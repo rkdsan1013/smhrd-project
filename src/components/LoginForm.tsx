@@ -25,7 +25,11 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
   }, []);
 
   useEffect(() => {
-    if (step > 1 && passwordRef.current) passwordRef.current.focus();
+    if (step === 1 && usernameRef.current) {
+      usernameRef.current.focus();
+    } else if (step > 1 && passwordRef.current) {
+      passwordRef.current.focus();
+    }
   }, [step]);
 
   useLayoutEffect(() => {
@@ -57,12 +61,16 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
         setError('아이디 또는 비밀번호가 잘못되었습니다.');
       }
     } else if (step === 3) {
-      if (password === confirmPassword) {
-        onLogin();
-        setUsername(inputUsername);
-      } else {
-        setError('비밀번호가 일치하지 않습니다.');
+      if (password.length < 8) {
+        setError('비밀번호는 최소 8자 이상이어야 합니다.');
+        return;
       }
+      if (password !== confirmPassword) {
+        setError('비밀번호가 일치하지 않습니다.');
+        return;
+      }
+      onLogin();
+      setUsername(inputUsername);
     }
   };
 
@@ -71,6 +79,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
     setPassword('');
     setConfirmPassword('');
     setError('');
+    if (usernameRef.current) {
+      usernameRef.current.focus();
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
