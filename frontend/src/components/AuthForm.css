@@ -1,11 +1,30 @@
+:root {
+  --background-color: #f9f9f9;
+  --text-color: #333;
+  --label-color: #666;
+  --button-color: #333;
+  --button-hover-color: #555;
+  --error-color: #e74c3c;
+  --border-color: #ccc;
+  --shadow-color: rgba(0, 0, 0, 0.15);
+}
+
 .auth-form {
-  border: 1px solid #ccc;
-  background-color: white;
+  width: 360px;
+  background-color: var(--background-color);
   border-radius: 8px;
   overflow: hidden;
-  margin-bottom: 1rem;
-  margin-top: 1rem;
-  transition: height 0.3s ease;
+  margin: 1rem 0;
+  transition: height 0.3s ease, transform 0.5s ease-out;
+  transform: translateX(-100%);
+  animation: slide-in 0.5s forwards ease-out;
+  box-shadow: 0 4px 10px var(--shadow-color);
+}
+
+@keyframes slide-in {
+  to {
+    transform: translateX(0);
+  }
 }
 
 .auth-form-content {
@@ -17,60 +36,84 @@
   margin-bottom: 1.5rem;
 }
 
-.signin-field {
-  width: 100%;
-  margin-bottom: 1rem;
+.form-field {
+  position: relative;
+  margin-bottom: 1.5rem;
 }
 
-.signin-field label {
-  display: block;
-  margin-bottom: 0.5rem;
+.form-field label {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  transition: all 0.2s ease;
+  color: var(--label-color);
+  pointer-events: none;
 }
 
-.signin-field input {
+.form-field input {
   width: 100%;
-  padding: 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  padding: 0.75rem 0;
+  border: none;
+  border-bottom: 2px solid var(--border-color);
+  background: none;
   box-sizing: border-box;
+  color: var(--text-color);
 }
 
-.signin-field input.disabled-input {
-  background-color: #f0f0f0;
-  color: #666;
+.form-field input:focus {
+  outline: none;
+  border-bottom-color: var(--text-color);
+}
+
+.form-field input::placeholder {
+  color: transparent;
+}
+
+.form-field input:focus + label,
+.form-field input:not(:placeholder-shown) + label {
+  top: -10px;
+  font-size: 0.75rem;
+  color: var(--text-color);
+}
+
+.form-field input.readonly {
+  color: #999;
   cursor: default;
+  border-bottom-color: var(--border-color);
 }
 
 .error-message {
-  color: red;
+  color: var(--error-color);
   font-size: 0.875rem;
   margin-top: 0.5rem;
-  overflow: hidden;
 }
 
-.button-wrapper {
-  margin-top: 1rem;
+.button-group {
   display: flex;
   justify-content: space-between;
+  margin-top: 1rem;
 }
 
-.full-width-button, .half-width-button {
-  background-color: #007bff;
-  color: white;
+.full-width,
+.half-width {
+  background-color: var(--button-color);
+  color: #fff;
   border: none;
   padding: 0.75rem;
   border-radius: 4px;
   cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
-.full-width-button {
+.full-width {
   width: 100%;
 }
 
-.half-width-button {
+.half-width {
   width: 48%;
 }
 
-.button-wrapper button:hover {
-  background-color: #0056b3;
+.button-group button:hover {
+  background-color: var(--button-hover-color);
 }

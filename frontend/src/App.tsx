@@ -3,6 +3,7 @@ import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import Content from './components/Content';
 import Footer from './components/Footer';
+import AuthForm from './components/AuthForm';
 import { UserProvider } from './contexts/UserContext';
 import './App.css';
 
@@ -16,12 +17,20 @@ const App: React.FC = () => {
   return (
     <UserProvider>
       <div className="app">
-        <Header />
+        {isLoggedIn && <Header />}
         <div className="container">
-          <Sidebar isLoggedIn={isLoggedIn} onSignin={handleLogin} />
-          <Content />
+          {isLoggedIn ? (
+            <>
+              <Sidebar isLoggedIn={isLoggedIn} onSignin={handleLogin} />
+              <Content />
+            </>
+          ) : (
+            <div className="auth-container">
+              <AuthForm onSignin={handleLogin} />
+            </div>
+          )}
         </div>
-        <Footer />
+        {isLoggedIn && <Footer />}
       </div>
     </UserProvider>
   );

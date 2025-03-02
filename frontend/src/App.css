@@ -1,3 +1,5 @@
+/* App.css */
+
 .app {
   display: flex;
   flex-direction: column;
@@ -7,6 +9,15 @@
 .container {
   display: flex;
   flex: 1;
+}
+
+.auth-container {
+  flex: 1;
+  display: flex;
+  align-items: center; /* 좌측 정렬 */
+  justify-content: center; /* 좌측 정렬 */
+  padding: 2rem; /* 여백 추가 */
+  /* background: linear-gradient(135deg, #ececec, #f5f5f5); */
 }
 
 .content {

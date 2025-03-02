@@ -6,71 +6,66 @@ interface AuthFormProps {
   onSignin: () => void;
 }
 
+const DEMO_EMAIL = 'test1234@test.com';
+const DEMO_PASSWORD = 'test1234';
+
 const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
-  const [step, setStep] = useState<number>(1);
   const { setUsername } = useUser();
-  const [email, setEmail] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
-  const [confirmPassword, setConfirmPassword] = useState<string>('');
-  const [error, setError] = useState<string>('');
+  const [step, setStep] = useState(1);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
   const [formHeight, setFormHeight] = useState<number | string>('auto');
 
-  const emailRef = useRef<HTMLInputElement>(null);
-  const passwordRef = useRef<HTMLInputElement>(null);
-  const confirmPasswordRef = useRef<HTMLInputElement>(null);
+  const emailInputRef = useRef<HTMLInputElement>(null);
+  const passwordInputRef = useRef<HTMLInputElement>(null);
+  const confirmPasswordInputRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (emailRef.current) emailRef.current.focus();
-  }, []);
-
-  useEffect(() => {
-    if (step === 1 && emailRef.current) {
-      emailRef.current.focus();
-    } else if (step > 1 && passwordRef.current) {
-      passwordRef.current.focus();
+    if (step === 1) {
+      emailInputRef.current?.focus();
+    } else {
+      passwordInputRef.current?.focus();
     }
   }, [step]);
 
   useLayoutEffect(() => {
-    const updateHeight = () => {
-      if (contentRef.current) {
-        setFormHeight(contentRef.current.scrollHeight);
-      }
-    };
+    if (contentRef.current) {
+      setFormHeight(contentRef.current.scrollHeight);
+    }
+  }, [step, errorMessage, email, password, confirmPassword]);
 
-    updateHeight();
-  }, [step, error, email, password, confirmPassword]);
-
-  const validateEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const validateEmail = (email: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const handleNextStep = () => {
     if (step === 1) {
       if (!validateEmail(email)) {
-        setError('유효한 이메일 주소를 입력하세요.');
+        setErrorMessage('유효한 이메일 주소를 입력하세요.');
         return;
       }
-
-      setError('');
-      setStep(email === 'smhrd123@example.com' ? 2 : 3);
+      setErrorMessage('');
+      setStep(email === DEMO_EMAIL ? 2 : 3);
     } else if (step === 2) {
-      if (email === 'smhrd123@example.com' && password === 'smhrd123') {
-        onSignin();
+      if (password === DEMO_PASSWORD) {
         setUsername(email);
+        onSignin();
       } else {
-        setError('아이디 또는 비밀번호가 잘못되었습니다.');
+        setErrorMessage('아이디 또는 비밀번호가 잘못되었습니다.');
       }
     } else if (step === 3) {
       if (password.length < 8) {
-        setError('비밀번호는 최소 8자 이상이어야 합니다.');
+        setErrorMessage('비밀번호는 최소 8자 이상이어야 합니다.');
         return;
       }
       if (password !== confirmPassword) {
-        setError('비밀번호가 일치하지 않습니다.');
+        setErrorMessage('비밀번호가 일치하지 않습니다.');
         return;
       }
-      onSignin();
       setUsername(email);
+      onSignin();
     }
   };
 
@@ -78,86 +73,91 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
     setStep(1);
     setPassword('');
     setConfirmPassword('');
-    setError('');
-    if (emailRef.current) {
-      emailRef.current.focus();
-    }
+    setErrorMessage('');
   };
+
+  const handleChange =
+    (setter: React.Dispatch<React.SetStateAction<string>>) =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setter(e.target.value);
+      setErrorMessage('');
+    };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') handleNextStep();
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'Escape' && step > 1) handlePrevStep();
-  };
-
-  const getHeaderText = () => {
-    if (step === 1) {
-      return '시작하기';
-    }
-    return email === 'smhrd123@example.com' ? '로그인' : '가입하기';
-  };
+  const headerText =
+    step === 1 ? '시작하기' : email === DEMO_EMAIL ? '로그인' : '가입하기';
 
   return (
-    <div className="auth-form" style={{ height: formHeight }} onKeyDown={handleKeyDown}>
+    <div
+      className="auth-form"
+      style={{ height: formHeight }}
+      onKeyDown={(e) => e.key === 'Escape' && step > 1 && handlePrevStep()}
+    >
       <div className="auth-form-content" ref={contentRef}>
-        <h2>{getHeaderText()}</h2>
+        <h2>{headerText}</h2>
         <div>
-          <div className="signin-field">
-            <label htmlFor="email">이메일</label>
+          <div className="form-field">
             <input
               type="email"
               id="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value.trim())}
+              onChange={handleChange(setEmail)}
               onKeyPress={handleKeyPress}
-              ref={emailRef}
+              ref={emailInputRef}
+              placeholder=" "
               readOnly={step !== 1}
-              className={step !== 1 ? 'disabled-input' : ''}
+              className={step !== 1 ? 'readonly' : ''}
             />
+            <label htmlFor="email">이메일</label>
           </div>
 
           {step >= 2 && (
             <>
-              <div className="signin-field">
-                <label htmlFor="password">비밀번호</label>
+              <div className="form-field">
                 <input
                   type="password"
                   id="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={handleChange(setPassword)}
                   onKeyPress={handleKeyPress}
-                  ref={passwordRef}
+                  ref={passwordInputRef}
+                  placeholder=" "
                 />
+                <label htmlFor="password">비밀번호</label>
               </div>
               {step === 3 && (
-                <div className="signin-field">
-                  <label htmlFor="confirmPassword">비밀번호 확인</label>
+                <div className="form-field">
                   <input
                     type="password"
                     id="confirmPassword"
                     value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    onChange={handleChange(setConfirmPassword)}
                     onKeyPress={handleKeyPress}
-                    ref={confirmPasswordRef}
+                    ref={confirmPasswordInputRef}
+                    placeholder=" "
                   />
+                  <label htmlFor="confirmPassword">비밀번호 확인</label>
                 </div>
               )}
             </>
           )}
 
-          <p className={`error-message ${error ? 'visible' : ''}`}>{error}</p>
+          {errorMessage && (
+            <p className="error-message">{errorMessage}</p>
+          )}
 
-          <div className="button-wrapper">
+          <div className="button-group">
             <button
               onClick={step === 1 ? handleNextStep : handlePrevStep}
-              className={step === 1 ? 'full-width-button' : 'half-width-button'}
+              className={step === 1 ? 'full-width' : 'half-width'}
             >
               {step === 1 ? '시작하기' : '돌아가기'}
             </button>
             {step !== 1 && (
-              <button onClick={handleNextStep} className="half-width-button">
+              <button onClick={handleNextStep} className="half-width">
                 {step === 2 ? '로그인' : '가입하기'}
               </button>
             )}
