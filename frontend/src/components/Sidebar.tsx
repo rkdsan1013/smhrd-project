@@ -1,19 +1,19 @@
 import React from 'react';
-import LoginForm from './LoginForm';
+import AuthForm from './AuthForm';
 import { useUser } from '../contexts/UserContext';
 import './Sidebar.css';
 
 interface SidebarProps {
   isLoggedIn: boolean;
-  onLogin: () => void;
+  onSignin: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ isLoggedIn, onLogin }) => {
+const Sidebar: React.FC<SidebarProps> = ({ isLoggedIn, onSignin }) => {
     const { username } = useUser();
     return (
     <aside className="sidebar">
       {!isLoggedIn ? (
-        <LoginForm onLogin={onLogin} />
+        <AuthForm onSignin={onSignin} />
       ) : (
         <div>
           <h2>{username && <p>Welcome, {username}!</p>}</h2>

@@ -18,7 +18,7 @@ const App: React.FC = () => {
       <div className="app">
         <Header />
         <div className="container">
-          <Sidebar isLoggedIn={isLoggedIn} onLogin={handleLogin} />
+          <Sidebar isLoggedIn={isLoggedIn} onSignin={handleLogin} />
           <Content />
         </div>
         <Footer />

@@ -1,4 +1,4 @@
-.login-form {
+.auth-form {
   border: 1px solid #ccc;
   background-color: white;
   border-radius: 8px;
@@ -8,26 +8,26 @@
   transition: height 0.3s ease;
 }
 
-.login-form-content {
+.auth-form-content {
   padding: 2rem;
 }
 
-.login-form h2 {
+.auth-form h2 {
   margin-top: 0;
   margin-bottom: 1.5rem;
 }
 
-.login-field {
+.signin-field {
   width: 100%;
   margin-bottom: 1rem;
 }
 
-.login-field label {
+.signin-field label {
   display: block;
   margin-bottom: 0.5rem;
 }
 
-.login-field input {
+.signin-field input {
   width: 100%;
   padding: 0.5rem;
   border: 1px solid #ccc;
@@ -35,7 +35,7 @@
   box-sizing: border-box;
 }
 
-.login-field input.disabled-input {
+.signin-field input.disabled-input {
   background-color: #f0f0f0;
   color: #666;
   cursor: default;

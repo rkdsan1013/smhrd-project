@@ -1,32 +1,32 @@
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { useUser } from '../contexts/UserContext';
-import './LoginForm.css';
+import './AuthForm.css';
 
-interface LoginFormProps {
-  onLogin: () => void;
+interface AuthFormProps {
+  onSignin: () => void;
 }
 
-const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
+const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
   const [step, setStep] = useState<number>(1);
   const { setUsername } = useUser();
-  const [inputUsername, setInputUsername] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [confirmPassword, setConfirmPassword] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [formHeight, setFormHeight] = useState<number | string>('auto');
 
-  const usernameRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const confirmPasswordRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (usernameRef.current) usernameRef.current.focus();
+    if (emailRef.current) emailRef.current.focus();
   }, []);
 
   useEffect(() => {
-    if (step === 1 && usernameRef.current) {
-      usernameRef.current.focus();
+    if (step === 1 && emailRef.current) {
+      emailRef.current.focus();
     } else if (step > 1 && passwordRef.current) {
       passwordRef.current.focus();
     }
@@ -40,23 +40,23 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
     };
 
     updateHeight();
-  }, [step, error, inputUsername, password, confirmPassword]);
+  }, [step, error, email, password, confirmPassword]);
 
   const validateEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const handleNextStep = () => {
     if (step === 1) {
-      if (!validateEmail(inputUsername)) {
+      if (!validateEmail(email)) {
         setError('유효한 이메일 주소를 입력하세요.');
         return;
       }
 
       setError('');
-      setStep(inputUsername === 'smhrd123@example.com' ? 2 : 3);
+      setStep(email === 'smhrd123@example.com' ? 2 : 3);
     } else if (step === 2) {
-      if (inputUsername === 'smhrd123@example.com' && password === 'smhrd123') {
-        onLogin();
-        setUsername(inputUsername);
+      if (email === 'smhrd123@example.com' && password === 'smhrd123') {
+        onSignin();
+        setUsername(email);
       } else {
         setError('아이디 또는 비밀번호가 잘못되었습니다.');
       }
@@ -69,8 +69,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
         setError('비밀번호가 일치하지 않습니다.');
         return;
       }
-      onLogin();
-      setUsername(inputUsername);
+      onSignin();
+      setUsername(email);
     }
   };
 
@@ -79,8 +79,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
     setPassword('');
     setConfirmPassword('');
     setError('');
-    if (usernameRef.current) {
-      usernameRef.current.focus();
+    if (emailRef.current) {
+      emailRef.current.focus();
     }
   };
 
@@ -92,20 +92,27 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
     if (e.key === 'Escape' && step > 1) handlePrevStep();
   };
 
+  const getHeaderText = () => {
+    if (step === 1) {
+      return '시작하기';
+    }
+    return email === 'smhrd123@example.com' ? '로그인' : '가입하기';
+  };
+
   return (
-    <div className="login-form" style={{ height: formHeight }} onKeyDown={handleKeyDown}>
-      <div className="login-form-content" ref={contentRef}>
-        <h2>로그인</h2>
+    <div className="auth-form" style={{ height: formHeight }} onKeyDown={handleKeyDown}>
+      <div className="auth-form-content" ref={contentRef}>
+        <h2>{getHeaderText()}</h2>
         <div>
-          <div className="login-field">
-            <label htmlFor="username">이메일</label>
+          <div className="signin-field">
+            <label htmlFor="email">이메일</label>
             <input
               type="email"
-              id="username"
-              value={inputUsername}
-              onChange={(e) => setInputUsername(e.target.value.trim())}
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value.trim())}
               onKeyPress={handleKeyPress}
-              ref={usernameRef}
+              ref={emailRef}
               readOnly={step !== 1}
               className={step !== 1 ? 'disabled-input' : ''}
             />
@@ -113,7 +120,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
 
           {step >= 2 && (
             <>
-              <div className="login-field">
+              <div className="signin-field">
                 <label htmlFor="password">비밀번호</label>
                 <input
                   type="password"
@@ -125,7 +132,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
                 />
               </div>
               {step === 3 && (
-                <div className="login-field">
+                <div className="signin-field">
                   <label htmlFor="confirmPassword">비밀번호 확인</label>
                   <input
                     type="password"
@@ -161,4 +168,4 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
   );
 };
 
-export default LoginForm;
+export default AuthForm;
