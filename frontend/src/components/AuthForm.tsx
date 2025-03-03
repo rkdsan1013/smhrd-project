@@ -5,12 +5,16 @@ import { useUser } from '../contexts/UserContext';
 import {
   validateEmail,
   validatePassword,
-} from '../utils/validators'; // 경로 수정
+  MIN_EMAIL_LENGTH,
+  MAX_EMAIL_LENGTH,
+  MIN_PASSWORD_LENGTH,
+  MAX_PASSWORD_LENGTH,
+} from '../utils/validators'; // 길이 제한 변수 임포트
 import {
   checkEmailExists,
   signIn,
   signUp,
-} from '../services/authService'; // 인증 서비스 임포트
+} from '../services/authService';
 import './AuthForm.css';
 
 interface AuthFormProps {
@@ -116,15 +120,15 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
     let errorMsg = '';
 
     if (id === 'email') {
-      if (value.length > 254) {
-        errorMsg = `이메일은 최대 254자까지 입력할 수 있습니다.`;
+      if (value.length > MAX_EMAIL_LENGTH) {
+        errorMsg = `이메일은 최대 ${MAX_EMAIL_LENGTH}자까지 입력할 수 있습니다.`;
       }
-      newValue = value.slice(0, 254);
+      newValue = value.slice(0, MAX_EMAIL_LENGTH);
     } else if (id === 'password' || id === 'confirmPassword') {
-      if (value.length > 60) {
-        errorMsg = `비밀번호는 최대 60자까지 입력할 수 있습니다.`;
+      if (value.length > MAX_PASSWORD_LENGTH) {
+        errorMsg = `비밀번호는 최대 ${MAX_PASSWORD_LENGTH}자까지 입력할 수 있습니다.`;
       }
-      newValue = value.slice(0, 60);
+      newValue = value.slice(0, MAX_PASSWORD_LENGTH);
     }
 
     setFormValues((prev) => ({

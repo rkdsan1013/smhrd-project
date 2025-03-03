@@ -2,10 +2,10 @@
 
 import validator from 'validator';
 
-const MIN_EMAIL_LENGTH = 5;
-const MAX_EMAIL_LENGTH = 254;
-const MIN_PASSWORD_LENGTH = 8;
-const MAX_PASSWORD_LENGTH = 60;
+export const MIN_EMAIL_LENGTH = 5;
+export const MAX_EMAIL_LENGTH = 254;
+export const MIN_PASSWORD_LENGTH = 8;
+export const MAX_PASSWORD_LENGTH = 60;
 
 export const validateEmail = (email: string): boolean => {
   return (
