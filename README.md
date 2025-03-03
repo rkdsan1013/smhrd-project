@@ -1,4 +1,4 @@
-### smhrd-project... gittest...
+### smhrd-project
 
 # Getting Started with Create React App
 
