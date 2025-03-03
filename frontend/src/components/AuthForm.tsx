@@ -1,10 +1,12 @@
-// AuthForm.tsx
+// /src/components/AuthForm.tsx
 
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { useUser } from '../contexts/UserContext';
 import {
   validateEmail,
   validatePassword,
+} from '../utils/validators'; // 경로 수정
+import {
   checkEmailExists,
   signIn,
   signUp,
