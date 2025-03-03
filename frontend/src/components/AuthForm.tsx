@@ -2,22 +2,18 @@
 
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { useUser } from '../contexts/UserContext';
-import axios from 'axios';
-import validator from 'validator'; // validator 라이브러리 임포트
+import {
+  validateEmail,
+  validatePassword,
+  checkEmailExists,
+  signIn,
+  signUp,
+} from '../services/authService'; // 인증 서비스 임포트
 import './AuthForm.css';
 
 interface AuthFormProps {
   onSignin: () => void;
 }
-
-interface ErrorResponseData {
-  message?: string;
-}
-
-const MIN_EMAIL_LENGTH = 5;
-const MAX_EMAIL_LENGTH = 254;
-const MIN_PASSWORD_LENGTH = 8;
-const MAX_PASSWORD_LENGTH = 60; // bcrypt 제한 최대 72바이트
 
 const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
   const { setUsername } = useUser();
@@ -39,8 +35,6 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
   const confirmPasswordInputRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  const API_URL = process.env.REACT_APP_API_URL || '';
-
   useEffect(() => {
     if (step === 1) {
       emailInputRef.current?.focus();
@@ -55,110 +49,50 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
     }
   }, [step, errorMessage]);
 
-  // 이메일 유효성 검사 함수
-  const validateEmail = (email: string): boolean => {
-    return (
-      typeof email === 'string' &&
-      email.length >= MIN_EMAIL_LENGTH &&
-      email.length <= MAX_EMAIL_LENGTH &&
-      validator.isEmail(email)
-    );
-  };
-
-  // 비밀번호 유효성 검사 함수
-  const validatePassword = (
-    password: string
-  ): { valid: boolean; message?: string } => {
-    if (typeof password !== 'string') {
-      return { valid: false, message: '비밀번호를 입력해주세요.' };
-    }
-    if (password.length < MIN_PASSWORD_LENGTH) {
-      return {
-        valid: false,
-        message: `비밀번호는 최소 ${MIN_PASSWORD_LENGTH}자 이상이어야 합니다.`,
-      };
-    }
-    if (password.length > MAX_PASSWORD_LENGTH) {
-      return {
-        valid: false,
-        message: `비밀번호는 최대 ${MAX_PASSWORD_LENGTH}자 이하로 입력해주세요.`,
-      };
-    }
-    if (!validator.isAscii(password)) {
-      return {
-        valid: false,
-        message: '비밀번호는 ASCII 문자만 사용 가능합니다.',
-      };
-    }
-    return { valid: true };
-  };
-
-  const handleError = (error: unknown, defaultMessage: string) => {
-    if (axios.isAxiosError(error) && error.response) {
-      setErrorMessage(error.response.data?.message || defaultMessage);
-    } else {
-      setErrorMessage('알 수 없는 오류가 발생했습니다.');
-    }
-  };
-
   const handleNextStep = async () => {
     const { email, password, confirmPassword } = formValues;
 
-    if (step === 1) {
-      if (!validateEmail(email)) {
-        setErrorMessage('유효한 이메일 주소를 입력하세요.');
-        return;
-      }
-      try {
-        const response = await axios.post(`${API_URL}/check-email`, { email });
-        setStep(response.data.exists ? 2 : 3);
+    try {
+      if (step === 1) {
+        if (!validateEmail(email)) {
+          setErrorMessage('유효한 이메일 주소를 입력하세요.');
+          return;
+        }
+        const exists = await checkEmailExists(email);
+        setStep(exists ? 2 : 3);
         setErrorMessage('');
-      } catch (error) {
-        handleError(error, '서버와 통신 중 오류가 발생했습니다.');
-      }
-    } else if (step === 2) {
-      const passwordValidation = validatePassword(password);
-      if (!passwordValidation.valid) {
-        setErrorMessage(
-          passwordValidation.message || '비밀번호가 유효하지 않습니다.'
-        );
-        return;
-      }
-      try {
-        const response = await axios.post(`${API_URL}/sign-in`, {
-          email,
-          password,
-        });
-        if (response.data.success) {
+      } else if (step === 2) {
+        const passwordValidation = validatePassword(password);
+        if (!passwordValidation.valid) {
+          setErrorMessage(passwordValidation.message || '비밀번호가 유효하지 않습니다.');
+          return;
+        }
+        const success = await signIn(email, password);
+        if (success) {
           setUsername(email);
           onSignin();
         }
-      } catch (error) {
-        handleError(error, '로그인 중 오류가 발생했습니다.');
-      }
-    } else if (step === 3) {
-      const passwordValidation = validatePassword(password);
-      if (!passwordValidation.valid) {
-        setErrorMessage(
-          passwordValidation.message || '비밀번호가 유효하지 않습니다.'
-        );
-        return;
-      }
-      if (password !== confirmPassword) {
-        setErrorMessage('비밀번호가 일치하지 않습니다.');
-        return;
-      }
-      try {
-        const response = await axios.post(`${API_URL}/sign-up`, {
-          email,
-          password,
-        });
-        if (response.data.success) {
+      } else if (step === 3) {
+        const passwordValidation = validatePassword(password);
+        if (!passwordValidation.valid) {
+          setErrorMessage(passwordValidation.message || '비밀번호가 유효하지 않습니다.');
+          return;
+        }
+        if (password !== confirmPassword) {
+          setErrorMessage('비밀번호가 일치하지 않습니다.');
+          return;
+        }
+        const success = await signUp(email, password);
+        if (success) {
           setUsername(email);
           onSignin();
         }
-      } catch (error) {
-        handleError(error, '회원가입 중 오류가 발생했습니다.');
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage('알 수 없는 오류가 발생했습니다.');
       }
     }
   };
@@ -180,15 +114,15 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
     let errorMsg = '';
 
     if (id === 'email') {
-      if (value.length > MAX_EMAIL_LENGTH) {
-        errorMsg = `이메일은 최대 ${MAX_EMAIL_LENGTH}자까지 입력할 수 있습니다.`;
+      if (value.length > 254) {
+        errorMsg = `이메일은 최대 254자까지 입력할 수 있습니다.`;
       }
-      newValue = value.slice(0, MAX_EMAIL_LENGTH);
+      newValue = value.slice(0, 254);
     } else if (id === 'password' || id === 'confirmPassword') {
-      if (value.length > MAX_PASSWORD_LENGTH) {
-        errorMsg = `비밀번호는 최대 ${MAX_PASSWORD_LENGTH}자까지 입력할 수 있습니다.`;
+      if (value.length > 60) {
+        errorMsg = `비밀번호는 최대 60자까지 입력할 수 있습니다.`;
       }
-      newValue = value.slice(0, MAX_PASSWORD_LENGTH);
+      newValue = value.slice(0, 60);
     }
 
     setFormValues((prev) => ({
