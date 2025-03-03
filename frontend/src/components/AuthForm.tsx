@@ -78,7 +78,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
     if (step === 1) {
       if (!validateEmail(email)) {
         setErrorMessage(
-          `유효한 이메일 주소를 입력하세요. (${MIN_EMAIL_LENGTH}자 이상, 최대 ${MAX_EMAIL_LENGTH}자)`
+          `유효한 이메일 주소를 입력하세요.`
         );
         return;
       }

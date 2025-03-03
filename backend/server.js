@@ -14,11 +14,12 @@ app.use(express.json());
 
 const db = mysql.createConnection({
   host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  port: process.env.DB_PORT
+  database: process.env.DB_NAME
 });
+
 
 db.connect((err) => {
   if (err) {
@@ -96,7 +97,7 @@ app.post('/sign-in', (req, res) => {
 });
 
 // 서버 실행
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server started on port ${PORT}`);
 });
