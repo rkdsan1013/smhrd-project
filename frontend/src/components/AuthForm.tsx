@@ -1,13 +1,9 @@
 // AuthForm.tsx
 
-import React, {
-  useState,
-  useRef,
-  useEffect,
-  useLayoutEffect,
-} from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { useUser } from '../contexts/UserContext';
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
+import validator from 'validator'; // validator 라이브러리 임포트
 import './AuthForm.css';
 
 interface AuthFormProps {
@@ -18,15 +14,19 @@ interface ErrorResponseData {
   message?: string;
 }
 
-const MAX_EMAIL_LENGTH = 254;
 const MIN_EMAIL_LENGTH = 5;
-const MAX_PASSWORD_LENGTH = 128;
+const MAX_EMAIL_LENGTH = 254;
 const MIN_PASSWORD_LENGTH = 8;
+const MAX_PASSWORD_LENGTH = 60; // bcrypt 제한 최대 72바이트
 
 const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
   const { setUsername } = useUser();
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [formValues, setFormValues] = useState({
+  const [formValues, setFormValues] = useState<{
+    email: string;
+    password: string;
+    confirmPassword: string;
+  }>({
     email: '',
     password: '',
     confirmPassword: '',
@@ -55,13 +55,42 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
     }
   }, [step, errorMessage]);
 
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  // 이메일 유효성 검사 함수
+  const validateEmail = (email: string): boolean => {
     return (
+      typeof email === 'string' &&
       email.length >= MIN_EMAIL_LENGTH &&
       email.length <= MAX_EMAIL_LENGTH &&
-      emailRegex.test(email)
+      validator.isEmail(email)
     );
+  };
+
+  // 비밀번호 유효성 검사 함수
+  const validatePassword = (
+    password: string
+  ): { valid: boolean; message?: string } => {
+    if (typeof password !== 'string') {
+      return { valid: false, message: '비밀번호를 입력해주세요.' };
+    }
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      return {
+        valid: false,
+        message: `비밀번호는 최소 ${MIN_PASSWORD_LENGTH}자 이상이어야 합니다.`,
+      };
+    }
+    if (password.length > MAX_PASSWORD_LENGTH) {
+      return {
+        valid: false,
+        message: `비밀번호는 최대 ${MAX_PASSWORD_LENGTH}자 이하로 입력해주세요.`,
+      };
+    }
+    if (!validator.isAscii(password)) {
+      return {
+        valid: false,
+        message: '비밀번호는 ASCII 문자만 사용 가능합니다.',
+      };
+    }
+    return { valid: true };
   };
 
   const handleError = (error: unknown, defaultMessage: string) => {
@@ -77,9 +106,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
 
     if (step === 1) {
       if (!validateEmail(email)) {
-        setErrorMessage(
-          `유효한 이메일 주소를 입력하세요.`
-        );
+        setErrorMessage('유효한 이메일 주소를 입력하세요.');
         return;
       }
       try {
@@ -90,8 +117,18 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
         handleError(error, '서버와 통신 중 오류가 발생했습니다.');
       }
     } else if (step === 2) {
+      const passwordValidation = validatePassword(password);
+      if (!passwordValidation.valid) {
+        setErrorMessage(
+          passwordValidation.message || '비밀번호가 유효하지 않습니다.'
+        );
+        return;
+      }
       try {
-        const response = await axios.post(`${API_URL}/sign-in`, { email, password });
+        const response = await axios.post(`${API_URL}/sign-in`, {
+          email,
+          password,
+        });
         if (response.data.success) {
           setUsername(email);
           onSignin();
@@ -100,12 +137,11 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
         handleError(error, '로그인 중 오류가 발생했습니다.');
       }
     } else if (step === 3) {
-      if (password.length < MIN_PASSWORD_LENGTH) {
-        setErrorMessage(`비밀번호는 최소 ${MIN_PASSWORD_LENGTH}자 이상이어야 합니다.`);
-        return;
-      }
-      if (password.length > MAX_PASSWORD_LENGTH) {
-        setErrorMessage(`비밀번호는 최대 ${MAX_PASSWORD_LENGTH}자 이하로 입력해주세요.`);
+      const passwordValidation = validatePassword(password);
+      if (!passwordValidation.valid) {
+        setErrorMessage(
+          passwordValidation.message || '비밀번호가 유효하지 않습니다.'
+        );
         return;
       }
       if (password !== confirmPassword) {
@@ -113,7 +149,10 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
         return;
       }
       try {
-        const response = await axios.post(`${API_URL}/sign-up`, { email, password });
+        const response = await axios.post(`${API_URL}/sign-up`, {
+          email,
+          password,
+        });
         if (response.data.success) {
           setUsername(email);
           onSignin();
@@ -126,28 +165,45 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
 
   const handlePrevStep = () => {
     setStep(1);
-    setFormValues({ email: formValues.email, password: '', confirmPassword: '' });
+    setFormValues((prev) => ({
+      ...prev,
+      password: '',
+      confirmPassword: '',
+    }));
     setErrorMessage('');
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
-    if (
-      (id === 'email' && value.length > MAX_EMAIL_LENGTH) ||
-      ((id === 'password' || id === 'confirmPassword') &&
-        value.length > MAX_PASSWORD_LENGTH)
-    ) {
-      return;
+
+    let newValue = value;
+    let errorMsg = '';
+
+    if (id === 'email') {
+      if (value.length > MAX_EMAIL_LENGTH) {
+        errorMsg = `이메일은 최대 ${MAX_EMAIL_LENGTH}자까지 입력할 수 있습니다.`;
+      }
+      newValue = value.slice(0, MAX_EMAIL_LENGTH);
+    } else if (id === 'password' || id === 'confirmPassword') {
+      if (value.length > MAX_PASSWORD_LENGTH) {
+        errorMsg = `비밀번호는 최대 ${MAX_PASSWORD_LENGTH}자까지 입력할 수 있습니다.`;
+      }
+      newValue = value.slice(0, MAX_PASSWORD_LENGTH);
     }
-    setFormValues((prev) => ({ ...prev, [id]: value }));
-    setErrorMessage('');
+
+    setFormValues((prev) => ({
+      ...prev,
+      [id]: newValue,
+    }));
+    setErrorMessage(errorMsg);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') handleNextStep();
   };
 
-  const headerText = step === 1 ? '시작하기' : step === 2 ? '로그인' : '가입하기';
+  const headerText =
+    step === 1 ? '시작하기' : step === 2 ? '로그인' : '가입하기';
 
   return (
     <div
@@ -169,7 +225,6 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
               placeholder=" "
               readOnly={step !== 1}
               className={step !== 1 ? 'readonly' : ''}
-              maxLength={MAX_EMAIL_LENGTH}
             />
             <label htmlFor="email">이메일</label>
           </div>
@@ -185,7 +240,6 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
                   onKeyPress={handleKeyPress}
                   ref={passwordInputRef}
                   placeholder=" "
-                  maxLength={MAX_PASSWORD_LENGTH}
                 />
                 <label htmlFor="password">비밀번호</label>
               </div>
@@ -199,7 +253,6 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
                     onKeyPress={handleKeyPress}
                     ref={confirmPasswordInputRef}
                     placeholder=" "
-                    maxLength={MAX_PASSWORD_LENGTH}
                   />
                   <label htmlFor="confirmPassword">비밀번호 확인</label>
                 </div>

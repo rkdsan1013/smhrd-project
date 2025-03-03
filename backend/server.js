@@ -5,6 +5,7 @@ const mysql = require('mysql2');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const dotenv = require('dotenv');
+const validator = require('validator'); // validator 라이브러리 임포트
 
 dotenv.config();
 
@@ -14,12 +15,11 @@ app.use(express.json());
 
 const db = mysql.createConnection({
   host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
+  port: process.env.DB_PORT || 3306,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME
+  database: process.env.DB_NAME,
 });
-
 
 db.connect((err) => {
   if (err) {
@@ -29,9 +29,55 @@ db.connect((err) => {
   console.log('MySQL Connected...');
 });
 
+// 입력값 검증을 위한 상수 및 유효성 검사 함수 추가
+const MIN_EMAIL_LENGTH = 5;
+const MAX_EMAIL_LENGTH = 254;
+const MIN_PASSWORD_LENGTH = 8;
+const MAX_PASSWORD_LENGTH = 60; // bcrypt 제한 최대 72바이트
+
+const validateEmail = (email) => {
+  return (
+    typeof email === 'string' &&
+    email.length >= MIN_EMAIL_LENGTH &&
+    email.length <= MAX_EMAIL_LENGTH &&
+    validator.isEmail(email)
+  );
+};
+
+const validatePassword = (password) => {
+  if (typeof password !== 'string') {
+    return { valid: false, message: '비밀번호를 입력해주세요.' };
+  }
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    return {
+      valid: false,
+      message: `비밀번호는 최소 ${MIN_PASSWORD_LENGTH}자 이상이어야 합니다.`,
+    };
+  }
+  if (password.length > MAX_PASSWORD_LENGTH) {
+    return {
+      valid: false,
+      message: `비밀번호는 최대 ${MAX_PASSWORD_LENGTH}자 이하로 입력해주세요.`,
+    };
+  }
+  if (!validator.isAscii(password)) {
+    return {
+      valid: false,
+      message: '비밀번호는 ASCII 문자만 사용 가능합니다.',
+    };
+  }
+  return { valid: true };
+};
+
 // 아이디 존재 여부 확인
 app.post('/check-email', (req, res) => {
   const { email } = req.body;
+
+  // 이메일 검증
+  if (!validateEmail(email)) {
+    return res.status(400).json({ message: '유효한 이메일 주소를 입력하세요.' });
+  }
+
   const sql = 'SELECT email FROM users WHERE email = ?';
 
   db.query(sql, [email], (err, results) => {
@@ -47,6 +93,20 @@ app.post('/check-email', (req, res) => {
 // 회원가입 처리
 app.post('/sign-up', async (req, res) => {
   const { email, password } = req.body;
+
+  // 이메일 검증
+  if (!validateEmail(email)) {
+    return res.status(400).json({ message: '유효한 이메일 주소를 입력하세요.' });
+  }
+
+  // 비밀번호 검증
+  const passwordValidation = validatePassword(password);
+  if (!passwordValidation.valid) {
+    return res
+      .status(400)
+      .json({ message: passwordValidation.message || '비밀번호가 유효하지 않습니다.' });
+  }
+
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
     const sql = 'INSERT INTO users (email, password) VALUES (?, ?)';
@@ -69,8 +129,22 @@ app.post('/sign-up', async (req, res) => {
 });
 
 // 로그인 처리
-app.post('/sign-in', (req, res) => {
+app.post('/sign-in', async (req, res) => {
   const { email, password } = req.body;
+
+  // 이메일 검증
+  if (!validateEmail(email)) {
+    return res.status(400).json({ message: '아이디 또는 비밀번호가 일치하지 않습니다.' });
+  }
+
+  // 비밀번호 검증
+  const passwordValidation = validatePassword(password);
+  if (!passwordValidation.valid) {
+    return res
+      .status(400)
+      .json({ message: passwordValidation.message || '아이디 또는 비밀번호가 일치하지 않습니다.' });
+  }
+
   const sql = 'SELECT email, password FROM users WHERE email = ?';
 
   db.query(sql, [email], async (err, results) => {
