@@ -1,13 +1,17 @@
+// AuthForm.tsx
+
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { useUser } from '../contexts/UserContext';
+import axios, { AxiosError } from 'axios';
 import './AuthForm.css';
 
 interface AuthFormProps {
   onSignin: () => void;
 }
 
-const DEMO_EMAIL = 'test1234@test.com';
-const DEMO_PASSWORD = 'test1234';
+interface ErrorResponseData {
+  message?: string;
+}
 
 const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
   const { setUsername } = useUser();
@@ -22,6 +26,9 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
   const passwordInputRef = useRef<HTMLInputElement>(null);
   const confirmPasswordInputRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+
+  // 환경 변수에서 API URL 가져오기
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
   useEffect(() => {
     if (step === 1) {
@@ -40,22 +47,39 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
   const validateEmail = (email: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  const handleNextStep = () => {
+  const handleNextStep = async () => {
     if (step === 1) {
       if (!validateEmail(email)) {
         setErrorMessage('유효한 이메일 주소를 입력하세요.');
         return;
       }
-      setErrorMessage('');
-      setStep(email === DEMO_EMAIL ? 2 : 3);
+      try {
+        const response = await axios.post(`${API_URL}/check-email`, { email });
+        if (response.data.exists) {
+          setStep(2); // 로그인 폼으로 이동
+        } else {
+          setStep(3); // 가입하기 폼으로 이동
+        }
+        setErrorMessage('');
+      } catch (error) {
+        handleError(error, '서버와 통신 중 오류가 발생했습니다.');
+      }
     } else if (step === 2) {
-      if (password === DEMO_PASSWORD) {
-        setUsername(email);
-        onSignin();
-      } else {
-        setErrorMessage('아이디 또는 비밀번호가 잘못되었습니다.');
+      // 로그인 처리
+      try {
+        const response = await axios.post(`${API_URL}/login`, {
+          email,
+          password,
+        });
+        if (response.data.success) {
+          setUsername(email);
+          onSignin();
+        }
+      } catch (error) {
+        handleError(error, '로그인 중 오류가 발생했습니다.');
       }
     } else if (step === 3) {
+      // 회원가입 처리
       if (password.length < 8) {
         setErrorMessage('비밀번호는 최소 8자 이상이어야 합니다.');
         return;
@@ -64,8 +88,18 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
         setErrorMessage('비밀번호가 일치하지 않습니다.');
         return;
       }
-      setUsername(email);
-      onSignin();
+      try {
+        const response = await axios.post(`${API_URL}/register`, {
+          email,
+          password,
+        });
+        if (response.data.success) {
+          setUsername(email);
+          onSignin();
+        }
+      } catch (error) {
+        handleError(error, '회원가입 중 오류가 발생했습니다.');
+      }
     }
   };
 
@@ -87,8 +121,17 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
     if (e.key === 'Enter') handleNextStep();
   };
 
+  const handleError = (error: unknown, defaultMessage: string) => {
+    if (axios.isAxiosError(error)) {
+      const err = error as AxiosError<ErrorResponseData>;
+      setErrorMessage(err.response?.data?.message || defaultMessage);
+    } else {
+      setErrorMessage('알 수 없는 오류가 발생했습니다.');
+    }
+  };
+
   const headerText =
-    step === 1 ? '시작하기' : email === DEMO_EMAIL ? '로그인' : '가입하기';
+    step === 1 ? '시작하기' : step === 2 ? '로그인' : '가입하기';
 
   return (
     <div
@@ -145,9 +188,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
             </>
           )}
 
-          {errorMessage && (
-            <p className="error-message">{errorMessage}</p>
-          )}
+          {errorMessage && <p className="error-message">{errorMessage}</p>}
 
           <div className="button-group">
             <button

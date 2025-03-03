@@ -7,6 +7,7 @@
   --error-color: #e74c3c;
   --border-color: #ccc;
   --shadow-color: rgba(0, 0, 0, 0.15);
+  --font-size: 16px;
 }
 
 .auth-form {
@@ -34,6 +35,7 @@
 .auth-form h2 {
   margin-top: 0;
   margin-bottom: 1.5rem;
+  font-size: 1.5rem;
 }
 
 .form-field {
@@ -49,6 +51,7 @@
   transition: all 0.2s ease;
   color: var(--label-color);
   pointer-events: none;
+  font-size: 0.875rem;
 }
 
 .form-field input {
@@ -59,6 +62,7 @@
   background: none;
   box-sizing: border-box;
   color: var(--text-color);
+  font-size: 1rem;
 }
 
 .form-field input:focus {
@@ -104,6 +108,7 @@
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.3s ease;
+  font-size: 1rem;
 }
 
 .full-width {
