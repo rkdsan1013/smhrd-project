@@ -1,6 +1,12 @@
 // AuthForm.tsx
 
-import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useLayoutEffect,
+  useCallback,
+} from 'react';
 import { useUser } from '../contexts/UserContext';
 import axios, { AxiosError } from 'axios';
 import './AuthForm.css';
@@ -28,8 +34,9 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
   const contentRef = useRef<HTMLDivElement>(null);
 
   // 환경 변수에서 API URL 가져오기
-  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+  const API_URL = process.env.REACT_APP_API_URL;
 
+  // 입력 필드 포커스 관리 최적화
   useEffect(() => {
     if (step === 1) {
       emailInputRef.current?.focus();
@@ -38,16 +45,34 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
     }
   }, [step]);
 
+  // formHeight 계산 최적화
   useLayoutEffect(() => {
     if (contentRef.current) {
       setFormHeight(contentRef.current.scrollHeight);
     }
-  }, [step, errorMessage, email, password, confirmPassword]);
+  }, [step, errorMessage]);
 
-  const validateEmail = (email: string) =>
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  // 이메일 유효성 검사 함수 메모화
+  const validateEmail = useCallback(
+    (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email),
+    []
+  );
 
-  const handleNextStep = async () => {
+  // 에러 처리 함수 메모화
+  const handleError = useCallback(
+    (error: unknown, defaultMessage: string) => {
+      if (axios.isAxiosError(error)) {
+        const err = error as AxiosError<ErrorResponseData>;
+        setErrorMessage(err.response?.data?.message || defaultMessage);
+      } else {
+        setErrorMessage('알 수 없는 오류가 발생했습니다.');
+      }
+    },
+    []
+  );
+
+  // 다음 단계로 이동하는 함수 최적화
+  const handleNextStep = useCallback(async () => {
     if (step === 1) {
       if (!validateEmail(email)) {
         setErrorMessage('유효한 이메일 주소를 입력하세요.');
@@ -101,37 +126,46 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
         handleError(error, '회원가입 중 오류가 발생했습니다.');
       }
     }
-  };
+  }, [
+    step,
+    email,
+    password,
+    confirmPassword,
+    API_URL,
+    validateEmail,
+    handleError,
+    setUsername,
+    onSignin,
+  ]);
 
-  const handlePrevStep = () => {
+  // 이전 단계로 이동하는 함수 최적화
+  const handlePrevStep = useCallback(() => {
     setStep(1);
     setPassword('');
     setConfirmPassword('');
     setErrorMessage('');
-  };
+  }, []);
 
-  const handleChange =
-    (setter: React.Dispatch<React.SetStateAction<string>>) =>
-    (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 입력 값 변경 핸들러 최적화
+  const handleChange = useCallback(
+    (setter: React.Dispatch<React.SetStateAction<string>>) => (
+      e: React.ChangeEvent<HTMLInputElement>
+    ) => {
       setter(e.target.value);
       setErrorMessage('');
-    };
+    },
+    []
+  );
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') handleNextStep();
-  };
+  // 키 입력 핸들러 최적화
+  const handleKeyPress = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') handleNextStep();
+    },
+    [handleNextStep]
+  );
 
-  const handleError = (error: unknown, defaultMessage: string) => {
-    if (axios.isAxiosError(error)) {
-      const err = error as AxiosError<ErrorResponseData>;
-      setErrorMessage(err.response?.data?.message || defaultMessage);
-    } else {
-      setErrorMessage('알 수 없는 오류가 발생했습니다.');
-    }
-  };
-
-  const headerText =
-    step === 1 ? '시작하기' : step === 2 ? '로그인' : '가입하기';
+  const headerText = step === 1 ? '시작하기' : step === 2 ? '로그인' : '가입하기';
 
   return (
     <div
