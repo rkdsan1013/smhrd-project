@@ -74,8 +74,8 @@
   color: transparent;
 }
 
-.form-field input:focus + label,
-.form-field input:not(:placeholder-shown) + label {
+.form-field input:focus+label,
+.form-field input:not(:placeholder-shown)+label {
   top: -10px;
   font-size: 0.75rem;
   color: var(--text-color);

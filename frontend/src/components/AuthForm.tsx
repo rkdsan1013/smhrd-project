@@ -5,7 +5,6 @@ import React, {
   useRef,
   useEffect,
   useLayoutEffect,
-  useCallback,
 } from 'react';
 import { useUser } from '../contexts/UserContext';
 import axios, { AxiosError } from 'axios';
@@ -19,24 +18,29 @@ interface ErrorResponseData {
   message?: string;
 }
 
+const MAX_EMAIL_LENGTH = 254;
+const MIN_EMAIL_LENGTH = 5;
+const MAX_PASSWORD_LENGTH = 128;
+const MIN_PASSWORD_LENGTH = 8;
+
 const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
   const { setUsername } = useUser();
-  const [step, setStep] = useState(1);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [formValues, setFormValues] = useState({
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
   const [errorMessage, setErrorMessage] = useState('');
-  const [formHeight, setFormHeight] = useState<number | string>('auto');
+  const [formHeight, setFormHeight] = useState<number | 'auto'>('auto');
 
   const emailInputRef = useRef<HTMLInputElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
   const confirmPasswordInputRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // 환경 변수에서 API URL 가져오기
-  const API_URL = process.env.REACT_APP_API_URL;
+  const API_URL = process.env.REACT_APP_API_URL || '';
 
-  // 입력 필드 포커스 관리 최적화
   useEffect(() => {
     if (step === 1) {
       emailInputRef.current?.focus();
@@ -45,57 +49,49 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
     }
   }, [step]);
 
-  // formHeight 계산 최적화
   useLayoutEffect(() => {
     if (contentRef.current) {
       setFormHeight(contentRef.current.scrollHeight);
     }
   }, [step, errorMessage]);
 
-  // 이메일 유효성 검사 함수 메모화
-  const validateEmail = useCallback(
-    (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email),
-    []
-  );
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return (
+      email.length >= MIN_EMAIL_LENGTH &&
+      email.length <= MAX_EMAIL_LENGTH &&
+      emailRegex.test(email)
+    );
+  };
 
-  // 에러 처리 함수 메모화
-  const handleError = useCallback(
-    (error: unknown, defaultMessage: string) => {
-      if (axios.isAxiosError(error)) {
-        const err = error as AxiosError<ErrorResponseData>;
-        setErrorMessage(err.response?.data?.message || defaultMessage);
-      } else {
-        setErrorMessage('알 수 없는 오류가 발생했습니다.');
-      }
-    },
-    []
-  );
+  const handleError = (error: unknown, defaultMessage: string) => {
+    if (axios.isAxiosError(error) && error.response) {
+      setErrorMessage(error.response.data?.message || defaultMessage);
+    } else {
+      setErrorMessage('알 수 없는 오류가 발생했습니다.');
+    }
+  };
 
-  // 다음 단계로 이동하는 함수 최적화
-  const handleNextStep = useCallback(async () => {
+  const handleNextStep = async () => {
+    const { email, password, confirmPassword } = formValues;
+
     if (step === 1) {
       if (!validateEmail(email)) {
-        setErrorMessage('유효한 이메일 주소를 입력하세요.');
+        setErrorMessage(
+          `유효한 이메일 주소를 입력하세요. (${MIN_EMAIL_LENGTH}자 이상, 최대 ${MAX_EMAIL_LENGTH}자)`
+        );
         return;
       }
       try {
         const response = await axios.post(`${API_URL}/check-email`, { email });
-        if (response.data.exists) {
-          setStep(2); // 로그인 폼으로 이동
-        } else {
-          setStep(3); // 가입하기 폼으로 이동
-        }
+        setStep(response.data.exists ? 2 : 3);
         setErrorMessage('');
       } catch (error) {
         handleError(error, '서버와 통신 중 오류가 발생했습니다.');
       }
     } else if (step === 2) {
-      // 로그인 처리
       try {
-        const response = await axios.post(`${API_URL}/login`, {
-          email,
-          password,
-        });
+        const response = await axios.post(`${API_URL}/sign-in`, { email, password });
         if (response.data.success) {
           setUsername(email);
           onSignin();
@@ -104,9 +100,12 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
         handleError(error, '로그인 중 오류가 발생했습니다.');
       }
     } else if (step === 3) {
-      // 회원가입 처리
-      if (password.length < 8) {
-        setErrorMessage('비밀번호는 최소 8자 이상이어야 합니다.');
+      if (password.length < MIN_PASSWORD_LENGTH) {
+        setErrorMessage(`비밀번호는 최소 ${MIN_PASSWORD_LENGTH}자 이상이어야 합니다.`);
+        return;
+      }
+      if (password.length > MAX_PASSWORD_LENGTH) {
+        setErrorMessage(`비밀번호는 최대 ${MAX_PASSWORD_LENGTH}자 이하로 입력해주세요.`);
         return;
       }
       if (password !== confirmPassword) {
@@ -114,10 +113,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
         return;
       }
       try {
-        const response = await axios.post(`${API_URL}/register`, {
-          email,
-          password,
-        });
+        const response = await axios.post(`${API_URL}/sign-up`, { email, password });
         if (response.data.success) {
           setUsername(email);
           onSignin();
@@ -126,44 +122,30 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
         handleError(error, '회원가입 중 오류가 발생했습니다.');
       }
     }
-  }, [
-    step,
-    email,
-    password,
-    confirmPassword,
-    API_URL,
-    validateEmail,
-    handleError,
-    setUsername,
-    onSignin,
-  ]);
+  };
 
-  // 이전 단계로 이동하는 함수 최적화
-  const handlePrevStep = useCallback(() => {
+  const handlePrevStep = () => {
     setStep(1);
-    setPassword('');
-    setConfirmPassword('');
+    setFormValues({ email: formValues.email, password: '', confirmPassword: '' });
     setErrorMessage('');
-  }, []);
+  };
 
-  // 입력 값 변경 핸들러 최적화
-  const handleChange = useCallback(
-    (setter: React.Dispatch<React.SetStateAction<string>>) => (
-      e: React.ChangeEvent<HTMLInputElement>
-    ) => {
-      setter(e.target.value);
-      setErrorMessage('');
-    },
-    []
-  );
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    if (
+      (id === 'email' && value.length > MAX_EMAIL_LENGTH) ||
+      ((id === 'password' || id === 'confirmPassword') &&
+        value.length > MAX_PASSWORD_LENGTH)
+    ) {
+      return;
+    }
+    setFormValues((prev) => ({ ...prev, [id]: value }));
+    setErrorMessage('');
+  };
 
-  // 키 입력 핸들러 최적화
-  const handleKeyPress = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Enter') handleNextStep();
-    },
-    [handleNextStep]
-  );
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') handleNextStep();
+  };
 
   const headerText = step === 1 ? '시작하기' : step === 2 ? '로그인' : '가입하기';
 
@@ -180,13 +162,14 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
             <input
               type="email"
               id="email"
-              value={email}
-              onChange={handleChange(setEmail)}
+              value={formValues.email}
+              onChange={handleChange}
               onKeyPress={handleKeyPress}
               ref={emailInputRef}
               placeholder=" "
               readOnly={step !== 1}
               className={step !== 1 ? 'readonly' : ''}
+              maxLength={MAX_EMAIL_LENGTH}
             />
             <label htmlFor="email">이메일</label>
           </div>
@@ -197,11 +180,12 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
                 <input
                   type="password"
                   id="password"
-                  value={password}
-                  onChange={handleChange(setPassword)}
+                  value={formValues.password}
+                  onChange={handleChange}
                   onKeyPress={handleKeyPress}
                   ref={passwordInputRef}
                   placeholder=" "
+                  maxLength={MAX_PASSWORD_LENGTH}
                 />
                 <label htmlFor="password">비밀번호</label>
               </div>
@@ -210,11 +194,12 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
                   <input
                     type="password"
                     id="confirmPassword"
-                    value={confirmPassword}
-                    onChange={handleChange(setConfirmPassword)}
+                    value={formValues.confirmPassword}
+                    onChange={handleChange}
                     onKeyPress={handleKeyPress}
                     ref={confirmPasswordInputRef}
                     placeholder=" "
+                    maxLength={MAX_PASSWORD_LENGTH}
                   />
                   <label htmlFor="confirmPassword">비밀번호 확인</label>
                 </div>

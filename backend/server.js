@@ -44,7 +44,7 @@ app.post('/check-email', (req, res) => {
 });
 
 // 회원가입 처리
-app.post('/register', async (req, res) => {
+app.post('/sign-up', async (req, res) => {
   const { email, password } = req.body;
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -68,7 +68,7 @@ app.post('/register', async (req, res) => {
 });
 
 // 로그인 처리
-app.post('/login', (req, res) => {
+app.post('/sign-in', (req, res) => {
   const { email, password } = req.body;
   const sql = 'SELECT email, password FROM users WHERE email = ?';
 

@@ -1,3 +1,5 @@
+// App.tsx
+
 import React, { useState } from 'react';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -8,29 +10,29 @@ import { UserProvider } from './contexts/UserContext';
 import './App.css';
 
 const App: React.FC = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isSignedIn, setIsSignedIn] = useState(false);
 
-  const handleLogin = () => {
-    setIsLoggedIn(true);
+  const handleSignIn = () => {
+    setIsSignedIn(true);
   };
 
   return (
     <UserProvider>
       <div className="app">
-        {isLoggedIn && <Header />}
+        {isSignedIn && <Header />}
         <div className="container">
-          {isLoggedIn ? (
+          {isSignedIn ? (
             <>
-              <Sidebar isLoggedIn={isLoggedIn} onSignin={handleLogin} />
+              <Sidebar isSignedIn={isSignedIn} onSignin={handleSignIn} />
               <Content />
             </>
           ) : (
             <div className="auth-container">
-              <AuthForm onSignin={handleLogin} />
+              <AuthForm onSignin={handleSignIn} />
             </div>
           )}
         </div>
-        {isLoggedIn && <Footer />}
+        {isSignedIn && <Footer />}
       </div>
     </UserProvider>
   );
