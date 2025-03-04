@@ -207,7 +207,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
               onClick={step === 1 ? handleNextStep : handlePrevStep}
               className={step === 1 ? 'full-width' : 'half-width'}
             >
-              {step === 1 ? '시작하기' : '돌아가기'}
+              {step === 1 ? '시작하기' : '뒤로가기'}
             </button>
             {step !== 1 && (
               <button onClick={handleNextStep} className="half-width">

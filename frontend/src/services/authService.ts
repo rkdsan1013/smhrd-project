@@ -1,10 +1,6 @@
 // /src/services/authService.ts
 
 import axios from 'axios';
-import {
-  validateEmail,
-  validatePassword,
-} from '../utils/validators'; // 유효성 검사 함수 임포트
 
 const API_URL = process.env.REACT_APP_API_URL || '';
 
