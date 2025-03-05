@@ -17,11 +17,7 @@ import {
 } from '../services/authService';
 import './AuthForm.css';
 
-interface AuthFormProps {
-  onSignin: () => void;
-}
-
-const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
+const AuthForm: React.FC = () => {
   const { setUsername } = useUser();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [formValues, setFormValues] = useState<{
@@ -76,7 +72,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
         const success = await signIn(email, password);
         if (success) {
           setUsername(email);
-          onSignin();
+          // App 컴포넌트의 로그인 상태 업데이트를 위해 콜백 함수 호출
+          window.dispatchEvent(new CustomEvent('userSignedIn', { detail: { email } }));
         }
       } else if (step === 3) {
         const passwordValidation = validatePassword(password);
@@ -91,7 +88,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSignin }) => {
         const success = await signUp(email, password);
         if (success) {
           setUsername(email);
-          onSignin();
+          // App 컴포넌트의 로그인 상태 업데이트를 위해 콜백 함수 호출
+          window.dispatchEvent(new CustomEvent('userSignedIn', { detail: { email } }));
         }
       }
     } catch (error) {

@@ -1,6 +1,6 @@
 // App.tsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import Content from './components/Content';
@@ -12,9 +12,17 @@ import './App.css';
 const App: React.FC = () => {
   const [isSignedIn, setIsSignedIn] = useState(false);
 
-  const handleSignIn = () => {
-    setIsSignedIn(true);
-  };
+  useEffect(() => {
+    const handleUserSignedIn = () => {
+      setIsSignedIn(true);
+    };
+    
+    window.addEventListener('userSignedIn', handleUserSignedIn);
+    
+    return () => {
+      window.removeEventListener('userSignedIn', handleUserSignedIn);
+    };
+  }, []);
 
   return (
     <UserProvider>
@@ -23,12 +31,12 @@ const App: React.FC = () => {
         <div className="container">
           {isSignedIn ? (
             <>
-              <Sidebar isSignedIn={isSignedIn} onSignin={handleSignIn} />
+              <Sidebar />
               <Content />
             </>
           ) : (
             <div className="auth-container">
-              <AuthForm onSignin={handleSignIn} />
+              <AuthForm />
             </div>
           )}
         </div>
