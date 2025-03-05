@@ -1,30 +1,27 @@
 // /src/components/AuthForm.tsx
 
-import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useLayoutEffect,
+  KeyboardEvent,
+  ChangeEvent,
+} from 'react';
 import { useUser } from '../contexts/UserContext';
 import {
   validateEmail,
   validatePassword,
-  MIN_EMAIL_LENGTH,
   MAX_EMAIL_LENGTH,
-  MIN_PASSWORD_LENGTH,
   MAX_PASSWORD_LENGTH,
-} from '../utils/validators'; // 길이 제한 변수 임포트
-import {
-  checkEmailExists,
-  signIn,
-  signUp,
-} from '../services/authService';
+} from '../utils/validators';
+import { checkEmailExists, signIn, signUp } from '../services/authService';
 import './AuthForm.css';
 
 const AuthForm: React.FC = () => {
   const { setUsername } = useUser();
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [formValues, setFormValues] = useState<{
-    email: string;
-    password: string;
-    confirmPassword: string;
-  }>({
+  const [formValues, setFormValues] = useState({
     email: '',
     password: '',
     confirmPassword: '',
@@ -37,6 +34,7 @@ const AuthForm: React.FC = () => {
   const confirmPasswordInputRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
+  // step에 따라 입력 포커스 설정
   useEffect(() => {
     if (step === 1) {
       emailInputRef.current?.focus();
@@ -45,6 +43,7 @@ const AuthForm: React.FC = () => {
     }
   }, [step]);
 
+  // 콘텐츠 높이를 측정하여 애니메이션이나 레이아웃에 활용
   useLayoutEffect(() => {
     if (contentRef.current) {
       setFormHeight(contentRef.current.scrollHeight);
@@ -64,21 +63,21 @@ const AuthForm: React.FC = () => {
         setStep(exists ? 2 : 3);
         setErrorMessage('');
       } else if (step === 2) {
-        const passwordValidation = validatePassword(password);
-        if (!passwordValidation.valid) {
-          setErrorMessage(passwordValidation.message || '비밀번호가 유효하지 않습니다.');
+        const validation = validatePassword(password);
+        if (!validation.valid) {
+          setErrorMessage(validation.message || '비밀번호가 유효하지 않습니다.');
           return;
         }
         const success = await signIn(email, password);
         if (success) {
           setUsername(email);
-          // App 컴포넌트의 로그인 상태 업데이트를 위해 콜백 함수 호출
+          // 로그인 성공 시 전역 이벤트를 발행하여 App에 통지
           window.dispatchEvent(new CustomEvent('userSignedIn', { detail: { email } }));
         }
       } else if (step === 3) {
-        const passwordValidation = validatePassword(password);
-        if (!passwordValidation.valid) {
-          setErrorMessage(passwordValidation.message || '비밀번호가 유효하지 않습니다.');
+        const validation = validatePassword(password);
+        if (!validation.valid) {
+          setErrorMessage(validation.message || '비밀번호가 유효하지 않습니다.');
           return;
         }
         if (password !== confirmPassword) {
@@ -88,7 +87,6 @@ const AuthForm: React.FC = () => {
         const success = await signUp(email, password);
         if (success) {
           setUsername(email);
-          // App 컴포넌트의 로그인 상태 업데이트를 위해 콜백 함수 호출
           window.dispatchEvent(new CustomEvent('userSignedIn', { detail: { email } }));
         }
       }
@@ -103,17 +101,12 @@ const AuthForm: React.FC = () => {
 
   const handlePrevStep = () => {
     setStep(1);
-    setFormValues((prev) => ({
-      ...prev,
-      password: '',
-      confirmPassword: '',
-    }));
+    setFormValues((prev) => ({ ...prev, password: '', confirmPassword: '' }));
     setErrorMessage('');
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
-
     let newValue = value;
     let errorMsg = '';
 
@@ -129,25 +122,23 @@ const AuthForm: React.FC = () => {
       newValue = value.slice(0, MAX_PASSWORD_LENGTH);
     }
 
-    setFormValues((prev) => ({
-      ...prev,
-      [id]: newValue,
-    }));
+    setFormValues((prev) => ({ ...prev, [id]: newValue }));
     setErrorMessage(errorMsg);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyPress = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') handleNextStep();
   };
 
-  const headerText =
-    step === 1 ? '시작하기' : step === 2 ? '로그인' : '가입하기';
+  const headerText = step === 1 ? '시작하기' : step === 2 ? '로그인' : '가입하기';
 
   return (
     <div
       className="auth-form"
       style={{ height: formHeight }}
-      onKeyDown={(e) => e.key === 'Escape' && step > 1 && handlePrevStep()}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape' && step > 1) handlePrevStep();
+      }}
     >
       <div className="auth-form-content" ref={contentRef}>
         <h2>{headerText}</h2>

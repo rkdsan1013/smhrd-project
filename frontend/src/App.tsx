@@ -1,4 +1,4 @@
-// App.tsx
+// /src/App.tsx
 
 import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
@@ -10,18 +10,13 @@ import { UserProvider } from './contexts/UserContext';
 import './App.css';
 
 const App: React.FC = () => {
-  const [isSignedIn, setIsSignedIn] = useState(false);
+  const [isSignedIn, setIsSignedIn] = useState<boolean>(false);
 
+  // 전역 이벤트를 통해 로그인 상태 변화를 감지
   useEffect(() => {
-    const handleUserSignedIn = () => {
-      setIsSignedIn(true);
-    };
-    
+    const handleUserSignedIn = () => setIsSignedIn(true);
     window.addEventListener('userSignedIn', handleUserSignedIn);
-    
-    return () => {
-      window.removeEventListener('userSignedIn', handleUserSignedIn);
-    };
+    return () => window.removeEventListener('userSignedIn', handleUserSignedIn);
   }, []);
 
   return (
