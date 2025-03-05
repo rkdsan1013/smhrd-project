@@ -1,5 +1,4 @@
 // /src/components/Sidebar.tsx
-
 import React from 'react';
 import { useUser } from '../contexts/UserContext';
 import './Sidebar.css';

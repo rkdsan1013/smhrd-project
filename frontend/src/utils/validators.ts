@@ -1,5 +1,4 @@
 // /src/utils/validators.ts
-
 import validator from 'validator';
 
 export const MIN_EMAIL_LENGTH = 5;
@@ -16,9 +15,7 @@ export const validateEmail = (email: string): boolean => {
   );
 };
 
-export const validatePassword = (
-  password: string
-): { valid: boolean; message?: string } => {
+export const validatePassword = (password: string): { valid: boolean; message?: string } => {
   if (typeof password !== 'string') {
     return { valid: false, message: '비밀번호를 입력해주세요.' };
   }

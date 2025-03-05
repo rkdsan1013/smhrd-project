@@ -1,39 +1,35 @@
 // /src/services/authService.ts
-
 import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_URL || '';
 
-export const checkEmailExists = async (email: string) => {
+export const checkEmailExists = async (email: string): Promise<boolean> => {
   try {
     const response = await axios.post(`${API_URL}/check-email`, { email });
     return response.data.exists;
   } catch (error) {
     handleAxiosError(error);
+    return false;
   }
 };
 
-export const signIn = async (email: string, password: string) => {
+export const signIn = async (email: string, password: string): Promise<boolean> => {
   try {
-    const response = await axios.post(`${API_URL}/sign-in`, {
-      email,
-      password,
-    });
+    const response = await axios.post(`${API_URL}/sign-in`, { email, password });
     return response.data.success;
   } catch (error) {
     handleAxiosError(error);
+    return false;
   }
 };
 
-export const signUp = async (email: string, password: string) => {
+export const signUp = async (email: string, password: string): Promise<boolean> => {
   try {
-    const response = await axios.post(`${API_URL}/sign-up`, {
-      email,
-      password,
-    });
+    const response = await axios.post(`${API_URL}/sign-up`, { email, password });
     return response.data.success;
   } catch (error) {
     handleAxiosError(error);
+    return false;
   }
 };
 

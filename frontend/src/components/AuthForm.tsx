@@ -1,5 +1,4 @@
 // /src/components/AuthForm.tsx
-
 import React, {
   useState,
   useRef,
@@ -20,13 +19,13 @@ import './AuthForm.css';
 
 const AuthForm: React.FC = () => {
   const { setUsername } = useUser();
-  const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [formValues, setFormValues] = useState({
+  const [authStep, setAuthStep] = useState<1 | 2 | 3>(1);
+  const [formData, setFormData] = useState({
     email: '',
     password: '',
     confirmPassword: '',
   });
-  const [errorMessage, setErrorMessage] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
   const [formHeight, setFormHeight] = useState<number | 'auto'>('auto');
 
   const emailInputRef = useRef<HTMLInputElement>(null);
@@ -34,110 +33,110 @@ const AuthForm: React.FC = () => {
   const confirmPasswordInputRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // step에 따라 입력 포커스 설정
+  // 각 인증 단계에 따라 입력 필드에 포커스 설정
   useEffect(() => {
-    if (step === 1) {
+    if (authStep === 1) {
       emailInputRef.current?.focus();
     } else {
       passwordInputRef.current?.focus();
     }
-  }, [step]);
+  }, [authStep]);
 
-  // 콘텐츠 높이를 측정하여 애니메이션이나 레이아웃에 활용
+  // 콘텐츠 영역의 높이를 동적으로 계산하여 애니메이션 등에 활용
   useLayoutEffect(() => {
     if (contentRef.current) {
       setFormHeight(contentRef.current.scrollHeight);
     }
-  }, [step, errorMessage]);
+  }, [authStep, errorMsg]);
 
   const handleNextStep = async () => {
-    const { email, password, confirmPassword } = formValues;
-
+    const { email, password, confirmPassword } = formData;
     try {
-      if (step === 1) {
+      if (authStep === 1) {
         if (!validateEmail(email)) {
-          setErrorMessage('유효한 이메일 주소를 입력하세요.');
+          setErrorMsg('유효한 이메일 주소를 입력하세요.');
           return;
         }
-        const exists = await checkEmailExists(email);
-        setStep(exists ? 2 : 3);
-        setErrorMessage('');
-      } else if (step === 2) {
-        const validation = validatePassword(password);
-        if (!validation.valid) {
-          setErrorMessage(validation.message || '비밀번호가 유효하지 않습니다.');
+        const emailExists = await checkEmailExists(email);
+        setAuthStep(emailExists ? 2 : 3);
+        setErrorMsg('');
+      } else if (authStep === 2) {
+        const { valid, message } = validatePassword(password);
+        if (!valid) {
+          setErrorMsg(message || '비밀번호가 유효하지 않습니다.');
           return;
         }
-        const success = await signIn(email, password);
-        if (success) {
+        const isSignedIn = await signIn(email, password);
+        if (isSignedIn) {
           setUsername(email);
-          // 로그인 성공 시 전역 이벤트를 발행하여 App에 통지
+          // 로그인 성공 시 전역 이벤트 발행
           window.dispatchEvent(new CustomEvent('userSignedIn', { detail: { email } }));
         }
-      } else if (step === 3) {
-        const validation = validatePassword(password);
-        if (!validation.valid) {
-          setErrorMessage(validation.message || '비밀번호가 유효하지 않습니다.');
+      } else if (authStep === 3) {
+        const { valid, message } = validatePassword(password);
+        if (!valid) {
+          setErrorMsg(message || '비밀번호가 유효하지 않습니다.');
           return;
         }
         if (password !== confirmPassword) {
-          setErrorMessage('비밀번호가 일치하지 않습니다.');
+          setErrorMsg('비밀번호가 일치하지 않습니다.');
           return;
         }
-        const success = await signUp(email, password);
-        if (success) {
+        const isSignedUp = await signUp(email, password);
+        if (isSignedUp) {
           setUsername(email);
           window.dispatchEvent(new CustomEvent('userSignedIn', { detail: { email } }));
         }
       }
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof Error) {
-        setErrorMessage(error.message);
+        setErrorMsg(error.message);
       } else {
-        setErrorMessage('알 수 없는 오류가 발생했습니다.');
+        setErrorMsg('알 수 없는 오류가 발생했습니다.');
       }
     }
   };
 
   const handlePrevStep = () => {
-    setStep(1);
-    setFormValues((prev) => ({ ...prev, password: '', confirmPassword: '' }));
-    setErrorMessage('');
+    setAuthStep(1);
+    setFormData((prev) => ({ ...prev, password: '', confirmPassword: '' }));
+    setErrorMsg('');
   };
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
-    let newValue = value;
-    let errorMsg = '';
+    let updatedValue = value;
+    let validationError = '';
 
     if (id === 'email') {
       if (value.length > MAX_EMAIL_LENGTH) {
-        errorMsg = `이메일은 최대 ${MAX_EMAIL_LENGTH}자까지 입력할 수 있습니다.`;
+        validationError = `이메일은 최대 ${MAX_EMAIL_LENGTH}자까지 입력할 수 있습니다.`;
       }
-      newValue = value.slice(0, MAX_EMAIL_LENGTH);
+      updatedValue = value.slice(0, MAX_EMAIL_LENGTH);
     } else if (id === 'password' || id === 'confirmPassword') {
       if (value.length > MAX_PASSWORD_LENGTH) {
-        errorMsg = `비밀번호는 최대 ${MAX_PASSWORD_LENGTH}자까지 입력할 수 있습니다.`;
+        validationError = `비밀번호는 최대 ${MAX_PASSWORD_LENGTH}자까지 입력할 수 있습니다.`;
       }
-      newValue = value.slice(0, MAX_PASSWORD_LENGTH);
+      updatedValue = value.slice(0, MAX_PASSWORD_LENGTH);
     }
 
-    setFormValues((prev) => ({ ...prev, [id]: newValue }));
-    setErrorMessage(errorMsg);
+    setFormData((prev) => ({ ...prev, [id]: updatedValue }));
+    setErrorMsg(validationError);
   };
 
   const handleKeyPress = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') handleNextStep();
   };
 
-  const headerText = step === 1 ? '시작하기' : step === 2 ? '로그인' : '가입하기';
+  const headerText =
+    authStep === 1 ? '시작하기' : authStep === 2 ? '로그인' : '가입하기';
 
   return (
     <div
       className="auth-form"
       style={{ height: formHeight }}
       onKeyDown={(e) => {
-        if (e.key === 'Escape' && step > 1) handlePrevStep();
+        if (e.key === 'Escape' && authStep > 1) handlePrevStep();
       }}
     >
       <div className="auth-form-content" ref={contentRef}>
@@ -147,24 +146,24 @@ const AuthForm: React.FC = () => {
             <input
               type="email"
               id="email"
-              value={formValues.email}
+              value={formData.email}
               onChange={handleChange}
               onKeyPress={handleKeyPress}
               ref={emailInputRef}
               placeholder=" "
-              readOnly={step !== 1}
-              className={step !== 1 ? 'readonly' : ''}
+              readOnly={authStep !== 1}
+              className={authStep !== 1 ? 'readonly' : ''}
             />
             <label htmlFor="email">이메일</label>
           </div>
 
-          {step >= 2 && (
+          {authStep >= 2 && (
             <>
               <div className="form-field">
                 <input
                   type="password"
                   id="password"
-                  value={formValues.password}
+                  value={formData.password}
                   onChange={handleChange}
                   onKeyPress={handleKeyPress}
                   ref={passwordInputRef}
@@ -172,12 +171,12 @@ const AuthForm: React.FC = () => {
                 />
                 <label htmlFor="password">비밀번호</label>
               </div>
-              {step === 3 && (
+              {authStep === 3 && (
                 <div className="form-field">
                   <input
                     type="password"
                     id="confirmPassword"
-                    value={formValues.confirmPassword}
+                    value={formData.confirmPassword}
                     onChange={handleChange}
                     onKeyPress={handleKeyPress}
                     ref={confirmPasswordInputRef}
@@ -189,18 +188,18 @@ const AuthForm: React.FC = () => {
             </>
           )}
 
-          {errorMessage && <p className="error-message">{errorMessage}</p>}
+          {errorMsg && <p className="error-message">{errorMsg}</p>}
 
           <div className="button-group">
             <button
-              onClick={step === 1 ? handleNextStep : handlePrevStep}
-              className={step === 1 ? 'full-width' : 'half-width'}
+              onClick={authStep === 1 ? handleNextStep : handlePrevStep}
+              className={authStep === 1 ? 'full-width' : 'half-width'}
             >
-              {step === 1 ? '시작하기' : '뒤로가기'}
+              {authStep === 1 ? '시작하기' : '뒤로가기'}
             </button>
-            {step !== 1 && (
+            {authStep !== 1 && (
               <button onClick={handleNextStep} className="half-width">
-                {step === 2 ? '로그인' : '가입하기'}
+                {authStep === 2 ? '로그인' : '가입하기'}
               </button>
             )}
           </div>

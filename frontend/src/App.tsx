@@ -1,5 +1,4 @@
 // /src/App.tsx
-
 import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -10,21 +9,20 @@ import { UserProvider } from './contexts/UserContext';
 import './App.css';
 
 const App: React.FC = () => {
-  const [isSignedIn, setIsSignedIn] = useState<boolean>(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
-  // 전역 이벤트를 통해 로그인 상태 변화를 감지
   useEffect(() => {
-    const handleUserSignedIn = () => setIsSignedIn(true);
-    window.addEventListener('userSignedIn', handleUserSignedIn);
-    return () => window.removeEventListener('userSignedIn', handleUserSignedIn);
+    const onUserSignedIn = () => setIsAuthenticated(true);
+    window.addEventListener('userSignedIn', onUserSignedIn);
+    return () => window.removeEventListener('userSignedIn', onUserSignedIn);
   }, []);
 
   return (
     <UserProvider>
       <div className="app">
-        {isSignedIn && <Header />}
+        {isAuthenticated && <Header />}
         <div className="container">
-          {isSignedIn ? (
+          {isAuthenticated ? (
             <>
               <Sidebar />
               <Content />
@@ -35,7 +33,7 @@ const App: React.FC = () => {
             </div>
           )}
         </div>
-        {isSignedIn && <Footer />}
+        {isAuthenticated && <Footer />}
       </div>
     </UserProvider>
   );
