@@ -19,7 +19,7 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// 정적 파일 서빙 (public 폴더의 uploads 경로)
+// 정적 파일 서빙: public 폴더의 uploads 경로
 app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
 app.use('/api/auth', authRoutes);

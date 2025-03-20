@@ -1,22 +1,18 @@
 // /backend/src/middlewares/verifyToken.js
-const { jwtVerify } = require('jose');
-const { TextEncoder } = require('util');
-
-const jwtSecret = process.env.JWT_SECRET || 'default';
-const secretKey = new TextEncoder().encode(jwtSecret);
+const { jwtVerify, secretKey } = require('../utils/jwtUtils');
 
 const verifyToken = async (req, res, next) => {
-  const token = req.cookies?.accessToken;
+  const token = req.cookies && req.cookies.accessToken;
   if (!token) {
-    return res.status(401).json({ success: false, message: '토큰이 없습니다.' });
+    return res.status(401).json({ message: "인증 토큰이 없습니다." });
   }
   try {
     const { payload } = await jwtVerify(token, secretKey);
-    req.user = payload; // payload: { uuid, exp, ... }
+    req.user = payload;
     next();
-  } catch (error) {
-    console.error('Token verification error:', error);
-    return res.status(401).json({ success: false, message: '토큰 검증 실패' });
+  } catch (err) {
+    console.error("토큰 검증 실패:", err);
+    return res.status(401).json({ message: "유효하지 않은 토큰입니다." });
   }
 };
 

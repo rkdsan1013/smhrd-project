@@ -1,15 +1,15 @@
-// /backend/src/models/authRoutes.js
+// /backend/src/routes/authRoutes.js
 const express = require('express');
-const router = express.Router();
 const multer = require('multer');
-const authController = require('../controllers/authController.js');
-const verifyToken = require('../middlewares/verifyToken.js');
+const authController = require('../controllers/authController');
+const verifyToken = require('../middlewares/verifyToken');
 
-// Multer memoryStorage 설정
+const router = express.Router();
+
+// Multer: 메모리 스토리지 사용 (원한다면 파일 크기, 형식 제한 추가)
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// 회원가입 시, "profilePicture" 필드의 파일 한 개 처리
 router.post('/sign-up', upload.single('profilePicture'), authController.signUp);
 router.post('/sign-in', authController.signIn);
 router.post('/check-email', authController.checkEmail);
