@@ -1,11 +1,9 @@
 // frontend/src/pages/MainPage.tsx
 import React from "react";
 import axios from "axios";
-import { useUser } from "../contexts/UserContext";
 import { useUserProfile } from "../hooks/useUserProfile";
 
 const MainPage: React.FC = () => {
-  const { userUuid } = useUser();
   const { profile, loading, error } = useUserProfile();
 
   // 로그아웃 버튼 클릭 시 실행되는 핸들러
@@ -37,9 +35,6 @@ const MainPage: React.FC = () => {
         <section className="mb-6">
           <p className="text-gray-600 text-lg">
             Welcome back! Here’s what’s happening:
-          </p>
-          <p className="mt-4 text-gray-800">
-            <span className="font-mono">{userUuid || "No UUID"}</span>
           </p>
         </section>
 
