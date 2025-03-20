@@ -1,19 +1,17 @@
-// /src/contexts/UserContext.tsx
+// /frontend/src/contexts/UserContext.tsx
 import React, { createContext, useState, ReactNode, useContext, useMemo } from 'react';
 
 interface IUserContext {
-  username: string;
-  setUsername: (username: string) => void;
+  userUuid: string;
+  setUserUuid: (uuid: string) => void;
 }
 
 const UserContext = createContext<IUserContext | undefined>(undefined);
 
 export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [username, setUsername] = useState<string>('');
-
-  const contextValue = useMemo(() => ({ username, setUsername }), [username]);
-
-  return <UserContext.Provider value={contextValue}>{children}</UserContext.Provider>;
+  const [userUuid, setUserUuid] = useState<string>('');
+  const value = useMemo(() => ({ userUuid, setUserUuid }), [userUuid]);
+  return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 };
 
 export const useUser = (): IUserContext => {
@@ -23,3 +21,5 @@ export const useUser = (): IUserContext => {
   }
   return context;
 };
+
+export default UserContext;

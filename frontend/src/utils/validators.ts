@@ -1,4 +1,4 @@
-// /src/utils/validators.ts
+// /frontend/src/utils/validators.ts
 import validator from 'validator';
 
 export const MIN_EMAIL_LENGTH = 5;
@@ -6,17 +6,20 @@ export const MAX_EMAIL_LENGTH = 254;
 export const MIN_PASSWORD_LENGTH = 8;
 export const MAX_PASSWORD_LENGTH = 60;
 
-export const validateEmail = (email: string): boolean => {
-  return (
-    typeof email === 'string' &&
-    email.length >= MIN_EMAIL_LENGTH &&
-    email.length <= MAX_EMAIL_LENGTH &&
-    validator.isEmail(email)
-  );
+export const validateEmail = (email: string): { valid: boolean; message?: string } => {
+  if (typeof email !== 'string' || email.trim() === '') {
+    return { valid: false, message: '이메일을 입력해주세요.' };
+  }
+  if (!validator.isEmail(email) || email.length < MIN_EMAIL_LENGTH || email.length > MAX_EMAIL_LENGTH) {
+    return { valid: false, message: '유효한 이메일 주소를 입력해주세요.' };
+  }
+  return { valid: true };
 };
 
-export const validatePassword = (password: string): { valid: boolean; message?: string } => {
-  if (typeof password !== 'string') {
+export const validatePassword = (
+  password: string
+): { valid: boolean; message?: string } => {
+  if (typeof password !== 'string' || password.trim() === '') {
     return { valid: false, message: '비밀번호를 입력해주세요.' };
   }
   if (password.length < MIN_PASSWORD_LENGTH) {
