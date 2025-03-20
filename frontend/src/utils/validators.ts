@@ -16,29 +16,70 @@ export const validateEmail = (email: string): { valid: boolean; message?: string
   return { valid: true };
 };
 
-export const validatePassword = (
-  password: string
-): { valid: boolean; message?: string } => {
+export const validatePassword = (password: string): { valid: boolean; message?: string } => {
   if (typeof password !== 'string' || password.trim() === '') {
     return { valid: false, message: '비밀번호를 입력해주세요.' };
   }
   if (password.length < MIN_PASSWORD_LENGTH) {
-    return {
-      valid: false,
-      message: `비밀번호는 최소 ${MIN_PASSWORD_LENGTH}자 이상이어야 합니다.`,
-    };
+    return { valid: false, message: `비밀번호는 최소 ${MIN_PASSWORD_LENGTH}자 이상이어야 합니다.` };
   }
   if (password.length > MAX_PASSWORD_LENGTH) {
-    return {
-      valid: false,
-      message: `비밀번호는 최대 ${MAX_PASSWORD_LENGTH}자 이하로 입력해주세요.`,
-    };
+    return { valid: false, message: `비밀번호는 최대 ${MAX_PASSWORD_LENGTH}자 이하로 입력해주세요.` };
   }
   if (!validator.isAscii(password)) {
-    return {
-      valid: false,
-      message: '비밀번호는 ASCII 문자만 사용 가능합니다.',
-    };
+    return { valid: false, message: '비밀번호는 ASCII 문자만 사용 가능합니다.' };
   }
+  return { valid: true };
+};
+
+export const validateName = (name: string): { valid: boolean; message?: string } => {
+  if (!name.trim()) return { valid: false, message: '이름을 입력해주세요.' };
+  return { valid: true };
+};
+
+export const validateBirthDate = (
+  year: string,
+  month: string,
+  day: string
+): { valid: boolean; message?: string } => {
+  if (!year.trim() || !month.trim() || !day.trim()) {
+    return { valid: false, message: '생년월일을 모두 입력해주세요.' };
+  }
+  if (!/^\d{4}$/.test(year)) {
+    return { valid: false, message: '년도를 4자리 숫자로 입력해주세요.' };
+  }
+  const y = parseInt(year, 10);
+  const m = parseInt(month, 10);
+  const d = parseInt(day, 10);
+  if (m < 1 || m > 12) {
+    return { valid: false, message: '월은 1부터 12 사이여야 합니다.' };
+  }
+  const maxDay = new Date(y, m, 0).getDate();
+  if (d < 1 || d > maxDay) {
+    return { valid: false, message: `해당 달은 최대 ${maxDay}일까지 있습니다.` };
+  }
+  return { valid: true };
+};
+
+export const validateGender = (gender: string): { valid: boolean; message?: string } => {
+  if (gender !== 'male' && gender !== 'female') {
+    return { valid: false, message: '성별을 올바르게 선택해주세요.' };
+  }
+  return { valid: true };
+};
+
+export const validateProfile = (
+  name: string,
+  year: string,
+  month: string,
+  day: string,
+  gender: string
+): { valid: boolean; message?: string } => {
+  const n = validateName(name);
+  if (!n.valid) return n;
+  const b = validateBirthDate(year, month, day);
+  if (!b.valid) return b;
+  const g = validateGender(gender);
+  if (!g.valid) return g;
   return { valid: true };
 };
