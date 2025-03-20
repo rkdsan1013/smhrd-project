@@ -39,9 +39,12 @@ export const signIn = async (email: string, password: string): Promise<AuthRespo
   }
 };
 
-export const signUp = async (email: string, password: string): Promise<AuthResponse> => {
+// signUp 함수는 이제 FormData를 인수로 받습니다.
+export const signUp = async (payload: FormData): Promise<AuthResponse> => {
   try {
-    const { data } = await axiosInstance.post<AuthResponse>("/auth/sign-up", { email, password });
+    const { data } = await axiosInstance.post<AuthResponse>("/auth/sign-up", payload, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
     return data;
   } catch (error) {
     return handleApiError(error);

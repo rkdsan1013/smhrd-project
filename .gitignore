@@ -47,3 +47,6 @@ build/
 *.lock
 *.cache
 *.tmp
+
+# 사용자 업로드 파일
+backend/public/uploads/
