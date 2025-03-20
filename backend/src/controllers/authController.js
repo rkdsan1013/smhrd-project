@@ -8,7 +8,6 @@ import sharp from "sharp";
 import { fileURLToPath } from "url";
 import { validateEmail, validatePassword, validateFullProfile } from "../utils/validators.js";
 import userModel from "../models/userModel.js";
-import db from "../config/db.js"; // MySQL2 Pool
 
 // __dirname 정의 (ESM 환경)
 const __filename = fileURLToPath(import.meta.url);
