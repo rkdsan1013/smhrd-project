@@ -6,6 +6,7 @@ const dotenv = require('dotenv');
 const path = require('path');
 
 const authRoutes = require('./routes/authRoutes');
+const userRoutes = require('./routes/userRoutes');
 
 dotenv.config();
 
@@ -22,7 +23,11 @@ app.use(cookieParser());
 // 정적 파일 서빙: public 폴더의 uploads 경로
 app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
+// 인증 관련 라우트
 app.use('/api/auth', authRoutes);
+
+// 사용자 프로필 관련 라우트
+app.use('/api/users', userRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

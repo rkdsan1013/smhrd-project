@@ -1,25 +1,25 @@
 // /frontend/src/contexts/UserContext.tsx
-import React, { createContext, useState, ReactNode, useContext, useMemo } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from "react";
 
-interface IUserContext {
+export interface IUserContext {
   userUuid: string;
+  // 다른 부가적인 정보는 여기 포함하지 않고, 필요하면 API 호출로 가져오기
   setUserUuid: (uuid: string) => void;
 }
 
-const UserContext = createContext<IUserContext | undefined>(undefined);
+const UserContext = createContext<IUserContext>({
+  userUuid: "",
+  setUserUuid: () => {},
+});
 
-export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [userUuid, setUserUuid] = useState<string>('');
-  const value = useMemo(() => ({ userUuid, setUserUuid }), [userUuid]);
-  return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
+export const UserProvider = ({ children }: { children: ReactNode }) => {
+  const [userUuid, setUserUuid] = useState<string>("");
+
+  return (
+    <UserContext.Provider value={{ userUuid, setUserUuid }}>
+      {children}
+    </UserContext.Provider>
+  );
 };
 
-export const useUser = (): IUserContext => {
-  const context = useContext(UserContext);
-  if (!context) {
-    throw new Error('useUser must be used within a UserProvider');
-  }
-  return context;
-};
-
-export default UserContext;
+export const useUser = () => useContext(UserContext);
