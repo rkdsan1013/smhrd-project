@@ -29,28 +29,29 @@ const formConfig: Record<FormState, { title: string; buttonLabel: string }> = {
 
 // 공통 입력 기본 클래스 (디자인 유지)
 const baseInputClass =
-  "peer block w-full border-0 border-b-2 pb-2.5 pt-4 text-base bg-transparent focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600";
+  "peer block w-full border-0 border-b-2 pb-2.5 pt-4 text-base bg-transparent " +
+  "focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600";
 
 const AuthForm: React.FC = () => {
   // 폼 상태
   const [formState, setFormState] = useState<FormState>("start");
   const [errorMsg, setErrorMsg] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  // 회원가입/프로필 관련 상태
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
   const [profilePreview, setProfilePreview] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [birthYear, setBirthYear] = useState("");
   const [birthMonth, setBirthMonth] = useState("");
   const [birthDay, setBirthDay] = useState("");
-  // gender 값은 "male", "female", "timeTraveler" 중 하나
-  const [gender, setGender] = useState("");
-  // override 옵션 버튼 표시 여부 (가입하기 클릭 후 날짜 오류가 있을 때만 활성화)
+  const [gender, setGender] = useState(""); // "male", "female", "timeTraveler"
   const [showOverride, setShowOverride] = useState(false);
 
-  // ref 설정
+  // ref (단계별 포커스)
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
@@ -58,20 +59,22 @@ const AuthForm: React.FC = () => {
   const birthMonthRef = useRef<HTMLInputElement>(null);
   const birthDayRef = useRef<HTMLInputElement>(null);
 
-  // 트랜지션을 적용할 컨테이너 & 내부 컨텐츠 ref
+  // 애니메이션 대상
   const cardOuterRef = useRef<HTMLDivElement>(null);
   const cardInnerRef = useRef<HTMLDivElement>(null);
 
-  // "이전 렌더링의 최종 높이"를 보관할 ref
-  const prevHeightRef = useRef(0);
+  // "처음 렌더 이후인지" 여부
+  const [hasMounted, setHasMounted] = useState(false);
 
-  // 에러 메시지 포매팅 함수
-  const formatError = (error: unknown): string =>
-    error instanceof Error
-      ? error.message.replace(/^Error:\s*/, "")
-      : String(error);
+  /** ------------------------------
+   *  UI 로직
+   * ------------------------------ */
+  // 첫 렌더 뒤에는 hasMounted를 true로 (초기 애니메이션 방지 등)
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
-  // formState에 따른 입력 포커스 설정
+  // 단계 전환 시 자동 포커스
   useEffect(() => {
     if (formState === "start") {
       emailRef.current?.focus();
@@ -82,7 +85,63 @@ const AuthForm: React.FC = () => {
     }
   }, [formState]);
 
-  // 생년월일 자동 보정 (월에 따른 최대 일 수)
+  // ESC 키 → 뒤로가기
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (formState !== "start" && e.key === "Escape") {
+      handleBack();
+    }
+  };
+
+  // 에러메시지 포매팅
+  const formatError = (error: unknown): string =>
+    error instanceof Error
+      ? error.message.replace(/^Error:\s*/, "")
+      : String(error);
+
+  // 공통 change 핸들러: 에러메시지 초기화
+  const handleChange = useCallback(
+    (setter: React.Dispatch<React.SetStateAction<string>>) =>
+      (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        setter(e.target.value);
+        setErrorMsg("");
+      },
+    []
+  );
+
+  // 뒤로가기
+  const handleBack = useCallback(() => {
+    if (formState === "profile") {
+      // 프로필 입력 단계면 "signup"단계로 돌아감
+      setFormState("signup");
+      setName("");
+      setBirthYear("");
+      setBirthMonth("");
+      setBirthDay("");
+      setGender("");
+      setProfilePicture(null);
+      setProfilePreview(null);
+      setShowOverride(false);
+    } else {
+      // 그 외면 "start" 단계로
+      setFormState("start");
+      setPassword("");
+      setConfirmPassword("");
+    }
+    setErrorMsg("");
+  }, [formState]);
+
+  // 프로필 사진
+  const handleProfilePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setProfilePicture(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setProfilePreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // 생년월일 관련 (자동 보정)
   useEffect(() => {
     if (birthYear && birthMonth && birthDay) {
       const y = parseInt(birthYear, 10);
@@ -96,17 +155,6 @@ const AuthForm: React.FC = () => {
     }
   }, [birthYear, birthMonth, birthDay]);
 
-  // 공통 change 핸들러 (에러 초기화 포함)
-  const handleChange = useCallback(
-    (setter: React.Dispatch<React.SetStateAction<string>>) =>
-      (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        setter(e.target.value);
-        setErrorMsg("");
-      },
-    []
-  );
-
-  // 생년월일 입력 핸들러들
   const handleBirthYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setShowOverride(false);
     const val = e.target.value.replace(/[^0-9]/g, "").slice(0, 4);
@@ -117,9 +165,8 @@ const AuthForm: React.FC = () => {
     }
   };
   const handleBirthYearBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const current = e.target.value;
-    if (current && current.length < 4) {
-      setBirthYear(formatYear(current));
+    if (e.target.value && e.target.value.length < 4) {
+      setBirthYear(formatYear(e.target.value));
     }
   };
   const handleBirthMonthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -133,7 +180,9 @@ const AuthForm: React.FC = () => {
   };
   const handleBirthMonthBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const current = e.target.value;
-    setBirthMonth(current === "" ? "" : formatTwoDigits(current, 12));
+    if (current) {
+      setBirthMonth(formatTwoDigits(current, 12));
+    }
   };
   const handleBirthDayChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setShowOverride(false);
@@ -143,7 +192,7 @@ const AuthForm: React.FC = () => {
   };
   const handleBirthDayBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const current = e.target.value;
-    if (current === "") {
+    if (!current) {
       setBirthDay("");
     } else {
       let maxDay = 31;
@@ -154,58 +203,9 @@ const AuthForm: React.FC = () => {
     }
   };
 
-  // 프로필 사진 핸들러
-  const handleProfilePictureChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setProfilePicture(file);
-      const reader = new FileReader();
-      reader.onloadend = () => setProfilePreview(reader.result as string);
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // 뒤로가기 핸들러
-  const handleBack = useCallback(() => {
-    if (formState === "profile") {
-      setFormState("signup");
-      setName("");
-      setBirthYear("");
-      setBirthMonth("");
-      setBirthDay("");
-      setGender("");
-      setProfilePicture(null);
-      setProfilePreview(null);
-      setShowOverride(false);
-    } else {
-      setFormState("start");
-      setPassword("");
-      setConfirmPassword("");
-    }
-    setErrorMsg("");
-  }, [formState]);
-
-  // 키보드 이벤트 핸들러 (Escape 시 뒤로가기)
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (formState !== "start" && e.key === "Escape") {
-      handleBack();
-    }
-  };
-
-  // 인증 성공 후 처리
-  const handleAuthSuccess = (
-    resp: { user?: { uuid: string; email: string } },
-    msg: string
-  ) => {
-    console.log(msg, resp);
-    window.dispatchEvent(
-      new CustomEvent("userSignedIn", { detail: { user: resp.user } })
-    );
-  };
-
-  // 각 단계별 제출 핸들러
+  /** ------------------------------
+   *  폼 제출 로직 (단계별)
+   * ------------------------------ */
   const handleStartSubmit = async () => {
     const { valid, message } = validateEmail(email);
     if (!valid) {
@@ -228,9 +228,11 @@ const AuthForm: React.FC = () => {
     }
     try {
       const resp = await signInService(email, password);
-      resp.success
-        ? handleAuthSuccess(resp, "로그인 성공:")
-        : setErrorMsg("로그인에 실패했습니다.");
+      if (resp.success) {
+        handleAuthSuccess(resp, "로그인 성공:");
+      } else {
+        setErrorMsg("로그인에 실패했습니다.");
+      }
     } catch (error) {
       setErrorMsg(formatError(error));
     }
@@ -280,7 +282,8 @@ const AuthForm: React.FC = () => {
       return;
     }
     setShowOverride(false);
-    // 생년월일 포매팅: YYYY-MM-DD
+
+    // YYYY-MM-DD
     const formattedBirthdate = `${birthYear.padStart(4, "0")}-${birthMonth.padStart(
       2,
       "0"
@@ -297,15 +300,27 @@ const AuthForm: React.FC = () => {
         formData.append("profilePicture", profilePicture);
       }
       const resp = await signUpService(formData);
-      resp.success
-        ? handleAuthSuccess(resp, "회원가입 성공:")
-        : setErrorMsg("회원가입에 실패했습니다.");
+      if (resp.success) {
+        handleAuthSuccess(resp, "회원가입 성공:");
+      } else {
+        setErrorMsg("회원가입에 실패했습니다.");
+      }
     } catch (error) {
       setErrorMsg(formatError(error));
     }
   };
 
-  // 폼을 제출
+  // 인증 성공 시
+  const handleAuthSuccess = (
+    resp: { user?: { uuid: string; email: string } },
+    msg: string
+  ) => {
+    console.log(msg, resp);
+    window.dispatchEvent(
+      new CustomEvent("userSignedIn", { detail: { user: resp.user } })
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
@@ -320,81 +335,58 @@ const AuthForm: React.FC = () => {
     }
   };
 
-  /**
-   * 1) 이전(직전) 높이를 우선 적용해 두고,
-   * 2) 강제 reflow 후,
-   * 3) 새 offsetHeight로 변경 → 트랜지션 발생
+  /** 
+   * (중요) 실제 폼 높이를 애니메이션하는 로직
+   * 
+   * 의존성 배열에 "실제로 폼 크기에 큰 영향을 주는 상태"만 포함!
+   * (formState, errorMsg, showOverride 등)
    */
   useLayoutEffect(() => {
     const outer = cardOuterRef.current;
     const inner = cardInnerRef.current;
     if (!outer || !inner) return;
 
-    // 새 컨텐츠 실제 높이를 미리 측정
+    // 새 높이
     const newHeight = inner.offsetHeight;
 
-    // 트랜지션 비활성화한 상태에서 "이전 높이" 세팅
+    // 첫 렌더 전이면(즉, 아직 hasMounted가 false) → 애니메이션 없이 즉시 설정
+    if (!hasMounted) {
+      outer.style.transition = "none";
+      outer.style.height = newHeight + "px";
+      return;
+    }
+
+    // 첫 렌더 이후
+    const currentHeight = parseFloat(window.getComputedStyle(outer).height || "0");
+    if (Math.round(currentHeight) === Math.round(newHeight)) {
+      // 이미 같은 높이면 트랜지션 필요 없음
+      return;
+    }
+
+    // 1) 트랜지션 끄고, 현재 높이로 설정
     outer.style.transition = "none";
+    outer.style.height = currentHeight + "px";
 
-    // 이전 렌더링 때 저장해둔 높이를 px로 세팅 (초기엔 0이므로, 첫 렌더 시 사실상 0px에서 시작)
-    outer.style.height = prevHeightRef.current + "px";
-
-    // 레이아웃 강제 계산 (reflow)
+    // 2) reflow
     outer.getBoundingClientRect();
 
-    // 이제 트랜지션 활성화
+    // 3) 트랜지션 켜고, 새 높이로
     outer.style.transition = "height 0.3s ease-in-out";
-
-    // 새로운 높이로 변경 (애니메이션 발생)
     outer.style.height = newHeight + "px";
-
-    // "이번 렌더의 실제 높이"를 다음 렌더를 위해 저장
-    prevHeightRef.current = newHeight;
-  }, [
-    formState,
-    errorMsg,
-    showOverride,
-    profilePreview,
-    name,
-    birthYear,
-    birthMonth,
-    birthDay,
-    gender,
-    password,
-    confirmPassword,
-  ]);
-
-  // 트랜지션 완료 후 height="auto" 복귀
-  const handleTransitionEnd = (e: React.TransitionEvent<HTMLDivElement>) => {
-    const outer = cardOuterRef.current;
-    const inner = cardInnerRef.current;
-    if (!outer || !inner) return;
-    if (e.target === outer && e.propertyName === "height") {
-      // 트랜지션 종료 시점, 실제 컨텐츠 높이와 같으면 auto 처리
-      const currentHeight = inner.offsetHeight;
-      // 만약 컨테이너가 실제 높이를 정확히 보여주고 있다면 auto로 전환
-      if (Math.round(currentHeight) === Math.round(prevHeightRef.current)) {
-        outer.style.transition = "none"; // auto로 바꾸기 직전에 transition 끄기
-        outer.style.height = "auto";
-      }
-    }
-  };
+  }, [hasMounted, formState, errorMsg, showOverride]);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-blue-100 via-blue-200 to-blue-300">
-      {/* 애니메이션 컨테이너 */}
       <div
         ref={cardOuterRef}
-        onTransitionEnd={handleTransitionEnd}
         className="w-full max-w-md bg-white shadow-2xl rounded-2xl overflow-hidden"
-      // height는 자바스크립트로 제어하므로 CSS로는 명시X
-      // Tailwind 클래스 대신 style.height / style.transition 등을 JS에서 제어
       >
         <div ref={cardInnerRef} className="p-8">
           <h2 className="mb-6 text-3xl font-bold text-gray-800">
             {formConfig[formState].title}
           </h2>
           <form onSubmit={handleSubmit} noValidate onKeyDown={handleKeyDown}>
+            {/* 프로필이 아닌 상태(이메일 입력) */}
             {formState !== "profile" && (
               <div className="relative z-0 w-full mb-6">
                 <input
@@ -404,22 +396,36 @@ const AuthForm: React.FC = () => {
                   value={email}
                   onChange={handleChange(setEmail)}
                   disabled={formState !== "start"}
-                  className={`${baseInputClass} ${formState !== "start"
+                  className={`${baseInputClass} ${
+                    formState !== "start"
                       ? "cursor-not-allowed opacity-50 text-gray-500"
                       : "text-gray-900"
-                    }`}
+                  }`}
                   placeholder=" "
                 />
+                {/* 라벨: whitespace-nowrap + origin-top-left */}
                 <label
                   htmlFor="email"
-                  className="absolute left-0 top-4 z-10 origin-0 text-sm text-gray-500 duration-300 transform 
-                             -translate-y-6 scale-75 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100 
-                             peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600"
+                  className="
+                    absolute left-0 top-4 z-10 
+                    text-sm text-gray-500
+                    whitespace-nowrap
+                    origin-top-left
+                    duration-300 transform
+                    -translate-y-6 scale-75
+                    peer-placeholder-shown:translate-y-0 
+                    peer-placeholder-shown:scale-100
+                    peer-focus:-translate-y-6 
+                    peer-focus:scale-75 
+                    peer-focus:text-blue-600
+                  "
                 >
                   이메일
                 </label>
               </div>
             )}
+
+            {/* signin 상태일 때: 비밀번호 */}
             {formState === "signin" && (
               <div className="relative z-0 w-full mb-6">
                 <input
@@ -433,14 +439,26 @@ const AuthForm: React.FC = () => {
                 />
                 <label
                   htmlFor="password"
-                  className="absolute left-0 top-4 z-10 origin-0 text-sm text-gray-500 duration-300 transform 
-                             -translate-y-6 scale-75 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100 
-                             peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600"
+                  className="
+                    absolute left-0 top-4 z-10
+                    text-sm text-gray-500
+                    whitespace-nowrap
+                    origin-top-left
+                    duration-300 transform
+                    -translate-y-6 scale-75
+                    peer-placeholder-shown:translate-y-0 
+                    peer-placeholder-shown:scale-100
+                    peer-focus:-translate-y-6 
+                    peer-focus:scale-75 
+                    peer-focus:text-blue-600
+                  "
                 >
                   비밀번호
                 </label>
               </div>
             )}
+
+            {/* signup 상태일 때: 비밀번호 / 비밀번호 확인 */}
             {formState === "signup" && (
               <>
                 <div className="relative z-0 w-full mb-6">
@@ -455,9 +473,19 @@ const AuthForm: React.FC = () => {
                   />
                   <label
                     htmlFor="password"
-                    className="absolute left-0 top-4 z-10 origin-0 text-sm text-gray-500 duration-300 transform 
-                               -translate-y-6 scale-75 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100 
-                               peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600"
+                    className="
+                      absolute left-0 top-4 z-10
+                      text-sm text-gray-500
+                      whitespace-nowrap
+                      origin-top-left
+                      duration-300 transform
+                      -translate-y-6 scale-75
+                      peer-placeholder-shown:translate-y-0 
+                      peer-placeholder-shown:scale-100
+                      peer-focus:-translate-y-6 
+                      peer-focus:scale-75 
+                      peer-focus:text-blue-600
+                    "
                   >
                     비밀번호
                   </label>
@@ -473,15 +501,27 @@ const AuthForm: React.FC = () => {
                   />
                   <label
                     htmlFor="confirmPassword"
-                    className="absolute left-0 top-4 z-10 origin-0 text-sm text-gray-500 duration-300 transform 
-                               -translate-y-6 scale-75 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100 
-                               peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600"
+                    className="
+                      absolute left-0 top-4 z-10
+                      text-sm text-gray-500
+                      whitespace-nowrap
+                      origin-top-left
+                      duration-300 transform
+                      -translate-y-6 scale-75
+                      peer-placeholder-shown:translate-y-0 
+                      peer-placeholder-shown:scale-100
+                      peer-focus:-translate-y-6 
+                      peer-focus:scale-75 
+                      peer-focus:text-blue-600
+                    "
                   >
                     비밀번호 확인
                   </label>
                 </div>
               </>
             )}
+
+            {/* profile 상태일 때: 프로필 입력 */}
             {formState === "profile" && (
               <>
                 <div className="mb-6 flex flex-col items-center">
@@ -518,13 +558,25 @@ const AuthForm: React.FC = () => {
                   />
                   <label
                     htmlFor="name"
-                    className="absolute left-0 top-4 z-10 origin-0 text-sm text-gray-500 duration-300 transform 
-                               -translate-y-6 scale-75 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100 
-                               peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600"
+                    className="
+                      absolute left-0 top-4 z-10
+                      text-sm text-gray-500
+                      whitespace-nowrap
+                      origin-top-left
+                      duration-300 transform
+                      -translate-y-6 scale-75
+                      peer-placeholder-shown:translate-y-0
+                      peer-placeholder-shown:scale-100
+                      peer-focus:-translate-y-6
+                      peer-focus:scale-75
+                      peer-focus:text-blue-600
+                    "
                   >
                     이름
                   </label>
                 </div>
+
+                {/* 생일(여긴 단순 텍스트/인풋 구조이므로 그대로) */}
                 <div className="relative z-0 w-full mb-6">
                   <label className="block text-sm text-gray-500 mb-1">
                     생일
@@ -541,8 +593,11 @@ const AuthForm: React.FC = () => {
                       placeholder="YYYY"
                       maxLength={4}
                       inputMode="numeric"
-                      className="block w-1/3 border-b-2 pb-2 pt-2 text-base text-center text-gray-900 
-                                 bg-transparent focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600"
+                      className="
+                        block w-1/3 border-b-2 pb-2 pt-2 text-base text-center text-gray-900 
+                        bg-transparent focus:outline-none focus:ring-0 border-gray-300 
+                        focus:border-blue-600
+                      "
                     />
                     <span className="text-gray-500">|</span>
                     <input
@@ -556,8 +611,11 @@ const AuthForm: React.FC = () => {
                       placeholder="MM"
                       maxLength={2}
                       inputMode="numeric"
-                      className="block w-1/3 border-b-2 pb-2 pt-2 text-base text-center text-gray-900 
-                                 bg-transparent focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600"
+                      className="
+                        block w-1/3 border-b-2 pb-2 pt-2 text-base text-center text-gray-900 
+                        bg-transparent focus:outline-none focus:ring-0 border-gray-300 
+                        focus:border-blue-600
+                      "
                     />
                     <span className="text-gray-500">|</span>
                     <input
@@ -571,11 +629,16 @@ const AuthForm: React.FC = () => {
                       placeholder="DD"
                       maxLength={2}
                       inputMode="numeric"
-                      className="block w-1/3 border-b-2 pb-2 pt-2 text-base text-center text-gray-900 
-                                 bg-transparent focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600"
+                      className="
+                        block w-1/3 border-b-2 pb-2 pt-2 text-base text-center text-gray-900 
+                        bg-transparent focus:outline-none focus:ring-0 border-gray-300 
+                        focus:border-blue-600
+                      "
                     />
                   </div>
                 </div>
+
+                {/* 성별 (라벨이 absolute가 아니라면 그대로) */}
                 <div className="mb-6">
                   <span className="block mb-2 text-sm font-medium text-gray-600">
                     성별
@@ -583,10 +646,11 @@ const AuthForm: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex space-x-4">
                       <label
-                        className={`flex items-center justify-center w-24 py-2 border rounded-md cursor-pointer transition-colors duration-200 ${gender === "male"
+                        className={`flex items-center justify-center w-24 py-2 border rounded-md cursor-pointer transition-colors duration-200 ${
+                          gender === "male"
                             ? "bg-blue-500 text-white border-blue-500"
                             : "bg-white text-gray-700 border-gray-300"
-                          }`}
+                        }`}
                       >
                         <input
                           type="radio"
@@ -599,10 +663,11 @@ const AuthForm: React.FC = () => {
                         <span>남성</span>
                       </label>
                       <label
-                        className={`flex items-center justify-center w-24 py-2 border rounded-md cursor-pointer transition-colors duration-200 ${gender === "female"
+                        className={`flex items-center justify-center w-24 py-2 border rounded-md cursor-pointer transition-colors duration-200 ${
+                          gender === "female"
                             ? "bg-blue-500 text-white border-blue-500"
                             : "bg-white text-gray-700 border-gray-300"
-                          }`}
+                        }`}
                       >
                         <input
                           type="radio"
@@ -618,10 +683,11 @@ const AuthForm: React.FC = () => {
                     {showOverride && (
                       <div>
                         <label
-                          className={`flex items-center justify-center w-24 py-2 border rounded-md cursor-pointer transition-colors duration-200 ${gender === "timeTraveler"
+                          className={`flex items-center justify-center w-24 py-2 border rounded-md cursor-pointer transition-colors duration-200 ${
+                            gender === "timeTraveler"
                               ? "bg-blue-500 text-white border-blue-500"
                               : "bg-white text-gray-700 border-gray-300"
-                            }`}
+                          }`}
                         >
                           <input
                             type="radio"
@@ -639,13 +705,21 @@ const AuthForm: React.FC = () => {
                 </div>
               </>
             )}
+
+            {/* 에러 메시지 */}
             {errorMsg && (
               <p className="mt-2 mb-4 text-sm text-red-500">{errorMsg}</p>
             )}
+
+            {/* 제출 버튼 */}
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-2 mb-4 text-white bg-blue-500 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-75"
+              className="
+                w-full py-2 mb-4 text-white bg-blue-500 rounded-lg 
+                hover:bg-blue-600 focus:outline-none focus:ring-2 
+                focus:ring-blue-400 disabled:opacity-75
+              "
             >
               <div className="flex items-center justify-center">
                 {isLoading && (
@@ -673,12 +747,18 @@ const AuthForm: React.FC = () => {
                 <span>{formConfig[formState].buttonLabel}</span>
               </div>
             </button>
+
+            {/* 뒤로가기 버튼 */}
             {formState !== "start" && (
               <button
                 type="button"
                 onClick={handleBack}
                 disabled={isLoading}
-                className="w-full py-2 text-blue-500 border border-blue-500 rounded-lg hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="
+                  w-full py-2 text-blue-500 border border-blue-500 rounded-lg 
+                  hover:bg-blue-100 focus:outline-none focus:ring-2 
+                  focus:ring-blue-400
+                "
               >
                 뒤로가기
               </button>
