@@ -97,29 +97,35 @@ export const validateFullProfile = (
   if (isNaN(y) || isNaN(m) || isNaN(d)) {
     return { valid: false, message: "생년월일이 올바르지 않습니다." };
   }
+
   const birthDate = new Date(y, m - 1, d);
   const today = new Date();
+  const birthTimestamp = birthDate.getTime();
+  const todayTimestamp = today.getTime();
+
+  // 나이 계산
   let age = today.getFullYear() - y;
   if (today.getMonth() < m - 1 || (today.getMonth() === m - 1 && today.getDate() < d)) {
     age--;
   }
 
-  if (birthDate.getTime() > today.getTime()) {
-    if (gender !== "timeTraveler") {
-      return {
-        valid: false,
-        message: "미래에서 온 당신, 타임머신은 아직 불법입니다!",
-        requiresOverride: true,
-      };
+  // 조건: 나이가 130세 이상이거나 생년월일이 미래인 경우 (단, gender가 "timeTraveler"가 아니어야 함)
+  if (gender !== "timeTraveler" && (age > 130 || birthTimestamp > todayTimestamp)) {
+    let easterEgg = "";
+    if (birthTimestamp > todayTimestamp) {
+      if (birthTimestamp === new Date(2038, 0, 19).getTime()) {
+        easterEgg = "2038년 1월 19일, 세계의 시간이 한 바퀴 돌고 있습니다.";
+      } else {
+        easterEgg = "미래에서 온 당신, 타임머신은 아직 불법입니다!";
+      }
+    } else if (age > 130) {
+      easterEgg = "너무 오래 살 수는 없습니다. 당신은 영원히 젊어야 해요!";
     }
-  } else if (age > 130) {
-    if (gender !== "timeTraveler") {
-      return {
-        valid: false,
-        message: "너무 오래 살 수는 없습니다. 당신은 영원히 젊어야 해요!",
-        requiresOverride: true,
-      };
-    }
+    return {
+      valid: false,
+      message: easterEgg,
+      requiresOverride: true,
+    };
   }
 
   return { valid: true };
