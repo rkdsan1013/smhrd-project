@@ -708,7 +708,7 @@ const AuthForm: React.FC = () => {
                     {showOverride && (
                       <div>
                         <label
-                          className={`flex items-center justify-center w-24 py-2 border rounded-md cursor-pointer transition-all duration-300 ease-in-out ${gender === "timeTraveler"
+                          className={`flex items-center justify-center w-34 py-2 border rounded-md cursor-pointer transition-all duration-300 ease-in-out ${gender === "timeTraveler"
                             ? "bg-blue-500 text-white border-blue-500"
                             : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
                             }`}
