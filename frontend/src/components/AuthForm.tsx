@@ -30,7 +30,9 @@ const formConfig: Record<FormState, { title: string; buttonLabel: string }> = {
 // 공통 입력 기본 클래스 (디자인 유지)
 const baseInputClass =
   "peer block w-full border-0 border-b-2 pb-2.5 pt-4 text-base bg-transparent " +
-  "focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600";
+  "focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600 " +
+  "transition-all duration-300 ease-in-out";
+
 
 const AuthForm: React.FC = () => {
   // 폼 상태
@@ -396,11 +398,10 @@ const AuthForm: React.FC = () => {
                   value={email}
                   onChange={handleChange(setEmail)}
                   disabled={formState !== "start"}
-                  className={`${baseInputClass} ${
-                    formState !== "start"
-                      ? "cursor-not-allowed opacity-50 text-gray-500"
-                      : "text-gray-900"
-                  }`}
+                  className={`${baseInputClass} ${formState !== "start"
+                    ? "cursor-not-allowed opacity-50 text-gray-500"
+                    : "text-gray-900"
+                    }`}
                   placeholder=" "
                 />
                 {/* 라벨: whitespace-nowrap + origin-top-left */}
@@ -525,18 +526,41 @@ const AuthForm: React.FC = () => {
             {formState === "profile" && (
               <>
                 <div className="mb-6 flex flex-col items-center">
-                  <label htmlFor="profilePicture" className="cursor-pointer">
-                    {profilePreview ? (
-                      <img
-                        src={profilePreview}
-                        alt="프로필 미리보기"
-                        className="w-32 h-32 rounded-full object-cover mb-2"
-                      />
-                    ) : (
-                      <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center mb-2">
-                        <span className="text-gray-500">미리보기</span>
-                      </div>
-                    )}
+                  <label
+                    htmlFor="profilePicture"
+                    className="relative group cursor-pointer w-32 h-32 mb-2 rounded-full overflow-hidden"
+                  >
+                    {/* 프로필 이미지 또는 기본 박스 */}
+                    <div className="w-full h-full">
+                      {profilePreview ? (
+                        <img
+                          src={profilePreview}
+                          alt="프로필 미리보기"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm">
+                          프로필
+                        </div>
+                      )}
+                    </div>
+                    {/* 반투명 오버레이 (연필 아이콘 포함) */}
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-6 w-6 text-white"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M15.232 5.232l3.536 3.536M9 11l6.536-6.536a2 2 0 112.828 2.828L11.828 14H9v-3z"
+                        />
+                      </svg>
+                    </div>
                   </label>
                   <input
                     type="file"
@@ -595,8 +619,9 @@ const AuthForm: React.FC = () => {
                       inputMode="numeric"
                       className="
                         block w-1/3 border-b-2 pb-2 pt-2 text-base text-center text-gray-900 
-                        bg-transparent focus:outline-none focus:ring-0 border-gray-300 
-                        focus:border-blue-600
+                        bg-transparent focus:outline-none focus:ring-0 
+                        border-gray-300 focus:border-blue-600 
+                        transition-all duration-300 ease-in-out
                       "
                     />
                     <span className="text-gray-500">|</span>
@@ -613,8 +638,9 @@ const AuthForm: React.FC = () => {
                       inputMode="numeric"
                       className="
                         block w-1/3 border-b-2 pb-2 pt-2 text-base text-center text-gray-900 
-                        bg-transparent focus:outline-none focus:ring-0 border-gray-300 
-                        focus:border-blue-600
+                        bg-transparent focus:outline-none focus:ring-0 
+                        border-gray-300 focus:border-blue-600 
+                        transition-all duration-300 ease-in-out
                       "
                     />
                     <span className="text-gray-500">|</span>
@@ -631,8 +657,9 @@ const AuthForm: React.FC = () => {
                       inputMode="numeric"
                       className="
                         block w-1/3 border-b-2 pb-2 pt-2 text-base text-center text-gray-900 
-                        bg-transparent focus:outline-none focus:ring-0 border-gray-300 
-                        focus:border-blue-600
+                        bg-transparent focus:outline-none focus:ring-0 
+                        border-gray-300 focus:border-blue-600 
+                        transition-all duration-300 ease-in-out
                       "
                     />
                   </div>
@@ -646,11 +673,10 @@ const AuthForm: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex space-x-4">
                       <label
-                        className={`flex items-center justify-center w-24 py-2 border rounded-md cursor-pointer transition-colors duration-200 ${
-                          gender === "male"
-                            ? "bg-blue-500 text-white border-blue-500"
-                            : "bg-white text-gray-700 border-gray-300"
-                        }`}
+                        className={`flex items-center justify-center w-24 py-2 border rounded-md cursor-pointer transition-all duration-300 ease-in-out ${gender === "male"
+                          ? "bg-blue-500 text-white border-blue-500"
+                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                          }`}
                       >
                         <input
                           type="radio"
@@ -663,11 +689,10 @@ const AuthForm: React.FC = () => {
                         <span>남성</span>
                       </label>
                       <label
-                        className={`flex items-center justify-center w-24 py-2 border rounded-md cursor-pointer transition-colors duration-200 ${
-                          gender === "female"
-                            ? "bg-blue-500 text-white border-blue-500"
-                            : "bg-white text-gray-700 border-gray-300"
-                        }`}
+                        className={`flex items-center justify-center w-24 py-2 border rounded-md cursor-pointer transition-all duration-300 ease-in-out ${gender === "female"
+                          ? "bg-blue-500 text-white border-blue-500"
+                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                          }`}
                       >
                         <input
                           type="radio"
@@ -683,11 +708,10 @@ const AuthForm: React.FC = () => {
                     {showOverride && (
                       <div>
                         <label
-                          className={`flex items-center justify-center w-24 py-2 border rounded-md cursor-pointer transition-colors duration-200 ${
-                            gender === "timeTraveler"
-                              ? "bg-blue-500 text-white border-blue-500"
-                              : "bg-white text-gray-700 border-gray-300"
-                          }`}
+                          className={`flex items-center justify-center w-24 py-2 border rounded-md cursor-pointer transition-all duration-300 ease-in-out ${gender === "timeTraveler"
+                            ? "bg-blue-500 text-white border-blue-500"
+                            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                            }`}
                         >
                           <input
                             type="radio"
@@ -717,8 +741,11 @@ const AuthForm: React.FC = () => {
               disabled={isLoading}
               className="
                 w-full py-2 mb-4 text-white bg-blue-500 rounded-lg 
-                hover:bg-blue-600 focus:outline-none focus:ring-2 
-                focus:ring-blue-400 disabled:opacity-75
+                transition-colors duration-300 ease-in-out
+                hover:bg-blue-600 
+                focus:outline-none focus:ring-2 
+                focus:ring-blue-300
+                disabled:opacity-60
               "
             >
               <div className="flex items-center justify-center">
@@ -756,8 +783,10 @@ const AuthForm: React.FC = () => {
                 disabled={isLoading}
                 className="
                   w-full py-2 text-blue-500 border border-blue-500 rounded-lg 
-                  hover:bg-blue-100 focus:outline-none focus:ring-2 
-                  focus:ring-blue-400
+                  hover:bg-blue-100 
+                  focus:outline-none focus:ring-2 
+                  focus:ring-blue-300 
+                  transition-colors duration-300 ease-in-out
                 "
               >
                 뒤로가기
