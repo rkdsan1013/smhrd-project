@@ -2,7 +2,6 @@
 const bcrypt = require("bcrypt");
 const path = require("path");
 const fs = require("fs");
-const sharp = require("sharp");
 const { validateEmail, validatePassword, validateFullProfile } = require("../utils/validators");
 const {
   generateTokens,
@@ -72,17 +71,20 @@ exports.signUp = async (req, res) => {
       gender
     );
 
-    // 프로필 이미지 처리 (기존 로직)
+    // 프로필 이미지 처리: uploadImage 미들웨어에서 이미 처리된 이미지를 사용
     if (req.file) {
       const uploadsDir = path.join(__dirname, "../../public/uploads/profile_pictures");
       if (!fs.existsSync(uploadsDir)) {
         fs.mkdirSync(uploadsDir, { recursive: true });
       }
-      const fileName = `${user.uuid}.webp`;
+      // 미들웨어에서 변환한 확장자를 사용 (여기서는 기본적으로 "webp")
+      const fileExtension = req.file.convertedExtension || "webp";
+      const fileName = `${user.uuid}.${fileExtension}`;
       const destPath = path.join(uploadsDir, fileName);
 
       try {
-        await sharp(req.file.buffer).toFormat("webp").toFile(destPath);
+        // 처리된 이미지 버퍼를 파일로 저장 (WebP 형식)
+        await fs.promises.writeFile(destPath, req.file.buffer);
       } catch (imageError) {
         console.error("[signUp] 이미지 처리 오류:", imageError);
         throw new Error("이미지 처리 중 오류가 발생했습니다.");
@@ -110,7 +112,7 @@ exports.signUp = async (req, res) => {
 exports.signIn = async (req, res) => {
   const { email, password } = req.body;
   try {
-    // 로그인 시에는 기존 로직대로 email을 그대로 검색
+    // 로그인 시 기존 로직대로 email을 검색
     const results = await userModel.getUserByEmail(email);
     if (!results || results.length === 0) {
       return res.status(400).json({ message: "아이디 또는 비밀번호가 일치하지 않습니다." });

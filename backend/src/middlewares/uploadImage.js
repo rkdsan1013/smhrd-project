@@ -1,3 +1,4 @@
+// /backend/src/middlewares/uploadImage.js
 const multer = require("multer");
 const sharp = require("sharp");
 
@@ -21,31 +22,33 @@ const upload = multer({
 });
 
 /**
- * 미들웨어: 업로드된 이미지를 512x512 크기로 가운데를 기준으로 잘라냅니다.
- * 이미지가 없으면 다음 단계로 넘어갑니다.
+ * 미들웨어: 업로드된 이미지를 처리하여
+ * 1. EXIF 정보를 기반으로 자동 회전
+ * 2. 512x512 크기로 리사이즈 및 가운데 기준 crop
+ * 3. webp 포맷으로 변환 (확장자를 webp로 통일)
+ *
+ * 이미지가 없으면 그냥 다음 단계로 넘어갑니다.
  */
 async function resizeImage(req, res, next) {
   if (!req.file) return next(); // 파일이 없는 경우 다음으로 넘어감
 
   try {
-    // sharp를 이용해 이미지 버퍼를 처리
     const resizedBuffer = await sharp(req.file.buffer)
-      .rotate()
+      .rotate() // EXIF 정보를 기반으로 자동 회전
       .resize(512, 512, {
-        fit: "cover", // 목표 크기를 채우도록 비율에 따라 자르기
+        fit: "cover", // 목표 크기를 완전히 채우도록 비율에 따라 자르기
         position: "center", // 가운데 기준으로 crop
       })
+      .toFormat("webp") // webp 형식으로 변환
       .toBuffer();
 
-    // 처리된 버퍼를 다시 req.file.buffer에 저장
     req.file.buffer = resizedBuffer;
+    // 나중에 컨트롤러에서 저장할 때 사용할 확장자를 지정
+    req.file.convertedExtension = "webp";
     next();
   } catch (error) {
     next(error); // 에러 발생 시 처리
   }
 }
 
-module.exports = {
-  upload,
-  resizeImage,
-};
+module.exports = { upload, resizeImage };
