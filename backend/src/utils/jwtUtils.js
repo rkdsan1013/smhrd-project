@@ -1,18 +1,18 @@
 // /backend/src/utils/jwtUtils.js
-const { SignJWT, jwtVerify, decodeJwt } = require('jose');
-const { TextEncoder } = require('util');
-const dotenv = require('dotenv');
+const { SignJWT, jwtVerify, decodeJwt } = require("jose");
+const { TextEncoder } = require("util");
+const dotenv = require("dotenv");
 
 dotenv.config();
 
-const jwtSecret = process.env.JWT_SECRET || 'default';
+const jwtSecret = process.env.JWT_SECRET || "default";
 const secretKey = new TextEncoder().encode(jwtSecret);
 
-const ACCESS_TOKEN_EXPIRATION = "1h";   // 1시간 만료
-const REFRESH_TOKEN_EXPIRATION = "3d";   // 3일 만료
+const ACCESS_TOKEN_EXPIRATION = "1h"; // 1시간 만료
+const REFRESH_TOKEN_EXPIRATION = "3d"; // 3일 만료
 
-const ACCESS_TOKEN_MAX_AGE = 60 * 60 * 1000;          // 1시간 (밀리초)
-const REFRESH_TOKEN_MAX_AGE = 3 * 24 * 60 * 60 * 1000;  // 3일 (밀리초)
+const ACCESS_TOKEN_MAX_AGE = 60 * 60 * 1000; // 1시간 (밀리초)
+const REFRESH_TOKEN_MAX_AGE = 3 * 24 * 60 * 60 * 1000; // 3일 (밀리초)
 
 const generateTokens = async (uuid) => {
   const payload = { uuid };

@@ -15,11 +15,7 @@ const UserContext = createContext<IUserContext>({
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [userUuid, setUserUuid] = useState<string>("");
 
-  return (
-    <UserContext.Provider value={{ userUuid, setUserUuid }}>
-      {children}
-    </UserContext.Provider>
-  );
+  return <UserContext.Provider value={{ userUuid, setUserUuid }}>{children}</UserContext.Provider>;
 };
 
 export const useUser = () => useContext(UserContext);

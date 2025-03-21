@@ -1,5 +1,5 @@
 // /backend/src/middlewares/verifyToken.js
-const { jwtVerify, secretKey } = require('../utils/jwtUtils');
+const { jwtVerify, secretKey } = require("../utils/jwtUtils");
 
 const verifyToken = async (req, res, next) => {
   const token = req.cookies && req.cookies.accessToken;

@@ -1,16 +1,6 @@
 // /frontend/src/AuthForm.tsx
-import React, {
-  useEffect,
-  useRef,
-  useState,
-  useCallback,
-  useLayoutEffect,
-} from "react";
-import {
-  validateEmail,
-  validatePassword,
-  validateFullProfile,
-} from "../utils/validators";
+import React, { useEffect, useRef, useState, useCallback, useLayoutEffect } from "react";
+import { validateEmail, validatePassword, validateFullProfile } from "../utils/validators";
 import { formatYear, formatTwoDigits, getMaxDay } from "../utils/dateUtils";
 import {
   checkEmailExists,
@@ -33,7 +23,6 @@ const baseInputClass =
   "focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600 " +
   "transition-all duration-300 ease-in-out";
 
-
 const AuthForm: React.FC = () => {
   // 폼 상태
   const [formState, setFormState] = useState<FormState>("start");
@@ -50,7 +39,7 @@ const AuthForm: React.FC = () => {
   const [birthYear, setBirthYear] = useState("");
   const [birthMonth, setBirthMonth] = useState("");
   const [birthDay, setBirthDay] = useState("");
-  const [gender, setGender] = useState(""); // "male", "female", "timeTraveler"
+  const [gender, setGender] = useState("");
   const [showOverride, setShowOverride] = useState(false);
 
   // ref (단계별 포커스)
@@ -96,9 +85,7 @@ const AuthForm: React.FC = () => {
 
   // 에러메시지 포매팅
   const formatError = (error: unknown): string =>
-    error instanceof Error
-      ? error.message.replace(/^Error:\s*/, "")
-      : String(error);
+    error instanceof Error ? error.message.replace(/^Error:\s*/, "") : String(error);
 
   // 공통 change 핸들러: 에러메시지 초기화
   const handleChange = useCallback(
@@ -209,9 +196,9 @@ const AuthForm: React.FC = () => {
    *  폼 제출 로직 (단계별)
    * ------------------------------ */
   const handleStartSubmit = async () => {
-    const { valid, message } = validateEmail(email);
-    if (!valid) {
-      setErrorMsg(message || "유효한 이메일을 입력해주세요.");
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.valid) {
+      setErrorMsg(emailValidation.message || "유효한 이메일 주소를 입력해주세요.");
       return;
     }
     try {
@@ -223,9 +210,9 @@ const AuthForm: React.FC = () => {
   };
 
   const handleSignInSubmit = async () => {
-    const { valid, message } = validatePassword(password);
-    if (!valid) {
-      setErrorMsg(message || "비밀번호가 유효하지 않습니다.");
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      setErrorMsg(passwordValidation.message || "비밀번호가 유효하지 않습니다.");
       return;
     }
     try {
@@ -241,12 +228,14 @@ const AuthForm: React.FC = () => {
   };
 
   const handleSignUpSubmit = async () => {
-    if (!validateEmail(email).valid) {
-      setErrorMsg("유효한 이메일을 입력해주세요.");
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.valid) {
+      setErrorMsg(emailValidation.message || "유효한 이메일 주소를 입력해주세요.");
       return;
     }
-    if (!validatePassword(password).valid) {
-      setErrorMsg("비밀번호가 유효하지 않습니다.");
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      setErrorMsg(passwordValidation.message || "비밀번호가 유효하지 않습니다.");
       return;
     }
     if (password !== confirmPassword) {
@@ -257,39 +246,17 @@ const AuthForm: React.FC = () => {
   };
 
   const handleProfileSubmit = async () => {
-    if (!name.trim()) {
-      setErrorMsg("이름을 입력해주세요.");
-      return;
-    }
-    if (!birthYear.trim() || !birthMonth.trim() || !birthDay.trim()) {
-      setErrorMsg("생년월일을 모두 입력해주세요.");
-      return;
-    }
-    if (!gender.trim()) {
-      setErrorMsg("성별을 선택해주세요.");
-      return;
-    }
-    const profileValidation = validateFullProfile(
-      name,
-      birthYear,
-      birthMonth,
-      birthDay,
-      gender
-    );
+    const profileValidation = validateFullProfile(name, birthYear, birthMonth, birthDay, gender);
     if (!profileValidation.valid) {
       if (profileValidation.requiresOverride) {
         setShowOverride(true);
       }
-      setErrorMsg(profileValidation.message || "");
+      setErrorMsg(profileValidation.message || "프로필 정보를 확인해주세요.");
       return;
     }
     setShowOverride(false);
 
-    // YYYY-MM-DD
-    const formattedBirthdate = `${birthYear.padStart(4, "0")}-${birthMonth.padStart(
-      2,
-      "0"
-    )}-${birthDay.padStart(2, "0")}`;
+    const formattedBirthdate = `${birthYear.padStart(4, "0")}-${birthMonth.padStart(2, "0")}-${birthDay.padStart(2, "0")}`;
 
     try {
       const formData = new FormData();
@@ -313,14 +280,9 @@ const AuthForm: React.FC = () => {
   };
 
   // 인증 성공 시
-  const handleAuthSuccess = (
-    resp: { user?: { uuid: string; email: string } },
-    msg: string
-  ) => {
+  const handleAuthSuccess = (resp: { user?: { uuid: string; email: string } }, msg: string) => {
     console.log(msg, resp);
-    window.dispatchEvent(
-      new CustomEvent("userSignedIn", { detail: { user: resp.user } })
-    );
+    window.dispatchEvent(new CustomEvent("userSignedIn", { detail: { user: resp.user } }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -337,9 +299,9 @@ const AuthForm: React.FC = () => {
     }
   };
 
-  /** 
+  /**
    * (중요) 실제 폼 높이를 애니메이션하는 로직
-   * 
+   *
    * 의존성 배열에 "실제로 폼 크기에 큰 영향을 주는 상태"만 포함!
    * (formState, errorMsg, showOverride 등)
    */
@@ -384,9 +346,7 @@ const AuthForm: React.FC = () => {
         className="w-full max-w-md bg-white shadow-2xl rounded-2xl overflow-hidden"
       >
         <div ref={cardInnerRef} className="p-8">
-          <h2 className="mb-6 text-3xl font-bold text-gray-800">
-            {formConfig[formState].title}
-          </h2>
+          <h2 className="mb-6 text-3xl font-bold text-gray-800">{formConfig[formState].title}</h2>
           <form onSubmit={handleSubmit} noValidate onKeyDown={handleKeyDown}>
             {/* 프로필이 아닌 상태(이메일 입력) */}
             {formState !== "profile" && (
@@ -398,10 +358,9 @@ const AuthForm: React.FC = () => {
                   value={email}
                   onChange={handleChange(setEmail)}
                   disabled={formState !== "start"}
-                  className={`${baseInputClass} ${formState !== "start"
-                    ? "opacity-50 text-gray-500"
-                    : "text-gray-900"
-                    }`}
+                  className={`${baseInputClass} ${
+                    formState !== "start" ? "opacity-50 text-gray-500" : "text-gray-900"
+                  }`}
                   placeholder=" "
                 />
                 {/* 라벨: whitespace-nowrap + origin-top-left */}
@@ -602,9 +561,7 @@ const AuthForm: React.FC = () => {
 
                 {/* 생일(여긴 단순 텍스트/인풋 구조이므로 그대로) */}
                 <div className="relative z-0 w-full mb-6">
-                  <label className="block text-sm text-gray-500 mb-1">
-                    생일
-                  </label>
+                  <label className="block text-sm text-gray-500 mb-1">생일</label>
                   <div className="flex items-center space-x-2">
                     <input
                       type="text"
@@ -667,16 +624,15 @@ const AuthForm: React.FC = () => {
 
                 {/* 성별 (라벨이 absolute가 아니라면 그대로) */}
                 <div className="mb-6">
-                  <span className="block mb-2 text-sm font-medium text-gray-600">
-                    성별
-                  </span>
+                  <span className="block mb-2 text-sm font-medium text-gray-600">성별</span>
                   <div className="flex items-center justify-between">
                     <div className="flex space-x-4">
                       <label
-                        className={`flex items-center justify-center w-24 py-2 border rounded-md cursor-pointer transition-all duration-300 ease-in-out ${gender === "male"
-                          ? "bg-blue-500 text-white border-blue-500"
-                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                          }`}
+                        className={`flex items-center justify-center w-24 py-2 border rounded-md cursor-pointer transition-all duration-300 ease-in-out ${
+                          gender === "male"
+                            ? "bg-blue-500 text-white border-blue-500"
+                            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                        }`}
                       >
                         <input
                           type="radio"
@@ -689,10 +645,11 @@ const AuthForm: React.FC = () => {
                         <span>남성</span>
                       </label>
                       <label
-                        className={`flex items-center justify-center w-24 py-2 border rounded-md cursor-pointer transition-all duration-300 ease-in-out ${gender === "female"
-                          ? "bg-blue-500 text-white border-blue-500"
-                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                          }`}
+                        className={`flex items-center justify-center w-24 py-2 border rounded-md cursor-pointer transition-all duration-300 ease-in-out ${
+                          gender === "female"
+                            ? "bg-blue-500 text-white border-blue-500"
+                            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                        }`}
                       >
                         <input
                           type="radio"
@@ -708,10 +665,11 @@ const AuthForm: React.FC = () => {
                     {showOverride && (
                       <div>
                         <label
-                          className={`flex items-center justify-center w-34 py-2 border rounded-md cursor-pointer transition-all duration-300 ease-in-out ${gender === "timeTraveler"
-                            ? "bg-blue-500 text-white border-blue-500"
-                            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                            }`}
+                          className={`flex items-center justify-center w-34 py-2 border rounded-md cursor-pointer transition-all duration-300 ease-in-out ${
+                            gender === "timeTraveler"
+                              ? "bg-blue-500 text-white border-blue-500"
+                              : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                          }`}
                         >
                           <input
                             type="radio"
@@ -731,9 +689,7 @@ const AuthForm: React.FC = () => {
             )}
 
             {/* 에러 메시지 */}
-            {errorMsg && (
-              <p className="mt-2 mb-4 text-sm text-red-500">{errorMsg}</p>
-            )}
+            {errorMsg && <p className="mt-2 mb-4 text-sm text-red-500">{errorMsg}</p>}
 
             {/* 제출 버튼 */}
             <button

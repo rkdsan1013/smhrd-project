@@ -1,8 +1,8 @@
 // /backend/src/models/userTransactions.js
-const pool = require('../config/db');
+const pool = require("../config/db");
 
 const createUser = async (email, hashedPassword, connection) => {
-  const sql = 'INSERT INTO users (email, password) VALUES (?, ?)';
+  const sql = "INSERT INTO users (email, password) VALUES (?, ?)";
   const [result] = await connection.query(sql, [email, hashedPassword]);
   return result;
 };

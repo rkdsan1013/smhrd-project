@@ -28,7 +28,10 @@ export const validatePassword = (password: string): { valid: boolean; message?: 
     return { valid: false, message: `비밀번호는 최소 ${MIN_PASSWORD_LENGTH}자 이상이어야 합니다.` };
   }
   if (password.length > MAX_PASSWORD_LENGTH) {
-    return { valid: false, message: `비밀번호는 최대 ${MAX_PASSWORD_LENGTH}자 이하로 입력해주세요.` };
+    return {
+      valid: false,
+      message: `비밀번호는 최대 ${MAX_PASSWORD_LENGTH}자 이하로 입력해주세요.`,
+    };
   }
   if (!validator.isAscii(password)) {
     return { valid: false, message: "비밀번호는 ASCII 문자만 사용 가능합니다." };

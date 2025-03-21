@@ -1,13 +1,9 @@
 // /backend/src/controllers/authController.js
-const bcrypt = require('bcrypt');
-const path = require('path');
-const fs = require('fs');
-const sharp = require('sharp');
-const {
-  validateEmail,
-  validatePassword,
-  validateFullProfile,
-} = require('../utils/validators');
+const bcrypt = require("bcrypt");
+const path = require("path");
+const fs = require("fs");
+const sharp = require("sharp");
+const { validateEmail, validatePassword, validateFullProfile } = require("../utils/validators");
 const {
   generateTokens,
   generateAccessToken,
@@ -16,8 +12,8 @@ const {
   jwtVerify,
   decodeJwt,
   secretKey,
-} = require('../utils/jwtUtils');
-const userModel = require('../models/userModel');
+} = require("../utils/jwtUtils");
+const userModel = require("../models/userModel");
 
 exports.checkEmail = async (req, res) => {
   const { email } = req.body;
@@ -78,7 +74,7 @@ exports.signUp = async (req, res) => {
 
     // 프로필 이미지 처리 (기존 로직)
     if (req.file) {
-      const uploadsDir = path.join(__dirname, '../../public/uploads/profile_pictures');
+      const uploadsDir = path.join(__dirname, "../../public/uploads/profile_pictures");
       if (!fs.existsSync(uploadsDir)) {
         fs.mkdirSync(uploadsDir, { recursive: true });
       }

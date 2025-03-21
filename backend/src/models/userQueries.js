@@ -1,8 +1,8 @@
 // /backend/src/models/userQueries.js
-const pool = require('../config/db');
+const pool = require("../config/db");
 
 const getUserByEmail = async (email) => {
-  const sql = 'SELECT uuid, email, password FROM users WHERE email = ?';
+  const sql = "SELECT uuid, email, password FROM users WHERE email = ?";
   const [rows] = await pool.query(sql, [email]);
   return rows;
 };
@@ -29,8 +29,8 @@ const getUserProfileByUuid = async (uuid) => {
   }
 };
 
-module.exports = { 
-  getUserByEmail, 
+module.exports = {
+  getUserByEmail,
   updateUserProfilePicture,
-  getUserProfileByUuid  // getUserProfileByUuid 함수가 올바르게 export 되었는지 확인합니다.
+  getUserProfileByUuid, // getUserProfileByUuid 함수가 올바르게 export 되었는지 확인합니다.
 };

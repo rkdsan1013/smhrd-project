@@ -1,0 +1,28 @@
+# Node.js 모듈 및 빌드 결과 폴더
+node_modules
+build
+dist
+
+# 환경설정 파일 및 기타 설정 관련 파일
+*.config.js
+*.config.json
+
+# 로그 파일 및 임시 파일
+*.log
+.tmp
+
+# Git 관련 파일
+.git
+.gitignore
+
+# 특정 에디터 설정 파일
+.vscode
+
+# 테스트 커버리지 폴더
+coverage
+
+# 특정 디렉토리 또는 파일 제외
+README.md
+docs/
+static/
+public/

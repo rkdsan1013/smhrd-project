@@ -33,9 +33,7 @@ const MainPage: React.FC = () => {
       </header>
       <main>
         <section className="mb-6">
-          <p className="text-gray-600 text-lg">
-            Welcome back! Here’s what’s happening:
-          </p>
+          <p className="text-gray-600 text-lg">Welcome back! Here’s what’s happening:</p>
         </section>
 
         {/* 프로필 정보 표시 섹션 */}
@@ -47,10 +45,7 @@ const MainPage: React.FC = () => {
             <div className="flex items-center bg-gray-50 p-4 rounded-lg shadow">
               <div className="w-16 h-16 mr-4">
                 <img
-                  src={
-                    profile.profile_picture ||
-                    "https://via.placeholder.com/64?text=Avatar"
-                  }
+                  src={profile.profile_picture || "https://via.placeholder.com/64?text=Avatar"}
                   alt="Profile"
                   className="w-full h-full rounded-full object-cover"
                 />
@@ -60,9 +55,7 @@ const MainPage: React.FC = () => {
                   {profile.name || "사용자 이름 없음"}
                 </p>
                 <p className="text-gray-600">{profile.email || "이메일 없음"}</p>
-                <p className="text-sm text-gray-500">
-                  UUID: {profile.uuid || "알 수 없음"}
-                </p>
+                <p className="text-sm text-gray-500">UUID: {profile.uuid || "알 수 없음"}</p>
               </div>
             </div>
           )}
