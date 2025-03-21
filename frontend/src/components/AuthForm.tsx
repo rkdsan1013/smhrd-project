@@ -399,7 +399,7 @@ const AuthForm: React.FC = () => {
                   onChange={handleChange(setEmail)}
                   disabled={formState !== "start"}
                   className={`${baseInputClass} ${formState !== "start"
-                    ? "cursor-not-allowed opacity-50 text-gray-500"
+                    ? "opacity-50 text-gray-500"
                     : "text-gray-900"
                     }`}
                   placeholder=" "

@@ -1,16 +1,16 @@
 // /backend/src/routes/authRoutes.js
 const express = require('express');
-const multer = require('multer');
 const authController = require('../controllers/authController');
 const verifyToken = require('../middlewares/verifyToken');
+// 위에서 만든 이미지 업로드 관련 미들웨어를 불러옵니다.
+const { upload, resizeImage } = require('../middlewares/uploadImage');
 
 const router = express.Router();
 
-// Multer: 메모리 스토리지 사용 (원한다면 파일 크기, 형식 제한 추가)
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
+// 회원가입 시 profilePicture 필드에 대해 이미지 업로드 후 자동 리사이징 처리
+router.post('/sign-up', upload.single('profilePicture'), resizeImage, authController.signUp);
 
-router.post('/sign-up', upload.single('profilePicture'), authController.signUp);
+// 기타 라우터들
 router.post('/sign-in', authController.signIn);
 router.post('/check-email', authController.checkEmail);
 router.post('/refresh', authController.refreshToken);
