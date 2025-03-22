@@ -1,8 +1,9 @@
 // /frontend/src/hooks/useUserProfile.ts
 import { useState, useEffect } from "react";
-import axios from "axios";
+import axiosInstance from "../services/axiosInstance";
 import { useUser } from "../contexts/UserContext";
 
+// 사용자 프로필 인터페이스
 export interface IUserProfile {
   uuid: string;
   email: string;
@@ -12,6 +13,7 @@ export interface IUserProfile {
   gender?: string;
 }
 
+// 자신의 프로필 정보를 가져오는 훅 (전체 정보 반환)
 export const useUserProfile = () => {
   const { userUuid } = useUser();
   const [profile, setProfile] = useState<IUserProfile | null>(null);
@@ -19,12 +21,11 @@ export const useUserProfile = () => {
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
+    // 자신의 프로필은 /users/profile 엔드포인트를 호출
     if (userUuid) {
       setLoading(true);
-      axios
-        .get(`${import.meta.env.VITE_API_BASE_URL}/users/${userUuid}`, {
-          withCredentials: true,
-        })
+      axiosInstance
+        .get("/users/profile")
         .then((res) => {
           if (res.data.success) {
             setProfile(res.data.profile);

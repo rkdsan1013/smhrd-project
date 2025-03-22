@@ -1,11 +1,10 @@
 // /backend/src/middlewares/verifyToken.js
 const { jwtVerify, secretKey } = require("../utils/jwtUtils");
 
+// 인증 토큰 확인 미들웨어
 const verifyToken = async (req, res, next) => {
-  const token = req.cookies && req.cookies.accessToken;
-  if (!token) {
-    return res.status(401).json({ message: "인증 토큰이 없습니다." });
-  }
+  const token = req.cookies?.accessToken;
+  if (!token) return res.status(401).json({ message: "인증 토큰이 없습니다." });
   try {
     const { payload } = await jwtVerify(token, secretKey);
     req.user = payload;

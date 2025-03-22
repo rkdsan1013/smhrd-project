@@ -94,7 +94,7 @@ const AuthForm: React.FC = () => {
         setter(e.target.value);
         setErrorMsg("");
       },
-    []
+    [],
   );
 
   // 뒤로가기
@@ -256,7 +256,10 @@ const AuthForm: React.FC = () => {
     }
     setShowOverride(false);
 
-    const formattedBirthdate = `${birthYear.padStart(4, "0")}-${birthMonth.padStart(2, "0")}-${birthDay.padStart(2, "0")}`;
+    const formattedBirthdate = `${birthYear.padStart(4, "0")}-${birthMonth.padStart(2, "0")}-${birthDay.padStart(
+      2,
+      "0",
+    )}`;
 
     try {
       const formData = new FormData();

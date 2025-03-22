@@ -1,18 +1,14 @@
 // /frontend/src/services/authService.ts
 import axios from "axios";
+import axiosInstance from "./axiosInstance";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
-
+// 인증 응답 인터페이스
 export interface AuthResponse {
   success: boolean;
   user?: { uuid: string; email: string };
 }
 
-const axiosInstance = axios.create({
-  baseURL: API_BASE_URL,
-  withCredentials: true,
-});
-
+// API 에러 처리 함수
 function handleApiError(error: any): never {
   const message =
     axios.isAxiosError(error) && error.response?.data?.message
@@ -21,6 +17,7 @@ function handleApiError(error: any): never {
   throw new Error(message);
 }
 
+// 이메일 중복 확인 함수
 export const checkEmailExists = async (email: string): Promise<boolean> => {
   try {
     const { data } = await axiosInstance.post<{ exists: boolean }>("/auth/check-email", { email });
@@ -30,6 +27,7 @@ export const checkEmailExists = async (email: string): Promise<boolean> => {
   }
 };
 
+// 로그인 처리 함수
 export const signIn = async (email: string, password: string): Promise<AuthResponse> => {
   try {
     const { data } = await axiosInstance.post<AuthResponse>("/auth/sign-in", { email, password });
@@ -39,7 +37,7 @@ export const signIn = async (email: string, password: string): Promise<AuthRespo
   }
 };
 
-// signUp 함수는 이제 FormData를 인수로 받습니다.
+// 회원가입 처리 함수 (FormData 사용)
 export const signUp = async (payload: FormData): Promise<AuthResponse> => {
   try {
     const { data } = await axiosInstance.post<AuthResponse>("/auth/sign-up", payload, {
@@ -51,6 +49,7 @@ export const signUp = async (payload: FormData): Promise<AuthResponse> => {
   }
 };
 
+// 토큰 갱신 함수 (renewRefresh 옵션)
 export const refreshTokens = async (renewRefresh: boolean): Promise<AuthResponse> => {
   try {
     const { data } = await axiosInstance.post<AuthResponse>("/auth/refresh", { renewRefresh });

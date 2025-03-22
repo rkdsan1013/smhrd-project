@@ -14,17 +14,16 @@ const {
 } = require("../utils/jwtUtils");
 const userModel = require("../models/userModel");
 
+// 이메일 중복 확인
 exports.checkEmail = async (req, res) => {
   const { email } = req.body;
   const emailValidation = validateEmail(email);
   if (!emailValidation.valid) {
-    return res.status(400).json({
-      message: emailValidation.message || "유효한 이메일 주소를 입력하세요.",
-    });
+    return res
+      .status(400)
+      .json({ message: emailValidation.message || "유효한 이메일 주소를 입력하세요." });
   }
-
   try {
-    // 중복체크는 기존 이메일 그대로 활용
     const results = await userModel.getUserByEmail(email);
     res.json({ exists: results.length > 0 });
   } catch (err) {
@@ -33,22 +32,17 @@ exports.checkEmail = async (req, res) => {
   }
 };
 
+// 회원가입 처리
 exports.signUp = async (req, res) => {
   const { email, password, name, birthdate, gender } = req.body;
-
-  // 1) 이메일 검증
   const emailValidation = validateEmail(email);
   if (!emailValidation.valid) {
     return res.status(400).json({ message: emailValidation.message });
   }
-
-  // 2) 비밀번호 검증
   const passwordValidation = validatePassword(password);
   if (!passwordValidation.valid) {
     return res.status(400).json({ message: passwordValidation.message });
   }
-
-  // 3) 생년월일, 성별 검증
   if (!birthdate || !birthdate.includes("-")) {
     return res.status(400).json({ message: "생년월일 형식이 올바르지 않습니다." });
   }
@@ -57,48 +51,34 @@ exports.signUp = async (req, res) => {
   if (!profileValidation.valid) {
     return res.status(400).json({ message: profileValidation.message });
   }
-
   try {
-    // 비밀번호 해싱
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    // DB 저장 시에만 소문자로 변환
     const user = await userModel.signUpUser(
       email.trim().toLowerCase(),
       hashedPassword,
       name,
       birthdate,
-      gender
+      gender,
     );
-
-    // 프로필 이미지 처리: uploadImage 미들웨어에서 이미 처리된 이미지를 사용
     if (req.file) {
       const uploadsDir = path.join(__dirname, "../../public/uploads/profile_pictures");
       if (!fs.existsSync(uploadsDir)) {
         fs.mkdirSync(uploadsDir, { recursive: true });
       }
-      // 미들웨어에서 변환한 확장자를 사용 (여기서는 기본적으로 "webp")
       const fileExtension = req.file.convertedExtension || "webp";
       const fileName = `${user.uuid}.${fileExtension}`;
       const destPath = path.join(uploadsDir, fileName);
-
       try {
-        // 처리된 이미지 버퍼를 파일로 저장 (WebP 형식)
         await fs.promises.writeFile(destPath, req.file.buffer);
       } catch (imageError) {
         console.error("[signUp] 이미지 처리 오류:", imageError);
         throw new Error("이미지 처리 중 오류가 발생했습니다.");
       }
-
       const profilePicturePath = `/uploads/profile_pictures/${fileName}`;
       await userModel.updateUserProfilePicture(user.uuid, profilePicturePath);
     }
-
-    // 토큰 생성 후 쿠키에 저장
     const tokens = await generateTokens(user.uuid);
     setAuthCookies(res, tokens);
-
-    // 가입 성공 응답
     res.json({ success: true, user: { uuid: user.uuid, email: user.email } });
   } catch (err) {
     if (err.code === "ER_DUP_ENTRY") {
@@ -109,21 +89,19 @@ exports.signUp = async (req, res) => {
   }
 };
 
+// 로그인 처리
 exports.signIn = async (req, res) => {
   const { email, password } = req.body;
   try {
-    // 로그인 시 기존 로직대로 email을 검색
     const results = await userModel.getUserByEmail(email);
     if (!results || results.length === 0) {
       return res.status(400).json({ message: "아이디 또는 비밀번호가 일치하지 않습니다." });
     }
     const user = results[0];
-
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: "아이디 또는 비밀번호가 일치하지 않습니다." });
     }
-
     const tokens = await generateTokens(user.uuid);
     setAuthCookies(res, tokens);
     res.json({ success: true, user: { uuid: user.uuid, email: user.email } });
@@ -133,6 +111,7 @@ exports.signIn = async (req, res) => {
   }
 };
 
+// 토큰 갱신 처리
 exports.refreshToken = async (req, res) => {
   const tokenFromCookie = req.cookies.refreshToken;
   if (!tokenFromCookie) {
@@ -164,6 +143,7 @@ exports.refreshToken = async (req, res) => {
   }
 };
 
+// 현재 사용자 정보 반환
 exports.getCurrentUser = (req, res) => {
   if (req.user) {
     res.json({ success: true, user: req.user });
@@ -172,6 +152,7 @@ exports.getCurrentUser = (req, res) => {
   }
 };
 
+// 로그아웃 처리 (쿠키 삭제)
 exports.logout = (req, res) => {
   res.clearCookie("accessToken").clearCookie("refreshToken");
   res.json({ success: true, message: "로그아웃되었습니다." });

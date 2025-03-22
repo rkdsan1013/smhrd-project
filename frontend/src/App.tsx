@@ -1,21 +1,20 @@
 // /frontend/src/App.tsx
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import axiosInstance from "./services/axiosInstance";
 import LandingPage from "./pages/LandingPage";
 import MainPage from "./pages/MainPage";
 import { UserProvider, useUser } from "./contexts/UserContext";
 import startTokenRefreshPolling from "./utils/tokenManager";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
 const AppContent: React.FC = () => {
   const { setUserUuid } = useUser();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isAuthChecked, setIsAuthChecked] = useState(false); // 인증 여부 확인 상태
+  const [isAuthChecked, setIsAuthChecked] = useState(false); // 인증 체크 완료 여부
 
+  // 현재 사용자 인증 상태 확인 함수
   const fetchCurrentUser = async () => {
     try {
-      const { data } = await axios.get(`${API_BASE_URL}/auth/me`, { withCredentials: true });
+      const { data } = await axiosInstance.get("/auth/me");
       if (data?.user) {
         setUserUuid(data.user.uuid);
         setIsLoggedIn(true);
@@ -26,34 +25,38 @@ const AppContent: React.FC = () => {
       console.warn("사용자 인증 확인 에러:", error);
       setIsLoggedIn(false);
     } finally {
-      setIsAuthChecked(true); // 인증 체크 완료
+      setIsAuthChecked(true);
     }
   };
 
-  // 앱 초기 렌더링 시 사용자 인증 상태 확인
+  // 앱 초기 렌더링 시 인증 상태 확인
   useEffect(() => {
     fetchCurrentUser();
   }, []);
 
-  // 로그인 상태일 때 토큰 갱신 폴링 수행
+  // 로그인 상태일 때 토큰 갱신 폴링 시작
   useEffect(() => {
     let cleanup: (() => void) | undefined;
     if (isLoggedIn) {
       cleanup = startTokenRefreshPolling();
     }
-    return () => cleanup && cleanup();
+    return () => {
+      if (cleanup) cleanup();
+    };
   }, [isLoggedIn]);
 
-  // 로그인 상태 시 30초마다 /auth/me 호출하여 인증 유지 검증
+  // 로그인 상태일 때 30초마다 인증 상태 재확인
   useEffect(() => {
     let intervalId: ReturnType<typeof setInterval>;
     if (isLoggedIn) {
       intervalId = setInterval(fetchCurrentUser, 30000);
     }
-    return () => intervalId && clearInterval(intervalId);
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [isLoggedIn]);
 
-  // 전역 커스텀 이벤트를 통한 로그인/로그아웃 상태 업데이트
+  // 전역 커스텀 이벤트로 로그인/로그아웃 상태 업데이트
   useEffect(() => {
     const onSignOut = () => setIsLoggedIn(false);
     const onSignIn = (e: CustomEvent) => {
@@ -69,7 +72,7 @@ const AppContent: React.FC = () => {
     };
   }, [setUserUuid]);
 
-  // 인증 체크가 완료되기 전에는 로딩 스피너 표시
+  // 인증 체크 전에는 로딩 스피너 표시
   if (!isAuthChecked) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -97,6 +100,7 @@ const AppContent: React.FC = () => {
     );
   }
 
+  // 로그인 상태면 MainPage, 아니면 LandingPage 렌더링
   return isLoggedIn ? <MainPage /> : <LandingPage />;
 };
 
