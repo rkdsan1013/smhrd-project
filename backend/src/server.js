@@ -26,7 +26,7 @@ app.use(express.json());
 // 쿠키 파싱
 app.use(cookieParser());
 // 정적 파일 제공 (uploads 폴더)
-app.use("/uploads", express.static(path.join(__dirname, "../public/uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // API 라우트 설정
 app.use("/api/auth", authRoutes);

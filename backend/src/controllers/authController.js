@@ -61,7 +61,8 @@ exports.signUp = async (req, res) => {
       gender,
     );
     if (req.file) {
-      const uploadsDir = path.join(__dirname, "../../public/uploads/profile_pictures");
+      // 기본 public/uploads에서 uploads로 변경
+      const uploadsDir = path.join(__dirname, "../../uploads/profile_pictures");
       if (!fs.existsSync(uploadsDir)) {
         fs.mkdirSync(uploadsDir, { recursive: true });
       }

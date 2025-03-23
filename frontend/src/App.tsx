@@ -1,6 +1,6 @@
 // /frontend/src/App.tsx
 import React, { useEffect, useState } from "react";
-import { get } from "./services/apiClient";
+import { get, post } from "./services/apiClient"; // axiosInstance를 사용한 get, post 함수
 import LandingPage from "./pages/LandingPage";
 import MainPage from "./pages/MainPage";
 import { UserProvider, useUser } from "./contexts/UserContext";
@@ -11,19 +11,39 @@ const AppContent: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAuthChecked, setIsAuthChecked] = useState(false); // 인증 체크 완료 여부
 
-  // 사용자 인증 상태 확인
+  // 사용자 인증 상태 확인 함수 - access 토큰이 없을 경우 refresh 처리
   const fetchCurrentUser = async () => {
     try {
+      // 먼저 /auth/me 엔드포인트를 호출하여 인증 상태 확인
       const data = await get<{ user?: { uuid: string } }>("/auth/me");
       if (data?.user) {
         setUserUuid(data.user.uuid);
         setIsLoggedIn(true);
-      } else {
-        setIsLoggedIn(false);
+        return;
       }
+      // user 정보가 없으면 강제로 에러 발생 (아래 refresh 처리로 넘어감)
+      throw new Error("사용자 정보 없음");
     } catch (error: any) {
       console.warn("사용자 인증 확인 에러:", error);
-      setIsLoggedIn(false);
+      // access 토큰 문제로 인증 실패한 경우 refresh 토큰으로 재발급 시도
+      try {
+        const refreshData = await post<{ success: boolean }>("/auth/refresh", {});
+        if (refreshData.success) {
+          // refresh 성공 후 다시 /auth/me 호출하여 사용자 정보 확인
+          const newData = await get<{ user?: { uuid: string } }>("/auth/me");
+          if (newData?.user) {
+            setUserUuid(newData.user.uuid);
+            setIsLoggedIn(true);
+          } else {
+            setIsLoggedIn(false);
+          }
+        } else {
+          setIsLoggedIn(false);
+        }
+      } catch (refreshError) {
+        console.error("토큰 갱신 실패:", refreshError);
+        setIsLoggedIn(false);
+      }
     } finally {
       setIsAuthChecked(true);
     }
@@ -60,7 +80,6 @@ const AppContent: React.FC = () => {
       if (e.detail?.user) setUserUuid(e.detail.user.uuid);
       setIsLoggedIn(true);
     };
-
     window.addEventListener("userSignedOut", onSignOut);
     window.addEventListener("userSignedIn", onSignIn as EventListener);
     return () => {
@@ -97,7 +116,6 @@ const AppContent: React.FC = () => {
     );
   }
 
-  // 로그인 상태면 MainPage, 아니면 LandingPage 렌더링
   return isLoggedIn ? <MainPage /> : <LandingPage />;
 };
 
