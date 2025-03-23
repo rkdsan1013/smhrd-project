@@ -2,11 +2,7 @@
 import React, { useEffect, useRef, useState, useCallback, useLayoutEffect } from "react";
 import { validateEmail, validatePassword, validateFullProfile } from "../utils/validators";
 import { formatYear, formatTwoDigits, getMaxDay } from "../utils/dateUtils";
-import {
-  checkEmailExists,
-  signIn as signInService,
-  signUp as signUpService,
-} from "../services/authService";
+import { checkEmailExists, signIn, signUp } from "../services/authService";
 
 type FormState = "start" | "signin" | "signup" | "profile";
 
@@ -216,7 +212,7 @@ const AuthForm: React.FC = () => {
       return;
     }
     try {
-      const resp = await signInService(email, password);
+      const resp = await signIn(email, password);
       if (resp.success) {
         handleAuthSuccess(resp, "로그인 성공:");
       } else {
@@ -256,10 +252,10 @@ const AuthForm: React.FC = () => {
     }
     setShowOverride(false);
 
-    const formattedBirthdate = `${birthYear.padStart(4, "0")}-${birthMonth.padStart(2, "0")}-${birthDay.padStart(
+    const formattedBirthdate = `${birthYear.padStart(4, "0")}-${birthMonth.padStart(
       2,
       "0",
-    )}`;
+    )}-${birthDay.padStart(2, "0")}`;
 
     try {
       const formData = new FormData();
@@ -271,7 +267,7 @@ const AuthForm: React.FC = () => {
       if (profilePicture) {
         formData.append("profilePicture", profilePicture);
       }
-      const resp = await signUpService(formData);
+      const resp = await signUp(formData);
       if (resp.success) {
         handleAuthSuccess(resp, "회원가입 성공:");
       } else {

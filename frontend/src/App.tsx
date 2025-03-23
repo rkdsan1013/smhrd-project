@@ -1,6 +1,6 @@
 // /frontend/src/App.tsx
 import React, { useEffect, useState } from "react";
-import axiosInstance from "./services/axiosInstance";
+import { get } from "./services/apiClient";
 import LandingPage from "./pages/LandingPage";
 import MainPage from "./pages/MainPage";
 import { UserProvider, useUser } from "./contexts/UserContext";
@@ -11,10 +11,10 @@ const AppContent: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAuthChecked, setIsAuthChecked] = useState(false); // 인증 체크 완료 여부
 
-  // 현재 사용자 인증 상태 확인 함수
+  // 사용자 인증 상태 확인
   const fetchCurrentUser = async () => {
     try {
-      const { data } = await axiosInstance.get("/auth/me");
+      const data = await get<{ user?: { uuid: string } }>("/auth/me");
       if (data?.user) {
         setUserUuid(data.user.uuid);
         setIsLoggedIn(true);
@@ -29,12 +29,12 @@ const AppContent: React.FC = () => {
     }
   };
 
-  // 앱 초기 렌더링 시 인증 상태 확인
+  // 앱 초기 렌더링 시 사용자 인증 체크
   useEffect(() => {
     fetchCurrentUser();
   }, []);
 
-  // 로그인 상태일 때 토큰 갱신 폴링 시작
+  // 로그인 상태면 토큰 갱신 폴링 시작
   useEffect(() => {
     let cleanup: (() => void) | undefined;
     if (isLoggedIn) {
@@ -45,15 +45,12 @@ const AppContent: React.FC = () => {
     };
   }, [isLoggedIn]);
 
-  // 로그인 상태일 때 30초마다 인증 상태 재확인
+  // 로그인 상태면 30초마다 사용자 인증 상태 재확인
   useEffect(() => {
-    let intervalId: ReturnType<typeof setInterval>;
     if (isLoggedIn) {
-      intervalId = setInterval(fetchCurrentUser, 30000);
+      const intervalId = setInterval(fetchCurrentUser, 30000);
+      return () => clearInterval(intervalId);
     }
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
   }, [isLoggedIn]);
 
   // 전역 커스텀 이벤트로 로그인/로그아웃 상태 업데이트
@@ -72,7 +69,7 @@ const AppContent: React.FC = () => {
     };
   }, [setUserUuid]);
 
-  // 인증 체크 전에는 로딩 스피너 표시
+  // 인증 체크 전 로딩 스피너 표시
   if (!isAuthChecked) {
     return (
       <div className="flex items-center justify-center min-h-screen">

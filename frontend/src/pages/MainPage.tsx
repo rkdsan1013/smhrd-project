@@ -1,6 +1,6 @@
 // /frontend/src/pages/MainPage.tsx
 import React, { useState } from "react";
-import axiosInstance from "../services/axiosInstance";
+import { get, post } from "../services/apiClient";
 import { useUserProfile, IUserProfile } from "../hooks/useUserProfile";
 
 const MainPage: React.FC = () => {
@@ -13,19 +13,19 @@ const MainPage: React.FC = () => {
   // 로그아웃 핸들러
   const handleLogout = async () => {
     try {
-      await axiosInstance.post("/auth/logout", {});
+      await post("/auth/logout", {});
       window.dispatchEvent(new CustomEvent("userSignedOut"));
-    } catch (error) {
-      console.error("로그아웃 실패:", error);
+    } catch (err) {
+      console.error("로그아웃 실패:", err);
     }
   };
 
-  // 타 유저 UUID 검색 핸들러
+  // 타 유저 프로필 검색 핸들러
   const handleSearch = async () => {
     setSearchLoading(true);
     setSearchError("");
     try {
-      const { data } = await axiosInstance.get(`/users/${searchUuid}`);
+      const data = await get<{ success: boolean; profile: IUserProfile }>(`/users/${searchUuid}`);
       if (data.success) {
         setSearchedProfile(data.profile);
       } else {
@@ -42,7 +42,6 @@ const MainPage: React.FC = () => {
 
   return (
     <div className="p-6 bg-white min-h-screen">
-      {/* 헤더 */}
       <header className="flex items-center justify-between py-4 border-b border-gray-300 mb-6">
         <h1 className="text-3xl font-semibold text-gray-800">Dashboard</h1>
         <button
@@ -53,11 +52,9 @@ const MainPage: React.FC = () => {
         </button>
       </header>
       <main>
-        {/* 환영 메시지 */}
         <section className="mb-6">
           <p className="text-gray-600 text-lg">Welcome back! Here’s what’s happening:</p>
         </section>
-        {/* 내 프로필 정보: DB의 모든 정보를 표시 */}
         <section className="mt-10">
           <h2 className="text-2xl font-bold text-gray-700 mb-4">내 프로필 정보</h2>
           {loading && <p className="text-blue-500">프로필 로딩 중...</p>}
@@ -89,7 +86,6 @@ const MainPage: React.FC = () => {
             </div>
           )}
         </section>
-        {/* 타 유저 프로필 검색 섹션: 제한된 정보를 표시 */}
         <section className="mt-10">
           <h2 className="text-2xl font-bold text-gray-700 mb-4">타 유저 프로필 검색</h2>
           <div className="flex items-center mb-4">
