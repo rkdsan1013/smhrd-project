@@ -120,7 +120,7 @@ const AuthForm: React.FC = () => {
     }
   };
 
-  // 생일 입력 핸들러 (입력 시 override 및 paradoxFlag 초기화)
+  // 생일 입력 핸들러
   const handleBirthYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setShowOverride(false);
     setParadoxFlag(false);

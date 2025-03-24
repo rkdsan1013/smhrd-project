@@ -98,14 +98,13 @@ export const validateBirthDate = (
 };
 
 // 전체 프로필 유효성 검사: 이름, 생년월일, 성별 종합 검사 및 나이/미래 날짜 체크
-// paradoxFlag가 true이면 나이 검증을 건너뜁니다.
 export const validateFullProfile = (
   name: string,
   gender: string,
   year: string,
   month: string,
   day: string,
-  paradoxFlag: boolean, // 추가: paradoxFlag 매개변수
+  paradoxFlag: boolean,
 ): { valid: boolean; message?: string; requiresOverride?: boolean } => {
   const nameValidation = validateName(name);
   if (!nameValidation.valid) return nameValidation;
@@ -133,7 +132,6 @@ export const validateFullProfile = (
     age--;
   }
 
-  // paradoxFlag가 false일 경우에만 나이/미래 날짜 검증 진행
   if (!paradoxFlag && (age > 130 || birthTimestamp > todayTimestamp)) {
     let message = "";
     if (birthTimestamp > todayTimestamp) {
