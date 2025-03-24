@@ -73,7 +73,7 @@ export const validateName = (name: string): { valid: boolean; message?: string }
   // Unicode 정규식 사용:
   //  - \p{L} : 모든 Unicode 문자(알파벳)를 의미 (국제적으로 사용되는 다양한 글자 포함)
   //  - \s    : 공백 (스페이스, 탭 등)
-  //  - .,'- : 점, 아포스트로피, 하이픈 허용
+  //  - .'- : 점, 아포스트로피, 하이픈 허용
   // 전체 문자열이 위 문자들로만 구성되어야 함 (u flag를 반드시 사용)
   const nameRegex = /^[\p{L}\s.'-]+$/u;
   if (!nameRegex.test(trimmedName)) {

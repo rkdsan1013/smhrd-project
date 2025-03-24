@@ -1,6 +1,6 @@
 // /frontend/src/App.tsx
 import React, { useEffect, useState } from "react";
-import { get, post } from "./services/apiClient"; // axiosInstance를 사용한 get, post 함수
+import { get, post } from "./services/apiClient";
 import LandingPage from "./pages/LandingPage";
 import MainPage from "./pages/MainPage";
 import { UserProvider, useUser } from "./contexts/UserContext";
