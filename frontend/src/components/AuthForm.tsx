@@ -19,7 +19,7 @@ const baseInputClass =
   "transition-all duration-300 ease-in-out";
 
 const AuthForm: React.FC = () => {
-  // 상태 변수들
+  // 상태 변수
   const [formState, setFormState] = useState<FormState>("start");
   const [errorMsg, setErrorMsg] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -29,14 +29,15 @@ const AuthForm: React.FC = () => {
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
   const [profilePreview, setProfilePreview] = useState<string | null>(null);
   const [name, setName] = useState("");
+  const [gender, setGender] = useState("");
   const [birthYear, setBirthYear] = useState("");
   const [birthMonth, setBirthMonth] = useState("");
   const [birthDay, setBirthDay] = useState("");
-  const [gender, setGender] = useState("");
+  const [paradoxFlag, setParadoxFlag] = useState(false);
   const [showOverride, setShowOverride] = useState(false);
   const [hasMounted, setHasMounted] = useState(false);
 
-  // ref들
+  // ref
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
@@ -46,19 +47,17 @@ const AuthForm: React.FC = () => {
   const cardOuterRef = useRef<HTMLDivElement>(null);
   const cardInnerRef = useRef<HTMLDivElement>(null);
 
-  // 마운트 후 플래그 설정
+  // 초기 마운트 플래그 설정 및 포커스 관리
   useEffect(() => {
     setHasMounted(true);
   }, []);
-
-  // 폼 상태에 따른 자동 포커스
   useEffect(() => {
     if (formState === "start") emailRef.current?.focus();
     else if (formState === "signin" || formState === "signup") passwordRef.current?.focus();
     else if (formState === "profile") nameRef.current?.focus();
   }, [formState]);
 
-  // 생일 일(day) 보정
+  // 생일 보정
   useEffect(() => {
     if (birthYear && birthMonth && birthDay) {
       const y = parseInt(birthYear, 10);
@@ -72,11 +71,10 @@ const AuthForm: React.FC = () => {
     }
   }, [birthYear, birthMonth, birthDay]);
 
-  // 에러 메시지 포맷
+  // 헬퍼 함수
   const formatError = (error: unknown): string =>
     error instanceof Error ? error.message.replace(/^Error:\s*/, "") : String(error);
 
-  // 공통 change 핸들러
   const handleChange = useCallback(
     (setter: React.Dispatch<React.SetStateAction<string>>) =>
       (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -86,7 +84,6 @@ const AuthForm: React.FC = () => {
     [],
   );
 
-  // ESC 키 입력 시 뒤로가기 처리
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (formState !== "start" && e.key === "Escape") handleBack();
   };
@@ -102,6 +99,7 @@ const AuthForm: React.FC = () => {
       setGender("");
       setProfilePicture(null);
       setProfilePreview(null);
+      setParadoxFlag(false);
       setShowOverride(false);
     } else {
       setFormState("start");
@@ -111,7 +109,7 @@ const AuthForm: React.FC = () => {
     setErrorMsg("");
   }, [formState]);
 
-  // 프로필 사진 변경 처리
+  // 파일 선택 처리
   const handleProfilePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -122,21 +120,21 @@ const AuthForm: React.FC = () => {
     }
   };
 
-  // 생년월일 관련 핸들러
+  // 생일 입력 핸들러 (입력 시 override 및 paradoxFlag 초기화)
   const handleBirthYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setShowOverride(false);
+    setParadoxFlag(false);
     const val = e.target.value.replace(/[^0-9]/g, "").slice(0, 4);
     setBirthYear(val);
     setErrorMsg("");
     if (val.length === 4) birthMonthRef.current?.focus();
   };
   const handleBirthYearBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    if (e.target.value && e.target.value.length < 4) {
-      setBirthYear(formatYear(e.target.value));
-    }
+    if (e.target.value && e.target.value.length < 4) setBirthYear(formatYear(e.target.value));
   };
   const handleBirthMonthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setShowOverride(false);
+    setParadoxFlag(false);
     const val = e.target.value.replace(/[^0-9]/g, "").slice(0, 2);
     setBirthMonth(val);
     setErrorMsg("");
@@ -147,6 +145,7 @@ const AuthForm: React.FC = () => {
   };
   const handleBirthDayChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setShowOverride(false);
+    setParadoxFlag(false);
     const val = e.target.value.replace(/[^0-9]/g, "").slice(0, 2);
     setBirthDay(val);
     setErrorMsg("");
@@ -161,7 +160,7 @@ const AuthForm: React.FC = () => {
     }
   };
 
-  // 시작 폼 제출 (이메일 입력 후 존재 여부 확인)
+  // 제출 관련 함수
   const handleStartSubmit = async () => {
     const emailValidation = validateEmail(email);
     if (!emailValidation.valid) {
@@ -176,7 +175,6 @@ const AuthForm: React.FC = () => {
     }
   };
 
-  // 로그인 제출
   const handleSignInSubmit = async () => {
     const passwordValidation = validatePassword(password);
     if (!passwordValidation.valid) {
@@ -192,7 +190,6 @@ const AuthForm: React.FC = () => {
     }
   };
 
-  // 회원가입 제출 (비밀번호 확인 후 프로필 단계로 전환)
   const handleSignUpSubmit = async () => {
     const emailValidation = validateEmail(email);
     if (!emailValidation.valid) {
@@ -211,9 +208,15 @@ const AuthForm: React.FC = () => {
     setFormState("profile");
   };
 
-  // 프로필 제출
   const handleProfileSubmit = async () => {
-    const profileValidation = validateFullProfile(name, birthYear, birthMonth, birthDay, gender);
+    const profileValidation = validateFullProfile(
+      name,
+      gender,
+      birthYear,
+      birthMonth,
+      birthDay,
+      paradoxFlag,
+    );
     if (!profileValidation.valid) {
       if (profileValidation.requiresOverride) setShowOverride(true);
       setErrorMsg(profileValidation.message || "프로필 정보를 확인해주세요.");
@@ -229,8 +232,9 @@ const AuthForm: React.FC = () => {
       formData.append("email", email);
       formData.append("password", password);
       formData.append("name", name);
-      formData.append("birthdate", formattedBirthdate);
       formData.append("gender", gender);
+      formData.append("birthdate", formattedBirthdate);
+      formData.append("paradox_flag", paradoxFlag ? "1" : "0");
       if (profilePicture) formData.append("profilePicture", profilePicture);
       const resp = await signUp(formData);
       if (resp.success) handleAuthSuccess(resp, "회원가입 성공:");
@@ -240,13 +244,11 @@ const AuthForm: React.FC = () => {
     }
   };
 
-  // 인증 성공 후 처리
   const handleAuthSuccess = (resp: { user?: { uuid: string; email: string } }, msg: string) => {
     console.log(msg, resp);
     window.dispatchEvent(new CustomEvent("userSignedIn", { detail: { user: resp.user } }));
   };
 
-  // 전체 폼 제출 처리
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
@@ -261,7 +263,7 @@ const AuthForm: React.FC = () => {
     }
   };
 
-  // 폼 높이 애니메이션 처리
+  // 폼 높이 애니메이션
   useLayoutEffect(() => {
     const outer = cardOuterRef.current;
     const inner = cardInnerRef.current;
@@ -517,23 +519,17 @@ const AuthForm: React.FC = () => {
                     </div>
                     {showOverride && (
                       <div>
-                        <label
-                          className={`flex items-center justify-center w-34 py-2 border rounded-md cursor-pointer transition-all duration-300 ease-in-out ${
-                            gender === "timeTraveler"
+                        <button
+                          type="button"
+                          onClick={() => setParadoxFlag((prev) => !prev)}
+                          className={`flex items-center justify-center w-32 py-2 border rounded-md cursor-pointer transition-all duration-300 ease-in-out ${
+                            paradoxFlag
                               ? "bg-blue-500 text-white border-blue-500"
                               : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
                           }`}
                         >
-                          <input
-                            type="radio"
-                            name="gender"
-                            value="timeTraveler"
-                            checked={gender === "timeTraveler"}
-                            onChange={handleChange(setGender)}
-                            className="hidden"
-                          />
-                          <span>시간 여행자</span>
-                        </label>
+                          시간 여행자
+                        </button>
                       </div>
                     )}
                   </div>

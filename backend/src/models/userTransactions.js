@@ -7,16 +7,31 @@ const createUser = async (email, hashedPassword, connection) => {
   return result;
 };
 
-const createUserProfile = async (uuid, name, birthdate, gender, profilePicture, connection) => {
+const createUserProfile = async (
+  uuid,
+  name,
+  gender,
+  birthdate,
+  paradoxFlag,
+  profilePicture,
+  connection,
+) => {
   const sql = `
-    INSERT INTO user_profiles (uuid, name, birthdate, gender, profile_picture)
-    VALUES (:uuid, :name, :birthdate, :gender, :profilePicture)
+    INSERT INTO user_profiles (uuid, name, gender, birthdate, paradox_flag, profile_picture)
+    VALUES (:uuid, :name, :gender, :birthdate, :paradoxFlag, :profilePicture)
   `;
-  const [result] = await connection.query(sql, { uuid, name, birthdate, gender, profilePicture });
+  const [result] = await connection.query(sql, {
+    uuid,
+    name,
+    gender,
+    birthdate,
+    paradoxFlag,
+    profilePicture,
+  });
   return result;
 };
 
-const signUpUser = async (email, hashedPassword, name, birthdate, gender) => {
+const signUpUser = async (email, hashedPassword, name, gender, birthdate, paradoxFlag) => {
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
@@ -29,7 +44,7 @@ const signUpUser = async (email, hashedPassword, name, birthdate, gender) => {
       throw new Error("회원가입 후 사용자 조회에 실패했습니다.");
     }
     const user = rows[0];
-    await createUserProfile(user.uuid, name, birthdate, gender, null, connection);
+    await createUserProfile(user.uuid, name, gender, birthdate, paradoxFlag, null, connection);
     await connection.commit();
     return user;
   } catch (err) {

@@ -33,7 +33,10 @@ exports.checkEmail = async (req, res) => {
 
 // 회원가입 처리
 exports.signUp = async (req, res) => {
-  const { email, password, name, birthdate, gender } = req.body;
+  const { email, password, name, gender, birthdate } = req.body;
+  // 클라이언트에서 전달한 paradox_flag를 읽어 Boolean으로 변환
+  const paradoxFlag = req.body.paradox_flag === "1";
+
   const emailValidation = validateEmail(email);
   if (!emailValidation.valid) {
     return res.status(400).json({ message: emailValidation.message });
@@ -45,19 +48,23 @@ exports.signUp = async (req, res) => {
   if (!birthdate || !birthdate.includes("-")) {
     return res.status(400).json({ message: "생년월일 형식이 올바르지 않습니다." });
   }
+  // birthdate를 "YYYY-MM-DD" 형식에서 분리
   const [year, month, day] = birthdate.split("-");
-  const profileValidation = validateFullProfile(name, year, month, day, gender);
+  // paradoxFlag를 클라이언트에서 받은 값으로 전달
+  const profileValidation = validateFullProfile(name, gender, year, month, day, paradoxFlag);
   if (!profileValidation.valid) {
     return res.status(400).json({ message: profileValidation.message });
   }
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
+    // 여기서 false 대신 paradoxFlag를 전달합니다.
     const user = await userModel.signUpUser(
       email.trim().toLowerCase(),
       hashedPassword,
       name,
-      birthdate,
       gender,
+      birthdate,
+      paradoxFlag,
     );
     if (req.file) {
       try {

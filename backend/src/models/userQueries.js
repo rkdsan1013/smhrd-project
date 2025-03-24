@@ -18,7 +18,7 @@ const updateUserProfilePicture = async (uuid, profilePicture) => {
 // uuid로 사용자 프로필 조회
 const getProfileByUuid = async (uuid) => {
   const sql = `
-    SELECT u.uuid, u.email, up.name, up.birthdate, up.gender, up.profile_picture 
+    SELECT u.uuid, u.email, up.name, up.gender, up.birthdate, up.profile_picture 
     FROM users u
     LEFT JOIN user_profiles up ON u.uuid = up.uuid 
     WHERE u.uuid = :uuid

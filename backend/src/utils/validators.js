@@ -61,19 +61,31 @@ const validateName = (name) => {
   return { valid: true };
 };
 
+const validateGender = (gender) => {
+  // "male"과 "female"만 허용
+  const validGenders = ["male", "female"];
+  if (typeof gender !== "string" || !validGenders.includes(gender)) {
+    return { valid: false, message: "성별을 올바르게 선택해주세요." };
+  }
+  return { valid: true };
+};
+
 const validateBirthDate = (year, month, day) => {
   if (typeof year !== "string" || typeof month !== "string" || typeof day !== "string") {
     return { valid: false, message: "생년월일은 문자열로 입력되어야 합니다." };
   }
-  if (year.trim() === "" || month.trim() === "" || day.trim() === "") {
+  const trimmedYear = year.trim();
+  const trimmedMonth = month.trim();
+  const trimmedDay = day.trim();
+  if (trimmedYear === "" || trimmedMonth === "" || trimmedDay === "") {
     return { valid: false, message: "생년월일을 모두 입력해주세요." };
   }
-  if (!/^\d{4}$/.test(year)) {
+  if (!/^\d{4}$/.test(trimmedYear)) {
     return { valid: false, message: "년도를 4자리 숫자로 입력해주세요." };
   }
-  const y = parseInt(year, 10);
-  const m = parseInt(month, 10);
-  const d = parseInt(day, 10);
+  const y = parseInt(trimmedYear, 10);
+  const m = parseInt(trimmedMonth, 10);
+  const d = parseInt(trimmedDay, 10);
   if (m < 1 || m > 12) {
     return { valid: false, message: "월은 1부터 12 사이여야 합니다." };
   }
@@ -84,15 +96,8 @@ const validateBirthDate = (year, month, day) => {
   return { valid: true };
 };
 
-const validateGender = (gender) => {
-  const validGenders = ["male", "female", "timeTraveler"];
-  if (typeof gender !== "string" || !validGenders.includes(gender)) {
-    return { valid: false, message: "성별을 올바르게 선택해주세요." };
-  }
-  return { valid: true };
-};
-
-const validateFullProfile = (name, year, month, day, gender) => {
+// 인자 순서를 (name, gender, year, month, day, paradoxFlag)로 변경 (DB 순서: 이름, 성별, 생일)
+const validateFullProfile = (name, gender, year, month, day, paradoxFlag) => {
   const nameResult = validateName(name);
   if (!nameResult.valid) return nameResult;
 
@@ -102,33 +107,33 @@ const validateFullProfile = (name, year, month, day, gender) => {
   const genderResult = validateGender(gender);
   if (!genderResult.valid) return genderResult;
 
-  const y = parseInt(year, 10);
-  const m = parseInt(month, 10);
-  const d = parseInt(day, 10);
+  const y = parseInt(year.trim(), 10);
+  const m = parseInt(month.trim(), 10);
+  const d = parseInt(day.trim(), 10);
   if (isNaN(y) || isNaN(m) || isNaN(d)) {
     return { valid: false, message: "생년월일이 올바르지 않습니다." };
   }
-  const birthDate = new Date(y, m - 1, d);
-  const today = new Date();
-  const birthTimestamp = birthDate.getTime();
-  const todayTimestamp = today.getTime();
 
-  let age = today.getFullYear() - y;
-  if (today.getMonth() < m - 1 || (today.getMonth() === m - 1 && today.getDate() < d)) {
-    age--;
-  }
-  if (gender !== "timeTraveler" && (age > 130 || birthTimestamp > todayTimestamp)) {
-    let easterEgg = "";
-    if (birthTimestamp > todayTimestamp) {
-      if (birthTimestamp === new Date(2038, 0, 19).getTime()) {
-        easterEgg = "2038년 1월 19일, 세계의 시간이 한 바퀴 돌고 있습니다.";
-      } else {
-        easterEgg = "미래에서 온 당신, 타임머신은 아직 불법입니다!";
-      }
-    } else if (age > 130) {
-      easterEgg = "너무 오래 살 수는 없습니다. 당신은 영원히 젊어야 해요!";
+  // paradoxFlag가 false인 경우에만 나이 및 미래 날짜 검증 수행
+  if (!paradoxFlag) {
+    const birthDate = new Date(y, m - 1, d);
+    const today = new Date();
+    const birthTimestamp = birthDate.getTime();
+    const todayTimestamp = today.getTime();
+
+    let age = today.getFullYear() - y;
+    if (today.getMonth() < m - 1 || (today.getMonth() === m - 1 && today.getDate() < d)) {
+      age--;
     }
-    return { valid: false, message: easterEgg, requiresOverride: true };
+    if (age > 130 || birthTimestamp > todayTimestamp) {
+      let message = "";
+      if (birthTimestamp > todayTimestamp) {
+        message = "미래에서 온 당신, 타임머신은 아직 불법입니다!";
+      } else if (age > 130) {
+        message = "너무 오래 살 수는 없습니다. 당신은 영원히 젊어야 해요!";
+      }
+      return { valid: false, message, requiresOverride: true };
+    }
   }
   return { valid: true };
 };
@@ -137,8 +142,8 @@ module.exports = {
   validateEmail,
   validatePassword,
   validateName,
-  validateBirthDate,
   validateGender,
+  validateBirthDate,
   validateFullProfile,
   MIN_EMAIL_LENGTH,
   MAX_EMAIL_LENGTH,
