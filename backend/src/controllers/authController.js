@@ -1,7 +1,5 @@
 // /backend/src/controllers/authController.js
 const bcrypt = require("bcrypt");
-const path = require("path");
-const fs = require("fs");
 const { validateEmail, validatePassword, validateFullProfile } = require("../utils/validators");
 const {
   generateTokens,
@@ -13,6 +11,7 @@ const {
   secretKey,
 } = require("../utils/jwtUtils");
 const userModel = require("../models/userModel");
+const { saveProfilePicture } = require("../utils/imageHelper");
 
 // 이메일 중복 확인
 exports.checkEmail = async (req, res) => {
@@ -61,22 +60,13 @@ exports.signUp = async (req, res) => {
       gender,
     );
     if (req.file) {
-      // 기본 public/uploads에서 uploads로 변경
-      const uploadsDir = path.join(__dirname, "../../uploads/profile_pictures");
-      if (!fs.existsSync(uploadsDir)) {
-        fs.mkdirSync(uploadsDir, { recursive: true });
-      }
-      const fileExtension = req.file.convertedExtension || "webp";
-      const fileName = `${user.uuid}.${fileExtension}`;
-      const destPath = path.join(uploadsDir, fileName);
       try {
-        await fs.promises.writeFile(destPath, req.file.buffer);
+        const profilePicturePath = await saveProfilePicture(user.uuid, req.file);
+        await userModel.updateUserProfilePicture(user.uuid, profilePicturePath);
       } catch (imageError) {
         console.error("[signUp] 이미지 처리 오류:", imageError);
         throw new Error("이미지 처리 중 오류가 발생했습니다.");
       }
-      const profilePicturePath = `/uploads/profile_pictures/${fileName}`;
-      await userModel.updateUserProfilePicture(user.uuid, profilePicturePath);
     }
     const tokens = await generateTokens(user.uuid);
     setAuthCookies(res, tokens);

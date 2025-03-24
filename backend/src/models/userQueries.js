@@ -23,14 +23,8 @@ const getProfileByUuid = async (uuid) => {
     LEFT JOIN user_profiles up ON u.uuid = up.uuid 
     WHERE u.uuid = :uuid
   `;
-  try {
-    const [rows] = await pool.query(sql, { uuid });
-    console.log("[getProfileByUuid] Query result for uuid", uuid, rows);
-    return rows[0];
-  } catch (error) {
-    console.error("[getProfileByUuid] Error executing query for uuid", uuid, error);
-    throw error;
-  }
+  const [rows] = await pool.query(sql, { uuid });
+  return rows[0];
 };
 
 module.exports = {

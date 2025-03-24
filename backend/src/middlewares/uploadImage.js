@@ -25,12 +25,12 @@ async function resizeImage(req, res, next) {
   if (!req.file) return next();
   try {
     const resizedBuffer = await sharp(req.file.buffer)
-      .rotate() // EXIF 정보 기반 자동 회전
-      .resize(512, 512, { fit: "cover", position: "center" }) // 512x512, 가운데 crop
-      .toFormat("webp") // webp 포맷 변환
+      .rotate()
+      .resize(512, 512, { fit: "cover", position: "center" })
+      .toFormat("webp")
       .toBuffer();
     req.file.buffer = resizedBuffer;
-    req.file.convertedExtension = "webp"; // 파일 확장자 지정
+    req.file.convertedExtension = "webp";
     next();
   } catch (error) {
     next(error);

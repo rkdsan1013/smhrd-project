@@ -10,7 +10,7 @@ const formatProfile = (profile) => {
   return profile;
 };
 
-// 타인 프로필에서 제한된 정보 반환 (uuid, 이름, 이메일, 프로필 사진 포함)
+// 타인 프로필에서 제한된 정보 반환 (이름, 이메일, 프로필 사진)
 const filterLimitedProfile = (profile) => ({
   name: profile.name,
   email: profile.email,

@@ -5,11 +5,11 @@ const { TextEncoder } = require("util");
 const jwtSecret = process.env.JWT_SECRET || "default";
 const secretKey = new TextEncoder().encode(jwtSecret);
 
-const ACCESS_TOKEN_EXPIRATION = "1h"; // 1시간 만료
-const REFRESH_TOKEN_EXPIRATION = "7d"; // 7일 만료
+const ACCESS_TOKEN_EXPIRATION = "1h";
+const REFRESH_TOKEN_EXPIRATION = "7d";
 
-const ACCESS_TOKEN_MAX_AGE = 60 * 60 * 1000; // 1시간 (밀리초)
-const REFRESH_TOKEN_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7일 (밀리초)
+const ACCESS_TOKEN_MAX_AGE = 60 * 60 * 1000; // 1시간
+const REFRESH_TOKEN_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7일
 
 // access 및 refresh 토큰 생성
 const generateTokens = async (uuid) => {

@@ -5,11 +5,11 @@ const cookieParser = require("cookie-parser");
 const dotenv = require("dotenv");
 const path = require("path");
 
-const authRoutes = require("./routes/authRoutes");
-const userRoutes = require("./routes/userRoutes");
-
 // 환경변수 로드
 dotenv.config();
+
+const authRoutes = require("./routes/authRoutes");
+const userRoutes = require("./routes/userRoutes");
 
 const app = express();
 
@@ -21,10 +21,10 @@ app.use(
   }),
 );
 
-// JSON 파싱
+// JSON 및 쿠키 파싱
 app.use(express.json());
-// 쿠키 파싱
 app.use(cookieParser());
+
 // 정적 파일 제공 (uploads 폴더)
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
@@ -32,7 +32,12 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 
-// 서버 시작
+// 글로벌 에러 핸들러 미들웨어
+app.use((err, req, res, next) => {
+  console.error("Global error handler:", err.stack);
+  res.status(500).json({ success: false, message: "서버 오류가 발생했습니다." });
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

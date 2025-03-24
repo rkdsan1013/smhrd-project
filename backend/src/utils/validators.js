@@ -8,7 +8,6 @@ const MAX_PASSWORD_LENGTH = 60;
 const MIN_NAME_LENGTH = 2;
 const MAX_NAME_LENGTH = 50;
 
-// 이메일 유효성 검사 (문자열 여부, 공백 제거, 형식 및 길이 검사)
 const validateEmail = (email) => {
   const trimmedEmail = typeof email === "string" ? email.trim() : "";
   if (validator.isEmpty(trimmedEmail, { ignore_whitespace: true })) {
@@ -24,7 +23,6 @@ const validateEmail = (email) => {
   return { valid: true };
 };
 
-// 비밀번호 유효성 검사 (문자열 여부, 공백 제거, 길이 및 ASCII 문자 검사)
 const validatePassword = (password) => {
   const trimmedPassword = typeof password === "string" ? password.trim() : "";
   if (validator.isEmpty(trimmedPassword, { ignore_whitespace: true })) {
@@ -45,7 +43,6 @@ const validatePassword = (password) => {
   return { valid: true };
 };
 
-// 이름 유효성 검사 (문자열 여부, 공백 제거, 길이 및 허용 문자 검사)
 const validateName = (name) => {
   const trimmedName = typeof name === "string" ? name.trim() : "";
   if (validator.isEmpty(trimmedName, { ignore_whitespace: true })) {
@@ -64,7 +61,6 @@ const validateName = (name) => {
   return { valid: true };
 };
 
-// 생년월일 유효성 검사 (문자열 여부, 형식, 범위 검사)
 const validateBirthDate = (year, month, day) => {
   if (typeof year !== "string" || typeof month !== "string" || typeof day !== "string") {
     return { valid: false, message: "생년월일은 문자열로 입력되어야 합니다." };
@@ -88,7 +84,6 @@ const validateBirthDate = (year, month, day) => {
   return { valid: true };
 };
 
-// 성별 유효성 검사 (정해진 값인지 확인)
 const validateGender = (gender) => {
   const validGenders = ["male", "female", "timeTraveler"];
   if (typeof gender !== "string" || !validGenders.includes(gender)) {
@@ -97,7 +92,6 @@ const validateGender = (gender) => {
   return { valid: true };
 };
 
-// 전체 프로필 유효성 검사 (이름, 생년월일, 성별, 나이/미래 날짜 검사)
 const validateFullProfile = (name, year, month, day, gender) => {
   const nameResult = validateName(name);
   if (!nameResult.valid) return nameResult;
