@@ -483,10 +483,10 @@ const AuthForm: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex space-x-4">
                       <label
-                        className={`flex items-center justify-center w-24 py-2 border rounded-md cursor-pointer transition-all duration-300 ease-in-out ${
+                        className={`flex items-center justify-center w-24 py-2 border rounded-lg transition-colors duration-300 ease-in-out focus-within:ring-2 focus-within:ring-blue-300 cursor-pointer ${
                           gender === "male"
-                            ? "bg-blue-500 text-white border-blue-500"
-                            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                            ? "bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
+                            : "bg-white text-blue-500 border-blue-500 hover:bg-blue-100"
                         }`}
                       >
                         <input
@@ -495,15 +495,16 @@ const AuthForm: React.FC = () => {
                           value="male"
                           checked={gender === "male"}
                           onChange={handleChange(setGender)}
-                          className="hidden"
+                          className="sr-only"
                         />
                         <span>남성</span>
                       </label>
+
                       <label
-                        className={`flex items-center justify-center w-24 py-2 border rounded-md cursor-pointer transition-all duration-300 ease-in-out ${
+                        className={`flex items-center justify-center w-24 py-2 border rounded-lg transition-colors duration-300 ease-in-out focus-within:ring-2 focus-within:ring-blue-300 cursor-pointer ${
                           gender === "female"
-                            ? "bg-blue-500 text-white border-blue-500"
-                            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                            ? "bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
+                            : "bg-white text-blue-500 border-blue-500 hover:bg-blue-100"
                         }`}
                       >
                         <input
@@ -512,7 +513,7 @@ const AuthForm: React.FC = () => {
                           value="female"
                           checked={gender === "female"}
                           onChange={handleChange(setGender)}
-                          className="hidden"
+                          className="sr-only"
                         />
                         <span>여성</span>
                       </label>
@@ -522,10 +523,10 @@ const AuthForm: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setParadoxFlag((prev) => !prev)}
-                          className={`flex items-center justify-center w-32 py-2 border rounded-md cursor-pointer transition-all duration-300 ease-in-out ${
+                          className={`flex items-center justify-center w-32 py-2 border rounded-lg transition-colors duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-300 cursor-pointer ${
                             paradoxFlag
-                              ? "bg-blue-500 text-white border-blue-500"
-                              : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                              ? "bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
+                              : "bg-white text-blue-500 border-blue-500 hover:bg-blue-100"
                           }`}
                         >
                           시간 여행자
