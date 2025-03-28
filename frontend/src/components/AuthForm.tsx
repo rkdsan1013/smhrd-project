@@ -284,7 +284,7 @@ const AuthForm: React.FC = () => {
   }, [hasMounted, formState, errorMsg, showOverride]);
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-blue-100 via-blue-200 to-blue-300">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-gray-100 via-gray-200 to-white">
       <div
         ref={cardOuterRef}
         className="w-full max-w-md bg-white shadow-2xl rounded-2xl overflow-hidden"
