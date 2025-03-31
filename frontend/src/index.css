@@ -1,13 +1,9 @@
 @import "tailwindcss";
 
-/* Chrome, Safari, Opera */
-.scrollbar-hide::-webkit-scrollbar {
+.no-scrollbar::-webkit-scrollbar {
   display: none;
 }
-
-/* IE, Edge */
-.scrollbar-hide {
+.no-scrollbar {
   -ms-overflow-style: none;
-  /* Firefox */
   scrollbar-width: none;
 }

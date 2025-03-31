@@ -1,239 +1,235 @@
-// /frontend/src/components/Sidebar.tsx
 import React, { useState, useEffect } from "react";
+import ReactDOM from "react-dom";
 
 interface Group {
   uuid: string;
   image: string;
+  name: string;
 }
+
+interface TooltipState {
+  text: string;
+  style: React.CSSProperties;
+}
+
+interface TooltipProps {
+  text: string;
+  style: React.CSSProperties;
+  className?: string;
+}
+
+const Tooltip: React.FC<TooltipProps> = ({ text, style, className }) => {
+  return ReactDOM.createPortal(
+    <div
+      style={style}
+      className={`fixed z-50 px-2 py-1 bg-gray-700 text-white rounded shadow transition-opacity duration-300 ${
+        className || "text-base whitespace-nowrap"
+      }`}
+    >
+      {text}
+    </div>,
+    document.body,
+  );
+};
+
+const tooltipWidth = 150; // Tooltip 최대 폭
 
 const Sidebar: React.FC = () => {
   const [groups, setGroups] = useState<Group[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  // 임시 데이터: group_info 및 group_members 테이블 기준
-  const dummyGroups: Group[] = [
-    {
-      uuid: "00000000-0000-0000-0000-000000000001",
-      image: "https://via.placeholder.com/50/FF5733?text=G1",
-    },
-    {
-      uuid: "00000000-0000-0000-0000-000000000002",
-      image: "https://via.placeholder.com/50/33FF57?text=G2",
-    },
-    { uuid: "00000000-0000-0000-0000-000000000003", image: "" },
-    {
-      uuid: "00000000-0000-0000-0000-000000000004",
-      image: "https://via.placeholder.com/50/FFFF33?text=G4",
-    },
-    { uuid: "00000000-0000-0000-0000-000000000005", image: "" },
-    {
-      uuid: "00000000-0000-0000-0000-000000000006",
-      image: "https://via.placeholder.com/50/33FFFF?text=G6",
-    },
-    { uuid: "00000000-0000-0000-0000-000000000007", image: "" },
-    {
-      uuid: "00000000-0000-0000-0000-000000000008",
-      image: "https://via.placeholder.com/50/FF33FF?text=G8",
-    },
-    {
-      uuid: "00000000-0000-0000-0000-000000000009",
-      image: "https://via.placeholder.com/50/FF5733?text=G9",
-    },
-    { uuid: "00000000-0000-0000-0000-000000000010", image: "" },
-    {
-      uuid: "00000000-0000-0000-0000-000000000011",
-      image: "https://via.placeholder.com/50/33FF57?text=G11",
-    },
-    { uuid: "00000000-0000-0000-0000-000000000012", image: "" },
-    {
-      uuid: "00000000-0000-0000-0000-000000000013",
-      image: "https://via.placeholder.com/50/FFFF33?text=G13",
-    },
-    {
-      uuid: "00000000-0000-0000-0000-000000000014",
-      image: "https://via.placeholder.com/50/FF33FF?text=G14",
-    },
-    { uuid: "00000000-0000-0000-0000-000000000015", image: "" },
-    {
-      uuid: "00000000-0000-0000-0000-000000000016",
-      image: "https://via.placeholder.com/50/33FFFF?text=G16",
-    },
-    { uuid: "00000000-0000-0000-0000-000000000017", image: "" },
-    {
-      uuid: "00000000-0000-0000-0000-000000000018",
-      image: "https://via.placeholder.com/50/FF5733?text=G18",
-    },
-    {
-      uuid: "00000000-0000-0000-0000-000000000019",
-      image: "https://via.placeholder.com/50/33FF57?text=G19",
-    },
-    { uuid: "00000000-0000-0000-0000-000000000020", image: "" },
-  ];
+  const [tooltip, setTooltip] = useState<TooltipState | null>(null);
 
   useEffect(() => {
-    const fetchGroups = async () => {
-      setLoading(true);
-      try {
-        // 실제 환경에서는 API 호출로 데이터를 받아옵니다.
-        setGroups(dummyGroups);
-      } catch {
-        setGroups([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchGroups();
+    // 10개의 더미 그룹 데이터 생성
+    const dummyGroups: Group[] = Array.from({ length: 20 }, (_, i) => ({
+      uuid: `uuid-${i + 1}`,
+      image: `https://via.placeholder.com/48x48?text=그룹${i + 1}`,
+      name: `그룹 ${i + 1}`,
+    }));
+    setGroups(dummyGroups);
   }, []);
 
-  // 그룹 버튼 클릭 시 (현재는 alert로 모의)
   const navigateTo = (groupUuid: string) => {
     alert(`그룹 UUID: ${groupUuid}로 이동합니다.`);
   };
 
+  const showTooltip = (e: React.MouseEvent<HTMLButtonElement>, text: string) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const isDesktop = window.innerWidth >= 768;
+    let style: React.CSSProperties = {};
+
+    if (isDesktop) {
+      // 데스크탑: 버튼 오른쪽 중앙
+      style = {
+        position: "fixed",
+        left: rect.right + 4,
+        top: rect.top + rect.height / 2,
+        transform: "translateY(-50%)",
+        maxWidth: tooltipWidth,
+      };
+    } else {
+      // 모바일: 버튼 중앙 아래쪽에 translateX(-50%) 적용해 중앙 정렬
+      style = {
+        position: "fixed",
+        left: rect.left + rect.width / 2,
+        top: rect.bottom + 4,
+        transform: "translateX(-50%)",
+        maxWidth: tooltipWidth,
+      };
+    }
+    setTooltip({ text, style });
+  };
+
+  const hideTooltip = () => setTooltip(null);
+
   return (
-    <aside className="w-full md:w-20 bg-white rounded-lg shadow-lg p-2">
-      {/* 부모 컨테이너: 모바일은 가로배열(flex-row), 데스크탑은 세로배열(flex-col) */}
-      <div className="flex flex-row md:flex-col h-full">
-        {/* 홈 버튼 영역 */}
-        <div className="flex-shrink-0 flex items-center justify-center">
-          <button
-            onClick={() => navigateTo("home")}
-            title="홈"
-            className="flex items-center justify-center text-gray-700 hover:text-blue-600 focus:outline-none"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              className="w-8 h-8"
+    <>
+      {/* 모바일: w-full, h-20 / 데스크탑: md:w-20, md:h-full */}
+      <aside className="w-full h-20 md:w-20 md:h-full bg-white rounded-lg shadow-lg p-2">
+        <div className="flex flex-row md:flex-col h-full">
+          {/* 홈 버튼 영역 */}
+          <div className="flex-shrink-0 flex items-center justify-center relative">
+            <button
+              onClick={() => navigateTo("home")}
+              onMouseEnter={(e) => showTooltip(e, "메인 화면")}
+              onMouseLeave={hideTooltip}
+              className="flex items-center justify-center text-gray-700 hover:text-blue-600 focus:outline-none"
             >
-              <path d="M11.47 3.841a.75.75 0 011.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 1 0 1.061 1.06l8.69-8.689Z" />
-              <path d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.29 0 0 0 .091-.086L12 5.432Z" />
-            </svg>
-          </button>
-        </div>
-
-        {/* 구분선 – 홈 버튼과 그룹 리스트 사이 */}
-        <div className="flex items-center">
-          {/* 모바일: 수직 구분선 (전체 높이, mx-2), 데스크탑: 수평 구분선 (전체 너비, my-2) */}
-          <div className="block md:hidden h-full border-l border-gray-300 mx-2" />
-          <div className="hidden md:block w-full border-t border-gray-300 my-2" />
-        </div>
-
-        {/* 그룹 리스트 영역 */}
-        <div className="relative flex-grow overflow-hidden mx-2 md:mx-0 my-1 md:my-2">
-          {/* 내부 스크롤 컨테이너: 모바일은 좌우 패딩(px-4), 데스크탑은 상하 패딩(md:py-4) */}
-          <div className="no-scrollbar flex flex-row md:flex-col gap-3 overflow-auto w-full h-full px-4 md:px-0 md:py-4">
-            {loading ? (
-              <div className="text-center text-xs text-gray-500">Loading...</div>
-            ) : groups.length === 0 ? (
-              <div className="text-center text-xs text-gray-500">없습니다.</div>
-            ) : (
-              groups.map((group) => (
-                <button
-                  key={group.uuid}
-                  onClick={() => navigateTo(group.uuid)}
-                  title={`그룹 ${group.uuid}`}
-                  className="flex flex-shrink-0 items-center justify-center hover:opacity-80 focus:outline-none"
-                >
-                  {group.image ? (
-                    <img
-                      src={group.image}
-                      alt={`그룹 ${group.uuid}`}
-                      className="w-12 h-12 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 rounded-full bg-gray-300" />
-                  )}
-                </button>
-              ))
-            )}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                className="w-8 h-8"
+              >
+                <path d="M11.47 3.841a.75.75 0 011.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 1 0 1.061 1.06l8.69-8.689Z" />
+                <path d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.29 0 0 0 .091-.086L12 5.432Z" />
+              </svg>
+            </button>
           </div>
-          {/* 페이드 오버레이 – 그룹 리스트 경계에 고정 */}
-          {/* 모바일: 좌우 오버레이 */}
-          <div className="block md:hidden pointer-events-none absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-white to-transparent" />
-          <div className="block md:hidden pointer-events-none absolute inset-y-0 right-0 w-4 bg-gradient-to-l from-white to-transparent" />
-          {/* 데스크탑: 상하 오버레이 */}
-          <div className="hidden md:block pointer-events-none absolute inset-x-0 top-0 h-4 bg-gradient-to-b from-white to-transparent" />
-          <div className="hidden md:block pointer-events-none absolute inset-x-0 bottom-0 h-4 bg-gradient-to-t from-white to-transparent" />
-        </div>
 
-        {/* 구분선 – 그룹 리스트와 내비게이션 버튼 사이 */}
-        <div className="flex items-center">
-          <div className="block md:hidden h-full border-l border-gray-300 mx-2" />
-          <div className="hidden md:block w-full border-t border-gray-300 my-2" />
-        </div>
+          {/* 구분선 */}
+          <div className="flex items-center">
+            <div className="block md:hidden h-full border-l border-gray-300 mx-2" />
+            <div className="hidden md:block w-full border-t border-gray-300 my-2" />
+          </div>
 
-        {/* 내비게이션 버튼 영역 – 모바일은 가로, 데스크탑은 세로 */}
-        <div className="flex flex-row md:flex-col flex-shrink-0 p-1">
-          <button
-            onClick={() => navigateTo("create-group")}
-            title="그룹 생성"
-            className="flex items-center justify-center text-gray-700 hover:text-blue-600 focus:outline-none"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              className="w-8 h-8"
-            >
-              <path
-                fillRule="evenodd"
-                d="M12 3.75a.75.75 0 01.75.75v6.75h6.75a.75.75 0 110 1.5h-6.75v6.75a.75.75 0 01-1.5 0v-6.75H4.5a.75.75 0 010-1.5h6.75V4.5a.75.75 0 01.75-.75z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </button>
-          <button
-            onClick={() => navigateTo("search-group")}
-            title="그룹 검색"
-            className="flex items-center justify-center text-gray-700 hover:text-blue-600 focus:outline-none"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              className="w-8 h-8"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10.5 3.75a6.75 6.75 0 100 13.5 6.75 6.75 0 000-13.5zm-8.25 6a8.25 8.25 0 1114.59 5.28l4.69 4.69a.75.75 0 11-1.06 1.06l-4.69-4.69A8.25 8.25 0 012.25 9.75z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </button>
-          <button
-            onClick={() => navigateTo("photo-album")}
-            title="사진첩"
-            className="flex items-center justify-center text-gray-700 hover:text-blue-600 focus:outline-none"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              className="w-8 h-8"
-            >
-              <path
-                fillRule="evenodd"
-                d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zm2.25-.75a.75.75 0 00-.75.75v12a.75.75 0 00.75.75h16.5a.75.75 0 00.75-.75V6a.75.75 0 00-.75-.75H3.75z"
-                clipRule="evenodd"
-              />
-              <path
-                fillRule="evenodd"
-                d="M3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061z"
-                clipRule="evenodd"
-              />
-              <path
-                fillRule="evenodd"
-                d="M13.125 8.94a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </button>
+          {/* 그룹 리스트 영역 */}
+          <div className="relative flex-1 overflow-auto mx-2 md:mx-0 my-1 md:my-2">
+            <div className="no-scrollbar flex flex-row md:flex-col gap-3 overflow-auto w-full h-full px-4 md:px-0 md:py-4 items-center justify-start">
+              {groups.map((group) => (
+                <div key={group.uuid} className="relative flex-shrink-0">
+                  <button
+                    onClick={() => navigateTo(group.uuid)}
+                    onMouseEnter={(e) => showTooltip(e, group.name)}
+                    onMouseLeave={hideTooltip}
+                    className="flex items-center justify-center hover:opacity-80 focus:outline-none"
+                  >
+                    {group.image ? (
+                      <img
+                        src={group.image}
+                        alt={group.name}
+                        className="w-12 h-12 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-gray-300" />
+                    )}
+                  </button>
+                </div>
+              ))}
+            </div>
+            {/* 모바일 스크롤 양쪽 gradient overlay */}
+            <div className="block md:hidden pointer-events-none absolute inset-y-0 left-0 w-4 z-0 bg-gradient-to-r from-white to-transparent" />
+            <div className="block md:hidden pointer-events-none absolute inset-y-0 right-0 w-4 z-0 bg-gradient-to-l from-white to-transparent" />
+            <div className="hidden md:block pointer-events-none absolute inset-x-0 top-0 h-4 z-0 bg-gradient-to-b from-white to-transparent" />
+            <div className="hidden md:block pointer-events-none absolute inset-x-0 bottom-0 h-4 z-0 bg-gradient-to-t from-white to-transparent" />
+          </div>
+
+          {/* 구분선 */}
+          <div className="flex items-center">
+            <div className="block md:hidden h-full border-l border-gray-300 mx-2" />
+            <div className="hidden md:block w-full border-t border-gray-300 my-2" />
+          </div>
+
+          {/* 내비게이션 버튼 영역 */}
+          <div className="flex flex-row md:flex-col flex-shrink-0 p-1 gap-2">
+            <div className="relative flex items-center justify-center">
+              <button
+                onClick={() => navigateTo("create-group")}
+                onMouseEnter={(e) => showTooltip(e, "그룹 생성")}
+                onMouseLeave={hideTooltip}
+                className="flex items-center justify-center text-gray-700 hover:text-blue-600 focus:outline-none"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="w-8 h-8"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M12 3.75a.75.75 0 01.75.75v6.75h6.75a.75.75 0 110 1.5h-6.75v6.75a.75.75 0 01-1.5 0v-6.75H4.5a.75.75 0 010-1.5h6.75V4.5a.75.75 0 01.75-.75z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div className="relative flex items-center justify-center">
+              <button
+                onClick={() => navigateTo("search-group")}
+                onMouseEnter={(e) => showTooltip(e, "그룹 검색")}
+                onMouseLeave={hideTooltip}
+                className="flex items-center justify-center text-gray-700 hover:text-blue-600 focus:outline-none"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="w-8 h-8"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10.5 3.75a6.75 6.75 0 100 13.5 6.75 6.75 0 000-13.5zm-8.25 6a8.25 8.25 0 1114.59 5.28l4.69 4.69a.75.75 0 11-1.06 1.06l-4.69-4.69A8.25 8.25 0 012.25 9.75z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div className="relative flex items-center justify-center">
+              <button
+                onClick={() => navigateTo("photo-album")}
+                onMouseEnter={(e) => showTooltip(e, "사진첩")}
+                onMouseLeave={hideTooltip}
+                className="flex items-center justify-center text-gray-700 hover:text-blue-600 focus:outline-none"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="w-8 h-8"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zm2.25-.75a.75.75 0 00-.75.75v12a.75.75 0 00.75.75h16.5a.75.75 0 00.75-.75V6a.75.75 0 00-.75-.75H3.75z"
+                    clipRule="evenodd"
+                  />
+                  <path
+                    fillRule="evenodd"
+                    d="M3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061z"
+                    clipRule="evenodd"
+                  />
+                  <path
+                    fillRule="evenodd"
+                    d="M13.125 8.94a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+
+      {tooltip && <Tooltip text={tooltip.text} style={tooltip.style} />}
+    </>
   );
 };
 

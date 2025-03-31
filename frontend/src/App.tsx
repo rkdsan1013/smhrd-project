@@ -4,7 +4,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { get, post } from "./services/apiClient";
 import LandingPage from "./pages/LandingPage";
 import TestPage from "./pages/TestPage";
-import Footer from "./components/Footer";
 import { UserProvider, useUser } from "./contexts/UserContext";
 import startTokenRefreshPolling from "./utils/tokenManager";
 
@@ -13,6 +12,7 @@ const AppContent: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAuthChecked, setIsAuthChecked] = useState(false);
 
+  // 사용자 인증 상태 확인 및 토큰 리프레시 처리
   const fetchCurrentUser = async () => {
     try {
       const data = await get<{ user?: { uuid: string } }>("/auth/me");
@@ -46,10 +46,12 @@ const AppContent: React.FC = () => {
     }
   };
 
+  // 초기 인증 검사
   useEffect(() => {
     fetchCurrentUser();
   }, []);
 
+  // 로그인 상태일 때 토큰 갱신 폴링 시작
   useEffect(() => {
     let cleanup: (() => void) | undefined;
     if (isLoggedIn) {
@@ -60,6 +62,7 @@ const AppContent: React.FC = () => {
     };
   }, [isLoggedIn]);
 
+  // 로그인 상태일 때 30초마다 사용자 인증 재확인
   useEffect(() => {
     if (isLoggedIn) {
       const intervalId = setInterval(fetchCurrentUser, 30000);
@@ -67,20 +70,22 @@ const AppContent: React.FC = () => {
     }
   }, [isLoggedIn]);
 
+  // 전역 이벤트 리스너로 로그인/로그아웃 상태 업데이트
   useEffect(() => {
-    const onSignOut = () => setIsLoggedIn(false);
-    const onSignIn = (e: CustomEvent) => {
+    const handleSignOut = () => setIsLoggedIn(false);
+    const handleSignIn = (e: CustomEvent) => {
       if (e.detail?.user) setUserUuid(e.detail.user.uuid);
       setIsLoggedIn(true);
     };
-    window.addEventListener("userSignedOut", onSignOut);
-    window.addEventListener("userSignedIn", onSignIn as EventListener);
+    window.addEventListener("userSignedOut", handleSignOut);
+    window.addEventListener("userSignedIn", handleSignIn as EventListener);
     return () => {
-      window.removeEventListener("userSignedOut", onSignOut);
-      window.removeEventListener("userSignedIn", onSignIn as EventListener);
+      window.removeEventListener("userSignedOut", handleSignOut);
+      window.removeEventListener("userSignedIn", handleSignIn as EventListener);
     };
   }, [setUserUuid]);
 
+  // 인증 체크 전에는 로딩 스피너 표시
   if (!isAuthChecked) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -97,19 +102,19 @@ const AppContent: React.FC = () => {
             r="10"
             stroke="currentColor"
             strokeWidth="4"
-          ></circle>
+          />
           <path
             className="opacity-75"
             fill="currentColor"
             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-          ></path>
+          />
         </svg>
       </div>
     );
   }
 
+  // 페이지 전환 애니메이션: 로그인 상태에 따라 TestPage 또는 LandingPage가 자연스럽게 페이드 슬라이드로 전환됨
   return (
-    // 최상위 컨테이너에 overflow-hidden을 지정하여 애니메이션 동안 스크롤바가 보이지 않도록 함
     <div className="h-screen bg-gray-100 overflow-hidden">
       <AnimatePresence mode="wait">
         {isLoggedIn ? (
