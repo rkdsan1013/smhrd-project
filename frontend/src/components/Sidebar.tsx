@@ -9,7 +9,7 @@ const Sidebar: React.FC = () => {
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // 임시 데이터 (group_info 및 group_members 테이블을 기준)
+  // 임시 데이터: group_info 및 group_members 테이블 기준
   const dummyGroups: Group[] = [
     {
       uuid: "00000000-0000-0000-0000-000000000001",
@@ -73,7 +73,7 @@ const Sidebar: React.FC = () => {
     const fetchGroups = async () => {
       setLoading(true);
       try {
-        // 실제 API 호출 대신 임시 데이터를 적용 (테스트용)
+        // 실제 환경에서는 API 호출로 데이터를 받아옵니다.
         setGroups(dummyGroups);
       } catch {
         setGroups([]);
@@ -85,16 +85,13 @@ const Sidebar: React.FC = () => {
     fetchGroups();
   }, []);
 
-  /**
-   * 그룹 버튼 클릭 시 해당 그룹의 uuid를 인자로 전달하여 페이지 이동 등 처리를 합니다.
-   * (여기서는 alert로 대체)
-   */
+  // 그룹 버튼 클릭 시 (여기서는 alert로 모의)
   const navigateTo = (groupUuid: string) => {
     alert(`그룹 UUID: ${groupUuid}로 이동합니다.`);
   };
 
   return (
-    // 전체 사이드바 여백을 줄이기 위해 p-2로 설정
+    // 사이드바 폼: 모바일은 전체 폭(w-full), 데스크탑은 고정 폭(md:w-20)
     <aside className="w-full md:w-20 bg-white rounded-lg shadow-lg p-2">
       <div className="flex flex-row md:flex-col h-full">
         {/* 홈 버튼 영역 */}
@@ -110,49 +107,63 @@ const Sidebar: React.FC = () => {
               fill="currentColor"
               className="w-8 h-8"
             >
-              <path d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 1 0 1.061 1.06l8.69-8.689Z" />
+              <path d="M11.47 3.841a.75.75 0 011.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 1 0 1.061 1.06l8.69-8.689Z" />
               <path d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.29 0 0 0 .091-.086L12 5.432Z" />
             </svg>
           </button>
         </div>
 
-        {/* 구분 라인 */}
-        <div className="hidden md:block w-full border-t border-gray-300 my-2"></div>
-        <div className="block md:hidden h-full border-l border-gray-300 mx-2"></div>
-
-        {/* 그룹 리스트 영역 - 간격(gap)을 gap-3으로 늘림 */}
-        <div className="no-scrollbar flex flex-row md:flex-col flex-grow gap-3 my-2 overflow-auto items-center justify-start">
-          {loading ? (
-            <div className="text-center text-xs text-gray-500">Loading...</div>
-          ) : groups.length === 0 ? (
-            <div className="text-center text-xs text-gray-500">없습니다.</div>
-          ) : (
-            groups.map((group) => (
-              <button
-                key={group.uuid}
-                onClick={() => navigateTo(group.uuid)}
-                title={`그룹 ${group.uuid}`}
-                className="flex items-center justify-center hover:opacity-80 focus:outline-none"
-              >
-                {group.image ? (
-                  <img
-                    src={group.image}
-                    alt={`그룹 ${group.uuid}`}
-                    className="w-12 h-12 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-gray-300" />
-                )}
-              </button>
-            ))
-          )}
+        {/* 구분 라인 – 홈 버튼과 그룹 리스트 사이 */}
+        <div className="flex items-center">
+          {/* 모바일에서는 세로 구분, 데스크탑은 가로 구분 */}
+          <div className="block md:hidden h-full border-l border-gray-300 mx-2" />
+          <div className="hidden md:block w-full border-t border-gray-300 my-2" />
         </div>
 
-        {/* 구분 라인 */}
-        <div className="hidden md:block w-full border-t border-gray-300 my-2"></div>
-        <div className="block md:hidden h-full border-l border-gray-300 mx-2"></div>
+        {/* 그룹 리스트 영역 – 스크롤 영역은 폼 내부에 고정되어, 경계에 페이드 효과 적용 */}
+        <div className="relative flex-grow mx-2 my-1 overflow-hidden">
+          <div className="no-scrollbar flex flex-row md:flex-col gap-3 overflow-auto w-full h-full">
+            {loading ? (
+              <div className="text-center text-xs text-gray-500">Loading...</div>
+            ) : groups.length === 0 ? (
+              <div className="text-center text-xs text-gray-500">없습니다.</div>
+            ) : (
+              groups.map((group) => (
+                <button
+                  key={group.uuid}
+                  onClick={() => navigateTo(group.uuid)}
+                  title={`그룹 ${group.uuid}`}
+                  className="flex items-center justify-center hover:opacity-80 focus:outline-none"
+                >
+                  {group.image ? (
+                    <img
+                      src={group.image}
+                      alt={`그룹 ${group.uuid}`}
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-gray-300" />
+                  )}
+                </button>
+              ))
+            )}
+          </div>
+          {/* 페이드 오버레이 – 스크롤 경계에 고정 (스크롤과는 분리됨) */}
+          {/* 모바일: 좌우 오버레이 */}
+          <div className="block md:hidden pointer-events-none absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-white to-transparent" />
+          <div className="block md:hidden pointer-events-none absolute inset-y-0 right-0 w-4 bg-gradient-to-l from-white to-transparent" />
+          {/* 데스크탑: 상하 오버레이 */}
+          <div className="hidden md:block pointer-events-none absolute inset-x-0 top-0 h-4 bg-gradient-to-b from-white to-transparent" />
+          <div className="hidden md:block pointer-events-none absolute inset-x-0 bottom-0 h-4 bg-gradient-to-t from-white to-transparent" />
+        </div>
 
-        {/* 하단 내비게이션 버튼 영역 */}
+        {/* 구분 라인 – 그룹 리스트와 내비게이션 버튼 사이 */}
+        <div className="flex items-center">
+          <div className="block md:hidden h-full border-l border-gray-300 mx-2" />
+          <div className="hidden md:block w-full border-t border-gray-300 my-2" />
+        </div>
+
+        {/* 내비게이션 버튼 영역 – 모바일은 가로, 데스크탑은 세로 배열 */}
         <div className="flex flex-row md:flex-col flex-shrink-0 gap-1 items-center justify-center">
           <button
             onClick={() => navigateTo("create-group")}
