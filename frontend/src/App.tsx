@@ -1,36 +1,32 @@
 // /frontend/src/App.tsx
 import React, { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { get, post } from "./services/apiClient";
 import LandingPage from "./pages/LandingPage";
-import MainPage from "./pages/MainPage";
 import TestPage from "./pages/TestPage";
+import Footer from "./components/Footer";
 import { UserProvider, useUser } from "./contexts/UserContext";
 import startTokenRefreshPolling from "./utils/tokenManager";
 
 const AppContent: React.FC = () => {
   const { setUserUuid } = useUser();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isAuthChecked, setIsAuthChecked] = useState(false); // 인증 체크 완료 여부
+  const [isAuthChecked, setIsAuthChecked] = useState(false);
 
-  // 사용자 인증 상태 확인 함수 - access 토큰이 없을 경우 refresh 처리
   const fetchCurrentUser = async () => {
     try {
-      // 먼저 /auth/me 엔드포인트를 호출하여 인증 상태 확인
       const data = await get<{ user?: { uuid: string } }>("/auth/me");
       if (data?.user) {
         setUserUuid(data.user.uuid);
         setIsLoggedIn(true);
         return;
       }
-      // user 정보가 없으면 강제로 에러 발생 (아래 refresh 처리로 넘어감)
       throw new Error("사용자 정보 없음");
     } catch (error: any) {
       console.warn("사용자 인증 확인 에러:", error);
-      // access 토큰 문제로 인증 실패한 경우 refresh 토큰으로 재발급 시도
       try {
         const refreshData = await post<{ success: boolean }>("/auth/refresh", {});
         if (refreshData.success) {
-          // refresh 성공 후 다시 /auth/me 호출하여 사용자 정보 확인
           const newData = await get<{ user?: { uuid: string } }>("/auth/me");
           if (newData?.user) {
             setUserUuid(newData.user.uuid);
@@ -50,12 +46,10 @@ const AppContent: React.FC = () => {
     }
   };
 
-  // 앱 초기 렌더링 시 사용자 인증 체크
   useEffect(() => {
     fetchCurrentUser();
   }, []);
 
-  // 로그인 상태면 토큰 갱신 폴링 시작
   useEffect(() => {
     let cleanup: (() => void) | undefined;
     if (isLoggedIn) {
@@ -66,7 +60,6 @@ const AppContent: React.FC = () => {
     };
   }, [isLoggedIn]);
 
-  // 로그인 상태면 30초마다 사용자 인증 상태 재확인
   useEffect(() => {
     if (isLoggedIn) {
       const intervalId = setInterval(fetchCurrentUser, 30000);
@@ -74,7 +67,6 @@ const AppContent: React.FC = () => {
     }
   }, [isLoggedIn]);
 
-  // 전역 커스텀 이벤트로 로그인/로그아웃 상태 업데이트
   useEffect(() => {
     const onSignOut = () => setIsLoggedIn(false);
     const onSignIn = (e: CustomEvent) => {
@@ -89,7 +81,6 @@ const AppContent: React.FC = () => {
     };
   }, [setUserUuid]);
 
-  // 인증 체크 전 로딩 스피너 표시
   if (!isAuthChecked) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -117,7 +108,36 @@ const AppContent: React.FC = () => {
     );
   }
 
-  return isLoggedIn ? <TestPage /> : <LandingPage />;
+  return (
+    // 최상위 컨테이너에 overflow-hidden을 지정하여 애니메이션 동안 스크롤바가 보이지 않도록 함
+    <div className="h-screen bg-gray-100 overflow-hidden">
+      <AnimatePresence mode="wait">
+        {isLoggedIn ? (
+          <motion.div
+            key="test"
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -50 }}
+            transition={{ duration: 0.5, ease: "easeInOut" }}
+            className="h-full"
+          >
+            <TestPage />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="landing"
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 50 }}
+            transition={{ duration: 0.5, ease: "easeInOut" }}
+            className="h-full"
+          >
+            <LandingPage />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
 };
 
 const App: React.FC = () => (
