@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { get, post } from "./services/apiClient";
 import LandingPage from "./pages/LandingPage";
 import MainPage from "./pages/MainPage";
+import TestPage from "./pages/TestPage";
 import { UserProvider, useUser } from "./contexts/UserContext";
 import startTokenRefreshPolling from "./utils/tokenManager";
 
@@ -116,7 +117,7 @@ const AppContent: React.FC = () => {
     );
   }
 
-  return isLoggedIn ? <MainPage /> : <LandingPage />;
+  return isLoggedIn ? <TestPage /> : <LandingPage />;
 };
 
 const App: React.FC = () => (
