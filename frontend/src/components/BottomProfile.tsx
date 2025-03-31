@@ -4,17 +4,16 @@ import { useFriends } from "../hooks/useFriends";
 
 const BottomProfile: React.FC = () => {
   const { profile } = useUserProfile();
-  const { friends, loading, error, loadFriends } = useFriends(profile?.uuid || ""); // 사용자 UUID
+  const { friends, loading, error, loadFriends } = useFriends(profile?.uuid || "");
   const [isFriendListOpen, setIsFriendListOpen] = useState(false);
   const friendListRef = useRef<HTMLDivElement>(null);
 
   const friendListClick = () => {
     if (!isFriendListOpen) {
-      loadFriends(); // 친구 목록 열 때 데이터 가져오기
+      loadFriends();
     }
     setIsFriendListOpen(!isFriendListOpen);
   };
-  
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -38,26 +37,10 @@ const BottomProfile: React.FC = () => {
             )}
           </div>
           <div>
-            <div className="flex items-center space-x-4">
-              <div>
-                <p className="text-gray-800 font-semibold">{profile?.name || "홍길동"}</p>
-                <p className="text-gray-600 text-sm">{profile?.email || "hong.gildong@example.com"}</p>
-              </div>
-              <button className="text-gray-600 hover:text-gray-800 focus:outline-none">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37 1 .608 2.296.07 2.572-1.065z"
-                  />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </button>
-            </div>
+            <p className="text-gray-800 font-semibold">{profile?.name || "홍길동"}</p>
+            <p className="text-gray-600 text-sm">{profile?.email || "hong.gildong@example.com"}</p>
           </div>
         </div>
-        {/* "친구 목록" 버튼을 우측 끝으로 이동 */}
         <div className="ml-auto">
           <button
             className="w-30 py-2 text-black rounded-lg text-sm hover:bg-blue-400 duration-200 focus:outline-none"
@@ -76,10 +59,21 @@ const BottomProfile: React.FC = () => {
             {error && <p className="text-red-500">{error}</p>}
             {!loading && !error && friends.length === 0 && <p>친구가 없습니다.</p>}
             {!loading && !error && friends.length > 0 && (
-              <ul>
+              <ul className="space-y-2">
                 {friends.map((friend) => (
-                  <li key={friend.uuid} className="py-1">
-                    {friend.name} ({friend.uuid})
+                  <li key={friend.uuid} className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
+                      {friend.profile_picture ? (
+                        <img
+                          src={friend.profile_picture}
+                          alt={friend.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-gray-500 text-sm">{friend.name?.charAt(0) || "?"}</span>
+                      )}
+                    </div>
+                    <span className="text-gray-800">{friend.name}</span>
                   </li>
                 ))}
               </ul>

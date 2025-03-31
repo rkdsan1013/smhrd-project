@@ -27,17 +27,15 @@ const getProfileByUuid = async (uuid) => {
   return rows[0];
 };
 
-// uuid로 친구 목록 조회
+// uuid로 친구 목록 조회 (friend_uuid만 조회)
 const getFriendsByUuid = async (uuid) => {
   const sql = `
-    SELECT u.uuid, up.name
-    FROM users u
-    LEFT JOIN user_profiles up ON u.uuid = up.uuid
-    INNER JOIN friends f ON u.uuid = f.friend_uuid
+    SELECT f.friend_uuid AS uuid
+    FROM friends f
     WHERE f.user_uuid = :uuid AND f.status = 'accepted'
   `;
   const [rows] = await pool.query(sql, { uuid });
-  return rows;
+  return rows; // [{ uuid }, ...]
 };
 
 module.exports = {

@@ -5,6 +5,7 @@ import { fetchFriends } from "../services/userService";
 export interface Friend {
   uuid: string;
   name: string;
+  profile_picture?: string | null;
 }
 
 export const useFriends = (userUuid: string) => {
