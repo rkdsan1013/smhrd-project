@@ -85,14 +85,14 @@ const Sidebar: React.FC = () => {
     fetchGroups();
   }, []);
 
-  // 그룹 버튼 클릭 시 (여기서는 alert로 모의)
+  // 그룹 버튼 클릭 시 (현재는 alert로 모의)
   const navigateTo = (groupUuid: string) => {
     alert(`그룹 UUID: ${groupUuid}로 이동합니다.`);
   };
 
   return (
-    // 사이드바 폼: 모바일은 전체 폭(w-full), 데스크탑은 고정 폭(md:w-20)
     <aside className="w-full md:w-20 bg-white rounded-lg shadow-lg p-2">
+      {/* 부모 컨테이너: 모바일은 가로배열(flex-row), 데스크탑은 세로배열(flex-col) */}
       <div className="flex flex-row md:flex-col h-full">
         {/* 홈 버튼 영역 */}
         <div className="flex-shrink-0 flex items-center justify-center">
@@ -113,16 +113,17 @@ const Sidebar: React.FC = () => {
           </button>
         </div>
 
-        {/* 구분 라인 – 홈 버튼과 그룹 리스트 사이 */}
+        {/* 구분선 – 홈 버튼과 그룹 리스트 사이 */}
         <div className="flex items-center">
-          {/* 모바일에서는 세로 구분, 데스크탑은 가로 구분 */}
+          {/* 모바일: 수직 구분선 (전체 높이, mx-2), 데스크탑: 수평 구분선 (전체 너비, my-2) */}
           <div className="block md:hidden h-full border-l border-gray-300 mx-2" />
           <div className="hidden md:block w-full border-t border-gray-300 my-2" />
         </div>
 
-        {/* 그룹 리스트 영역 – 스크롤 영역은 폼 내부에 고정되어, 경계에 페이드 효과 적용 */}
-        <div className="relative flex-grow mx-2 my-1 overflow-hidden">
-          <div className="no-scrollbar flex flex-row md:flex-col gap-3 overflow-auto w-full h-full">
+        {/* 그룹 리스트 영역 */}
+        <div className="relative flex-grow overflow-hidden mx-2 md:mx-0 my-1 md:my-2">
+          {/* 내부 스크롤 컨테이너: 모바일은 좌우 패딩(px-4), 데스크탑은 상하 패딩(md:py-4) */}
+          <div className="no-scrollbar flex flex-row md:flex-col gap-3 overflow-auto w-full h-full px-4 md:px-0 md:py-4">
             {loading ? (
               <div className="text-center text-xs text-gray-500">Loading...</div>
             ) : groups.length === 0 ? (
@@ -133,7 +134,7 @@ const Sidebar: React.FC = () => {
                   key={group.uuid}
                   onClick={() => navigateTo(group.uuid)}
                   title={`그룹 ${group.uuid}`}
-                  className="flex items-center justify-center hover:opacity-80 focus:outline-none"
+                  className="flex flex-shrink-0 items-center justify-center hover:opacity-80 focus:outline-none"
                 >
                   {group.image ? (
                     <img
@@ -148,7 +149,7 @@ const Sidebar: React.FC = () => {
               ))
             )}
           </div>
-          {/* 페이드 오버레이 – 스크롤 경계에 고정 (스크롤과는 분리됨) */}
+          {/* 페이드 오버레이 – 그룹 리스트 경계에 고정 */}
           {/* 모바일: 좌우 오버레이 */}
           <div className="block md:hidden pointer-events-none absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-white to-transparent" />
           <div className="block md:hidden pointer-events-none absolute inset-y-0 right-0 w-4 bg-gradient-to-l from-white to-transparent" />
@@ -157,14 +158,14 @@ const Sidebar: React.FC = () => {
           <div className="hidden md:block pointer-events-none absolute inset-x-0 bottom-0 h-4 bg-gradient-to-t from-white to-transparent" />
         </div>
 
-        {/* 구분 라인 – 그룹 리스트와 내비게이션 버튼 사이 */}
+        {/* 구분선 – 그룹 리스트와 내비게이션 버튼 사이 */}
         <div className="flex items-center">
           <div className="block md:hidden h-full border-l border-gray-300 mx-2" />
           <div className="hidden md:block w-full border-t border-gray-300 my-2" />
         </div>
 
-        {/* 내비게이션 버튼 영역 – 모바일은 가로, 데스크탑은 세로 배열 */}
-        <div className="flex flex-row md:flex-col flex-shrink-0 gap-1 items-center justify-center">
+        {/* 내비게이션 버튼 영역 – 모바일은 가로, 데스크탑은 세로 */}
+        <div className="flex flex-row md:flex-col flex-shrink-0 p-1">
           <button
             onClick={() => navigateTo("create-group")}
             title="그룹 생성"
