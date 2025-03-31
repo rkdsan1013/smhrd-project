@@ -27,8 +27,22 @@ const getProfileByUuid = async (uuid) => {
   return rows[0];
 };
 
+// uuid로 친구 목록 조회
+const getFriendsByUuid = async (uuid) => {
+  const sql = `
+    SELECT u.uuid, up.name
+    FROM users u
+    LEFT JOIN user_profiles up ON u.uuid = up.uuid
+    INNER JOIN friends f ON u.uuid = f.friend_uuid
+    WHERE f.user_uuid = :uuid AND f.status = 'accepted'
+  `;
+  const [rows] = await pool.query(sql, { uuid });
+  return rows;
+};
+
 module.exports = {
   getUserByEmail,
   updateUserProfilePicture,
   getProfileByUuid,
+  getFriendsByUuid,
 };

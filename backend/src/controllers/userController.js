@@ -66,3 +66,32 @@ exports.getProfileByUuid = async (req, res) => {
     });
   }
 };
+
+// 친구 목록 조회
+exports.getFriends = async (req, res) => {
+  try {
+    const { uuid } = req.params;
+    if (!uuid) {
+      return res.status(400).json({
+        success: false,
+        message: "유효한 uuid를 제공해주세요.",
+      });
+    }
+    const friends = await userModel.getFriendsByUuid(uuid);
+
+    if (friends.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "친구 목록을 찾을 수 없습니다.",
+      });
+    }
+
+    res.json({ success: true, friends });
+  } catch (error) {
+    console.error("[getFriends] Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "서버 오류가 발생했습니다.",
+    });
+  }
+};
