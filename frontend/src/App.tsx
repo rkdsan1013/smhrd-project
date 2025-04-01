@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { get, post } from "./services/apiClient";
 import LandingPage from "./pages/LandingPage";
-import TestPage from "./pages/TestPage";
+import MainPage from "./pages/MainPage";
 import { UserProvider, useUser } from "./contexts/UserContext";
 import startTokenRefreshPolling from "./utils/tokenManager";
 
@@ -126,7 +126,7 @@ const AppContent: React.FC = () => {
             transition={{ duration: 0.5, ease: "easeInOut" }}
             className="h-full"
           >
-            <TestPage />
+            <MainPage />
           </motion.div>
         ) : (
           <motion.div
