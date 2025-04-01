@@ -4,8 +4,8 @@ const userModel = require("../models/userModel");
 // 서버 URL을 프로필 이미지 앞에 추가
 const formatProfile = (profile) => {
   const serverUrl = process.env.SERVER_URL || "http://localhost:5000";
-  if (profile.profile_picture) {
-    profile.profile_picture = serverUrl + profile.profile_picture;
+  if (profile.profilePicture) {
+    profile.profilePicture = serverUrl + profile.profilePicture;
   }
   return profile;
 };
@@ -14,7 +14,7 @@ const formatProfile = (profile) => {
 const filterLimitedProfile = (profile) => ({
   name: profile.name,
   email: profile.email,
-  profile_picture: profile.profile_picture,
+  profilePicture: profile.profilePicture,
 });
 
 // 자신의 프로필 조회 (모든 정보 반환)

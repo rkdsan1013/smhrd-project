@@ -14,9 +14,10 @@ const formConfig: Record<FormState, { title: string; buttonLabel: string }> = {
 };
 
 const baseInputClass =
-  "peer block w-full border-0 border-b-2 pb-2.5 pt-4 text-base bg-transparent " +
-  "focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600 " +
-  "transition-all duration-300 ease-in-out";
+  "peer block w-full border-0 border-b-2 pb-2.5 pt-4 text-base bg-transparent focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600 transition-all duration-300 ease-in-out";
+
+const labelClass =
+  "absolute left-0 top-4 z-10 text-sm text-gray-500 whitespace-nowrap origin-top-left duration-300 transform -translate-y-6 scale-75 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100 peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600";
 
 const AuthForm: React.FC = () => {
   // 상태 변수
@@ -306,10 +307,7 @@ const AuthForm: React.FC = () => {
                   }`}
                   placeholder=" "
                 />
-                <label
-                  htmlFor="email"
-                  className="absolute left-0 top-4 z-10 text-sm text-gray-500 whitespace-nowrap origin-top-left duration-300 transform -translate-y-6 scale-75 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100 peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600"
-                >
+                <label htmlFor="email" className={labelClass}>
                   이메일
                 </label>
               </div>
@@ -325,10 +323,7 @@ const AuthForm: React.FC = () => {
                   className={`${baseInputClass} text-gray-900`}
                   placeholder=" "
                 />
-                <label
-                  htmlFor="password"
-                  className="absolute left-0 top-4 z-10 text-sm text-gray-500 whitespace-nowrap origin-top-left duration-300 transform -translate-y-6 scale-75 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100 peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600"
-                >
+                <label htmlFor="password" className={labelClass}>
                   비밀번호
                 </label>
               </div>
@@ -345,10 +340,7 @@ const AuthForm: React.FC = () => {
                     className={`${baseInputClass} text-gray-900`}
                     placeholder=" "
                   />
-                  <label
-                    htmlFor="password"
-                    className="absolute left-0 top-4 z-10 text-sm text-gray-500 whitespace-nowrap origin-top-left duration-300 transform -translate-y-6 scale-75 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100 peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600"
-                  >
+                  <label htmlFor="password" className={labelClass}>
                     비밀번호
                   </label>
                 </div>
@@ -361,10 +353,7 @@ const AuthForm: React.FC = () => {
                     className={`${baseInputClass} text-gray-900`}
                     placeholder=" "
                   />
-                  <label
-                    htmlFor="confirmPassword"
-                    className="absolute left-0 top-4 z-10 text-sm text-gray-500 whitespace-nowrap origin-top-left duration-300 transform -translate-y-6 scale-75 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100 peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600"
-                  >
+                  <label htmlFor="confirmPassword" className={labelClass}>
                     비밀번호 확인
                   </label>
                 </div>
@@ -425,10 +414,7 @@ const AuthForm: React.FC = () => {
                     className={`${baseInputClass} text-gray-900`}
                     placeholder=" "
                   />
-                  <label
-                    htmlFor="name"
-                    className="absolute left-0 top-4 z-10 text-sm text-gray-500 whitespace-nowrap origin-top-left duration-300 transform -translate-y-6 scale-75 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100 peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600"
-                  >
+                  <label htmlFor="name" className={labelClass}>
                     이름
                   </label>
                 </div>
