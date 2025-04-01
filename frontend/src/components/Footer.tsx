@@ -26,7 +26,7 @@ const Footer: React.FC = () => {
           {/* 왼쪽: 클릭 가능한 프로필 카드 */}
           <div
             onClick={handleProfileClick}
-            className="flex items-center space-x-3 cursor-pointer p-3 rounded-lg bg-gray-100 hover:shadow-md transition duration-150"
+            className="flex items-center space-x-3 cursor-pointer p-3 rounded-lg bg-gray-100 hover:shadow-md transition duration-200"
           >
             {loading ? (
               <div className="text-gray-700 text-sm">Loading...</div>
