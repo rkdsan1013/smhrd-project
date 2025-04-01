@@ -45,7 +45,7 @@ const Sidebar: React.FC = () => {
   useEffect(() => {
     const dummyGroups: Group[] = Array.from({ length: 20 }, (_, i) => ({
       uuid: `uuid-${i + 1}`,
-      image: `https://via.placeholder.com/48x48?text=그룹${i + 1}`,
+      image: ``,
       name: `그룹 ${i + 1}`,
     }));
     setGroups(dummyGroups);
