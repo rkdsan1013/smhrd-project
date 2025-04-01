@@ -66,3 +66,39 @@ exports.getProfileByUuid = async (req, res) => {
     });
   }
 };
+
+// 자신의 프로필 업데이트 (PATCH /profile)
+exports.updateProfile = async (req, res) => {
+  try {
+    // verifyToken 미들웨어에서 설정한 사용자 정보에서 uuid를 가져옴
+    const { uuid } = req.user;
+    // 클라이언트에서 전달한 업데이트 데이터 (예: name, bio, phone 등)
+    const updateData = req.body;
+
+    // 입력 데이터에 대한 검증이 필요한 경우 여기에서 진행(예: express-validator 또는 Joi 사용)
+    // 예: if (!updateData.name) { ... }
+
+    // userModel의 업데이트 함수 호출 (예: updateProfileByUuid)
+    const result = await userModel.updateProfileByUuid(uuid, updateData);
+    if (!result) {
+      return res.status(404).json({
+        success: false,
+        message: "프로필 업데이트에 실패했습니다.",
+      });
+    }
+
+    // 업데이트된 데이터를 다시 조회해서 클라이언트에 넘김
+    const updatedProfile = await userModel.getProfileByUuid(uuid);
+    res.status(200).json({
+      success: true,
+      message: "프로필이 업데이트되었습니다.",
+      profile: formatProfile(updatedProfile),
+    });
+  } catch (error) {
+    console.error("[updateProfile] Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "서버 오류가 발생했습니다.",
+    });
+  }
+};
