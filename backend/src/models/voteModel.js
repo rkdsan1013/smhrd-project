@@ -3,17 +3,17 @@ const pool = require("../config/db");
 
 const voteModel = {
   // 투표 생성 (MULTI/SIMPLE)
-  createVote: async (groupUuid, type, title, content = null, options = []) => {
+  createVote: async (groupUuid, type, title, content = null, options = [], endDate = null) => {
     const conn = await pool.getConnection();
     try {
       await conn.beginTransaction();
 
       // 투표 삽입
       const voteSql = `
-        INSERT INTO votes (uuid, group_uuid, type, title, content)
-        VALUES (UUID(), :groupUuid, :type, :title, :content)
+        INSERT INTO votes (uuid, group_uuid, type, title, content, end_date)
+        VALUES (UUID(), :groupUuid, :type, :title, :content, :endDate)
       `;
-      await conn.query(voteSql, { groupUuid, type, title, content });
+      await conn.query(voteSql, { groupUuid, type, title, content, endDate });
 
       // 생성된 UUID 조회
       const [uuidRows] = await conn.query(
@@ -51,7 +51,7 @@ const voteModel = {
   // 투표 조회
   getVote: async (voteUuid) => {
     const voteSql = `
-      SELECT uuid, group_uuid, type, title, content, created_at
+      SELECT uuid, group_uuid, type, title, content, created_at, end_date
       FROM votes
       WHERE uuid = :voteUuid
     `;

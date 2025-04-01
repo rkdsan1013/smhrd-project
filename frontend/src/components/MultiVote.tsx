@@ -52,7 +52,7 @@ const MultiVote: React.FC<MultiVoteProps> = ({ voteUuid }) => {
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center"
+      className="fixed inset-0 bg-black/40 flex items-center justify-center"
       onClick={handleBackdropClick}
     >
       <div className="w-[360px] h-flex-fill bg-white rounded-2xl p-6 flex flex-col">

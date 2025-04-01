@@ -8,6 +8,7 @@ export interface CreateVoteRequest {
   title: string;
   content?: string;
   options?: string[];
+  endDate?: string;
 }
 
 // 투표 생성 응답 인터페이스

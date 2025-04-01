@@ -49,6 +49,10 @@ const Center: React.FC = () => {
     setShowCreateVote(false);
   };
 
+  const handleCloseCreateVote = () => {
+    setShowCreateVote(false); // 모달 닫기
+  };
+
   return (
     <div>
       <div className="flex h-[92vh] mt-[5vh] mb-[5vh] rounded-lg overflow-hidden">
@@ -144,7 +148,8 @@ const Center: React.FC = () => {
         showCreateVote ? (
           <CreateVote
             groupUuid="group1-uuid-1111-2222-3333"
-            onVoteCreated={handleVoteCreated} // 2개 인자를 받는 함수 전달
+            onVoteCreated={handleVoteCreated}
+            onClose={handleCloseCreateVote} // onClose // 2개 인자를 받는 함수 전달
           />
         ) : voteUuid && voteType === "MULTI" ? (
           <MultiVote voteUuid={voteUuid} />
