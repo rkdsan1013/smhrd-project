@@ -56,7 +56,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     }
   }, [profile, isEditing, profilePreview]);
 
-  // 초기 마운트 시, 동적 영역(outer)의 높이를 inner 높이로 설정 및 transition 적용
+  // 초기 마운트 시, 동적 영역(outer)의 높이를 inner의 높이로 설정 및 transition 적용
   useEffect(() => {
     if (cardOuterRef.current && cardInnerRef.current) {
       const newHeight = cardInnerRef.current.offsetHeight;
@@ -80,7 +80,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     if (Math.round(currentHeight) === Math.round(newHeight)) return;
     outer.style.transition = "none";
     outer.style.height = `${currentHeight}px`;
-    outer.getBoundingClientRect(); // force reflow
+    outer.getBoundingClientRect();
     outer.style.transition = "height 0.3s ease-in-out";
     outer.style.height = `${newHeight}px`;
   }, [hasMounted, isEditing, isChangingPassword]);
@@ -96,7 +96,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     }
   };
 
-  // 첫 동적 변경 전, outer의 이전 높이 저장 후 상태 업데이트 (0ms 지연)
+  // 편집 모드 전환 전, outer의 이전 높이 저장 후 상태 업데이트
   const handleEditProfile = () => {
     if (cardOuterRef.current) {
       oldHeightRef.current = cardOuterRef.current.offsetHeight;
@@ -107,7 +107,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     }, 0);
   };
 
-  // 취소시 편집 상태와 프로필 사진 변경 내역 초기화
+  // 취소 시 편집 및 업로드 내역 초기화
   const handleCancelEdit = () => {
     setIsEditing(false);
     setIsChangingPassword(false);
@@ -115,7 +115,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     setProfilePreview(profile ? profile.profilePicture ?? null : null);
   };
 
-  // 저장시 편집 상태 종료 및 (필요 시) 상태 업데이트
+  // 저장 시 편집 종료 및 업로드 내역 초기화
   const handleSaveEdit = () => {
     alert(isChangingPassword ? "비밀번호가 변경되었습니다." : "수정 내용이 저장되었습니다.");
     setIsEditing(false);
@@ -124,7 +124,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     setProfilePreview(profile ? profile.profilePicture ?? null : null);
   };
 
-  // 비밀번호 변경 선택 시 편집 중인 프로필 사진/이름 내역 초기화
+  // 비밀번호 변경 선택 시 편집 내역 초기화 후 비밀번호 입력란 활성화
   const handleChangePassword = () => {
     setIsChangingPassword(true);
     setCurrentPassword("");
@@ -244,24 +244,42 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm">
-                          프로필
+                        <div className="w-full h-full bg-gray-200 flex items-center justify-center rounded-full">
+                          <svg
+                            className="h-6 w-6 text-gray-400"
+                            aria-hidden="true"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M13 10a1 1 0 0 1 1-1h.01a1 1 0 1 1 0 2H14a1 1 0 0 1-1-1Z"
+                              clipRule="evenodd"
+                            />
+                            <path
+                              fillRule="evenodd"
+                              d="M2 6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12c0 .556-.227 1.06-.593 1.422A.999.999 0 0 1 20.5 20H4a2.002 2.002 0 0 1-2-2V6Zm6.892 12 3.833-5.356-3.99-4.322a1 1 0 0 0-1.549.097L4 12.879V6h16v9.95l-3.257-3.619a1 1 0 0 0-1.557.088L11.2 18H8.892Z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
                         </div>
                       )}
                     </div>
                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       <svg
-                        xmlns="http://www.w3.org/2000/svg"
                         className="h-6 w-6 text-white"
+                        aria-hidden="true"
+                        xmlns="http://www.w3.org/2000/svg"
                         fill="none"
                         viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2}
                       >
                         <path
+                          stroke="currentColor"
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          d="M15.232 5.232l3.536 3.536M9 11l6.536-6.536a2 2 0 112.828 2.828L11.828 14H9v-3z"
+                          strokeWidth="2"
+                          d="m14.304 4.844 2.852 2.852M7 7H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-4.5m2.409-9.91a2.017 2.017 0 0 1 0 2.853l-6.844 6.844L8 14l.713-3.565 6.844-6.844a2.015 2.015 0 0 1 2.852 0Z"
                         />
                       </svg>
                     </div>
@@ -283,7 +301,26 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
                       className="w-24 h-24 rounded-full object-cover"
                     />
                   ) : (
-                    <div className="w-24 h-24 bg-gray-300 rounded-full" />
+                    <div className="w-full h-full bg-gray-200 flex items-center justify-center rounded-full">
+                      <svg
+                        className="h-6 w-6 text-gray-400"
+                        aria-hidden="true"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M13 10a1 1 0 0 1 1-1h.01a1 1 0 1 1 0 2H14a1 1 0 0 1-1-1Z"
+                          clipRule="evenodd"
+                        />
+                        <path
+                          fillRule="evenodd"
+                          d="M2 6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12c0 .556-.227 1.06-.593 1.422A.999.999 0 0 1 20.5 20H4a2.002 2.002 0 0 1-2-2V6Zm6.892 12 3.833-5.356-3.99-4.322a1 1 0 0 0-1.549.097L4 12.879V6h16v9.95l-3.257-3.619a1 1 0 0 0-1.557.088L11.2 18H8.892Z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </div>
                   )}
                 </div>
               )}
@@ -320,7 +357,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
                 </>
               )}
             </div>
-            {/* 비밀번호 변경 버튼 (편집 상태인데 비밀번호 변경 입력란이 아직 활성화되지 않은 경우) */}
+            {/* 비밀번호 변경 버튼 (편집 모드에서, 비밀번호 변경 입력란이 활성화되지 않은 경우) */}
             {isEditing && !isChangingPassword && (
               <div className="w-full mt-4">
                 <button
@@ -331,7 +368,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
                 </button>
               </div>
             )}
-            {/* Password Change Section (편집 상태이고 비밀번호 변경 입력란 활성화된 경우) */}
+            {/* Password Change Section (편집 모드에서, 비밀번호 변경 입력란 활성화된 경우) */}
             {isEditing && isChangingPassword && (
               <div className="w-full mt-4">
                 <div className="w-full space-y-3">
@@ -377,7 +414,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
                 </div>
               </div>
             )}
-            {/* Birthdate, Gender, paradoxFlag (편집 상태에서는 숨김) */}
+            {/* Birthdate, Gender, paradoxFlag (편집 모드에서는 숨김) */}
             {!isEditing && (
               <div className="w-full text-left mt-4">
                 {profile.birthdate && (
