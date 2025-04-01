@@ -1,28 +1,29 @@
 // /frontend/src/hooks/useUserProfile.ts
 import { useState, useEffect } from "react";
-import { get } from "../services/apiClient";
+import { fetchUserProfile } from "../services/userService";
 import { useUser } from "../contexts/UserContext";
 
-export interface IUserProfile {
+export interface UserProfile {
   uuid: string;
   email: string;
   name: string;
-  profile_picture?: string;
-  birthdate?: string;
   gender?: string;
+  birthdate?: string;
+  paradoxFlag?: boolean;
+  profilePicture?: string;
 }
 
 // 자신의 프로필 정보를 가져오는 훅
 export const useUserProfile = () => {
   const { userUuid } = useUser();
-  const [profile, setProfile] = useState<IUserProfile | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
     if (userUuid) {
       setLoading(true);
-      get<{ success: boolean; profile: IUserProfile }>("/users/profile")
+      fetchUserProfile()
         .then((data) => {
           if (data.success) {
             setProfile(data.profile);

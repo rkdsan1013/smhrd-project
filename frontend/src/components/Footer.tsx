@@ -34,9 +34,9 @@ const Footer: React.FC = () => {
               <div className="text-red-500 text-sm">{error}</div>
             ) : profile ? (
               <>
-                {profile.profile_picture ? (
+                {profile.profilePicture ? (
                   <img
-                    src={profile.profile_picture}
+                    src={profile.profilePicture}
                     alt={profile.name}
                     className="w-12 h-12 rounded-full object-cover"
                   />
