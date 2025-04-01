@@ -15,7 +15,7 @@ interface TeamMember {
 const TeamMemberModal: React.FC = () => {
   const [isOpen, setIsOpen] = useState(true);
 
-  // 샘플 데이터 
+  // 샘플 데이터
   const member: TeamMember = {
     id: 1,
     name: "김민수",
@@ -46,31 +46,21 @@ const TeamMemberModal: React.FC = () => {
         <div className="self-center mb-6">
           <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
             {member.image ? (
-              <img
-                src={member.image}
-                alt={member.name}
-                className="w-full h-full object-cover"
-              />
+              <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
             ) : (
-              <span className="text-2xl text-gray-400">
-                {member.name.charAt(0)}
-              </span>
+              <span className="text-2xl text-gray-400">{member.name.charAt(0)}</span>
             )}
           </div>
         </div>
 
         {/* 2. 사용자 이름 */}
-        <h3 className="text-lg font-semibold text-gray-900 text-center">
-          {member.name}
-        </h3>
+        <h3 className="text-lg font-semibold text-gray-900 text-center">{member.name}</h3>
 
         {/* 3. 사용자 태그 */}
-        <p className="text-sm text-gray-500 text-center mb-4">
-          {member.userTag}
-        </p>
+        <p className="text-sm text-gray-500 text-center mb-4">{member.userTag}</p>
 
         {/* 4. 최근 방문한 지역, 여행 기간, 여행 사진 */}
-          <div className="bg-gray-100 rounded-lg p-4 mb-4">
+        <div className="bg-gray-100 rounded-lg p-4 mb-4">
           {member.travelPhoto && (
             <img
               src={member.travelPhoto}
@@ -78,34 +68,29 @@ const TeamMemberModal: React.FC = () => {
               className="w-full h-32 rounded-lg object-cover"
             />
           )}
-        <div className="space-y-2 mb-4">
-          <p className="text-sm text-gray-700">
-            <span className="font-medium">최근 방문: </span>
-            {member.recentLocation}
-          </p>
-          <p className="text-sm text-gray-700">
-            <span className="font-medium">여행 기간: </span>
-            {member.travelPeriod}
-          </p>
-        </div>
+          <div className="space-y-2 mb-4">
+            <p className="text-sm text-gray-700">
+              <span className="font-medium">최근 방문: </span>
+              {member.recentLocation}
+            </p>
+            <p className="text-sm text-gray-700">
+              <span className="font-medium">여행 기간: </span>
+              {member.travelPeriod}
+            </p>
+          </div>
         </div>
 
         {/* 5. 여행 태그 */}
         <div className="flex flex-wrap gap-2 mb-4">
           {member.travelTags.map((tag, index) => (
-            <span
-              key={index}
-              className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded-full"
-            >
+            <span key={index} className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded-full">
               #{tag}
             </span>
           ))}
         </div>
 
         {/* 6. 사용자 한마디 */}
-        <p className="text-sm text-gray-700 italic text-center">
-          "{member.bio}"
-        </p>
+        <p className="text-sm text-gray-700 italic text-center">"{member.bio}"</p>
       </div>
     </div>
   );

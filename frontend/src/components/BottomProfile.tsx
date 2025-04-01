@@ -31,7 +31,11 @@ const BottomProfile: React.FC = () => {
         <div className="flex items-center space-x-4">
           <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
             {profile?.profile_picture ? (
-              <img src={profile.profile_picture} alt="Profile" className="w-full h-full object-cover" />
+              <img
+                src={profile.profile_picture}
+                alt="Profile"
+                className="w-full h-full object-cover"
+              />
             ) : (
               <span className="text-gray-400 text-sm">사진</span>
             )}
@@ -70,7 +74,9 @@ const BottomProfile: React.FC = () => {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <span className="text-gray-500 text-sm">{friend.name?.charAt(0) || "?"}</span>
+                        <span className="text-gray-500 text-sm">
+                          {friend.name?.charAt(0) || "?"}
+                        </span>
                       )}
                     </div>
                     <span className="text-gray-800">{friend.name}</span>

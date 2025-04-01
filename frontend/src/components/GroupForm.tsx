@@ -22,10 +22,7 @@ const GroupForm: React.FC = () => {
   const [isOpen, setIsOpen] = useState(true);
 
   // 입력값 변경 핸들러
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    field: keyof FormData
-  ) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>, field: keyof FormData) => {
     setFormData({ ...formData, [field]: e.target.value });
   };
 
@@ -88,11 +85,7 @@ const GroupForm: React.FC = () => {
               onChange={handleImageChange}
             />
             {formData.image ? (
-              <img
-                src={formData.image}
-                alt="Group"
-                className="w-full h-full object-cover"
-              />
+              <img src={formData.image} alt="Group" className="w-full h-full object-cover" />
             ) : (
               <span className="text-2xl text-gray-400">+</span>
             )}
@@ -111,7 +104,7 @@ const GroupForm: React.FC = () => {
               value={formData.name}
               onChange={(e) => handleInputChange(e, "name")}
               className="w-full mt-1 p-3 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500"
-              />
+            />
           </div>
 
           <div>
@@ -122,7 +115,7 @@ const GroupForm: React.FC = () => {
               value={formData.description}
               onChange={(e) => handleInputChange(e, "description")}
               className="w-full mt-1 p-3 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500"
-              />
+            />
           </div>
 
           <div>
@@ -134,7 +127,7 @@ const GroupForm: React.FC = () => {
               value={formData.maxMembers}
               onChange={(e) => handleInputChange(e, "maxMembers")}
               className="w-full mt-1 p-3 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500"
-              />
+            />
           </div>
 
           <div>
@@ -145,7 +138,7 @@ const GroupForm: React.FC = () => {
               value={formData.hashtag}
               onChange={(e) => handleInputChange(e, "hashtag")}
               className="w-full mt-1 p-3 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500"
-              />
+            />
           </div>
 
           {/* 토글 스위치 */}
@@ -156,23 +149,23 @@ const GroupForm: React.FC = () => {
                 formData.isPublic ? "bg-blue-500" : "bg-gray-300"
               }`}
               onClick={togglePublic}
-              >
+            >
               <div
                 className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform ${
                   formData.isPublic ? "translate-x-5" : "translate-x-0"
                 }`}
-                />
+              />
             </div>
           </div>
         </div>
 
-          {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
         {/* 버튼 */}
         <div className="mt-6 flex space-x-2">
           <button
             className="flex-1 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors"
             onClick={handleSubmit}
-            >
+          >
             만들기
           </button>
           <button

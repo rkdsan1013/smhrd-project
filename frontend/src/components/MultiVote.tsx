@@ -1,29 +1,27 @@
-import React, { useState } from "react";
+// /frontend/src/components/MultiVote.tsx
+import React, { useState, useEffect } from "react";
+import { fetchVote, voteMulti } from "../services/voteService";
 
-interface VoteOption {
-  id: number;
-  text: string;
-  votes: number; // 투표 수
+interface MultiVoteProps {
+  voteUuid: string; // prop 타입 정의
 }
 
-interface MultiVoteData {
-  id: number;
-  title: string;
-  options: VoteOption[];
-}
-
-const MultiVote: React.FC = () => {
+const MultiVote: React.FC<MultiVoteProps> = ({ voteUuid }) => {
   const [isOpen, setIsOpen] = useState(true);
-  const [voteData, setVoteData] = useState<MultiVoteData>({
-    id: 1,
-    title: "다음 여행지 추천",
-    options: [
-      { id: 1, text: "제주도", votes: 3 },
-      { id: 2, text: "부산", votes: 5 },
-      { id: 3, text: "강원도", votes: 2 },
-    ],
-  });
-  const [hasVoted, setHasVoted] = useState(false); // 투표 여부 상태
+  const [voteData, setVoteData] = useState<any>(null);
+  const [hasVoted, setHasVoted] = useState(false);
+
+  useEffect(() => {
+    const loadVote = async () => {
+      try {
+        const response = await fetchVote(voteUuid);
+        setVoteData(response.vote);
+      } catch (err) {
+        console.error("투표 조회 실패:", err);
+      }
+    };
+    loadVote();
+  }, [voteUuid]);
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
@@ -31,21 +29,26 @@ const MultiVote: React.FC = () => {
     }
   };
 
-  const handleVote = (optionId: number) => {
+  const handleVote = async (optionUuid: string) => {
     if (!hasVoted) {
-      const updatedOptions = voteData.options.map((option) =>
-        option.id === optionId ? { ...option, votes: option.votes + 1 } : option
-      );
-      setVoteData({ ...voteData, options: updatedOptions });
-      setHasVoted(true);
-      console.log(`투표: ${voteData.options.find((opt) => opt.id === optionId)?.text}`);
+      try {
+        await voteMulti(voteUuid, { optionUuid });
+        const updatedOptions = voteData.options.map((opt: any) =>
+          opt.uuid === optionUuid ? { ...opt, votes: opt.votes + 1 } : opt,
+        );
+        setVoteData({ ...voteData, options: updatedOptions });
+        setHasVoted(true);
+        console.log(`투표: ${voteData.options.find((opt: any) => opt.uuid === optionUuid)?.text}`);
+      } catch (err) {
+        console.error("투표 실패:", err);
+      }
     }
   };
 
-  const totalVotes = voteData.options.reduce((sum, opt) => sum + opt.votes, 0);
-  const getPercentage = (votes: number) => (totalVotes > 0 ? (votes / totalVotes) * 100 : 0);
+  if (!isOpen || !voteData) return null;
 
-  if (!isOpen) return null;
+  const totalVotes = voteData.options.reduce((sum: number, opt: any) => sum + opt.votes, 0);
+  const getPercentage = (votes: number) => (totalVotes > 0 ? (votes / totalVotes) * 100 : 0);
 
   return (
     <div
@@ -53,21 +56,16 @@ const MultiVote: React.FC = () => {
       onClick={handleBackdropClick}
     >
       <div className="w-[360px] h-flex-fill bg-white rounded-2xl p-6 flex flex-col">
-        {/* 투표 제목 */}
-        <h3 className="text-lg font-semibold text-gray-900 text-center mb-6">
-          {voteData.title}
-        </h3>
-
-        {/* 투표 옵션 목록 */}
+        <h3 className="text-lg font-semibold text-gray-900 text-center mb-6">{voteData.title}</h3>
         <div className="space-y-4 flex-1 overflow-y-auto">
-          {voteData.options.map((option) => (
-            <div key={option.id} className="flex flex-col">
+          {voteData.options.map((option: any) => (
+            <div key={option.uuid} className="flex flex-col">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm text-gray-700">{option.text}</span>
                 {!hasVoted ? (
                   <button
                     className="px-4 py-1 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
-                    onClick={() => handleVote(option.id)}
+                    onClick={() => handleVote(option.uuid)}
                   >
                     선택
                   </button>

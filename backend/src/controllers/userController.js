@@ -90,7 +90,7 @@ exports.getFriends = async (req, res) => {
           name: profile.name,
           profile_picture: profile.profile_picture || null, // 이미 formatProfile 있음
         };
-      })
+      }),
     );
 
     res.json({ success: true, friends });

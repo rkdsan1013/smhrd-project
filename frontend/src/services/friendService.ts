@@ -13,6 +13,8 @@ export const fetchFriends = async (uuid: string): Promise<FriendsResponse> => {
 };
 
 // 친구 정보 조회
-export const fetchFriendProfile = async (friendUuid: string): Promise<{ profile: IUserProfile }> => {
+export const fetchFriendProfile = async (
+  friendUuid: string,
+): Promise<{ profile: IUserProfile }> => {
   return get<{ profile: IUserProfile }>(`/users/${friendUuid}`, { withCredentials: true });
 };

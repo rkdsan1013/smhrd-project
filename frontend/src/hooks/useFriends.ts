@@ -1,6 +1,6 @@
 // /frontend/src/hooks/useFriends.ts
 import { useState } from "react";
-import { fetchFriends } from "../services/userService";
+import { fetchFriends } from "../services/friendService";
 
 export interface Friend {
   uuid: string;

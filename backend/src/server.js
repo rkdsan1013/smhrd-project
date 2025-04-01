@@ -10,6 +10,7 @@ dotenv.config();
 
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
+const voteRoutes = require("./routes/voteRoutes");
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 // API 라우트 설정
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/votes", voteRoutes);
 
 // 글로벌 에러 핸들러 미들웨어
 app.use((err, req, res, next) => {
