@@ -1,3 +1,4 @@
+// /backend/src/utils/validators.js
 const validator = require("validator");
 
 const MIN_EMAIL_LENGTH = 5;

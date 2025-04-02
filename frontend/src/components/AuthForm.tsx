@@ -1,4 +1,4 @@
-// /frontend/src/AuthForm.tsx
+// /frontend/src/components/AuthForm.tsx
 import React, {
   useEffect,
   useRef,
