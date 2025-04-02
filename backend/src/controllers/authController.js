@@ -194,3 +194,49 @@ exports.changePassword = async (req, res) => {
     res.status(500).json({ message: "비밀번호 변경 중 오류가 발생했습니다." });
   }
 };
+
+exports.withdrawAccount = async (req, res) => {
+  const { password } = req.body; // 탈퇴 확인용 비밀번호
+
+  if (!password) {
+    return res.status(400).json({ message: "비밀번호를 입력해주세요." });
+  }
+
+  // 탈퇴 요청 시에도 새 비밀번호와 동일하게 검증하여 보안을 강화할 수 있음
+  const passValidation = validatePassword(password);
+  if (!passValidation.valid) {
+    return res
+      .status(400)
+      .json({ message: passValidation.message || "비밀번호가 유효하지 않습니다." });
+  }
+
+  try {
+    const uuid = req.user.uuid;
+    // 사용자 조회: 비밀번호가 포함된 사용자 정보를 가져오기 위해 getUserByUuid 사용
+    const results = await userModel.getUserByUuid(uuid);
+    if (!results || results.length === 0) {
+      return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+    }
+    const user = results[0];
+
+    // 입력한 비밀번호와 저장된 비밀번호 해시 비교
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "비밀번호가 일치하지 않습니다." });
+    }
+
+    // 사용자 탈퇴 처리: 실제 삭제할 것인지, 비활성화 처리할 것인지에 따라 로직 구현
+    // 예시로, users 테이블에서 사용자를 삭제하는 로직을 가정 (실제 구현 시, Soft Delete를 많이 사용합니다.)
+    const deleteResult = await userModel.deleteUserByUuid(uuid);
+    if (deleteResult.affectedRows === 0) {
+      return res.status(500).json({ message: "회원 탈퇴 처리 중 오류가 발생했습니다." });
+    }
+
+    // 쿠키 삭제 등 로그아웃 처리
+    res.clearCookie("accessToken").clearCookie("refreshToken");
+    res.json({ success: true, message: "회원 탈퇴가 완료되었습니다." });
+  } catch (error) {
+    console.error("[withdrawAccount] Error:", error);
+    res.status(500).json({ message: "회원 탈퇴 처리 중 오류가 발생했습니다." });
+  }
+};

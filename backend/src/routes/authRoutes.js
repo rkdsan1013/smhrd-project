@@ -19,4 +19,7 @@ router.get("/me", verifyToken, authController.getCurrentUser);
 // 비밀번호 변경: 인증된 사용자만 접근
 router.patch("/change-password", verifyToken, authController.changePassword);
 
+// 회원 탈퇴 처리: 인증된 사용자만 접근
+router.post("/withdraw", verifyToken, authController.withdrawAccount);
+
 module.exports = router;

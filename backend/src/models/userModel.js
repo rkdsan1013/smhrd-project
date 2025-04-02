@@ -6,6 +6,7 @@ const {
   updateUserProfile,
   getProfileByUuid,
   changeUserPassword,
+  deleteUserByUuid,
 } = require("./userQueries");
 
 const { signUpUser } = require("./userTransactions");
@@ -18,4 +19,5 @@ module.exports = {
   signUpUser,
   getProfileByUuid,
   changeUserPassword,
+  deleteUserByUuid,
 };

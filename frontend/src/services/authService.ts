@@ -13,6 +13,12 @@ export interface PasswordChangeResponse {
   message?: string;
 }
 
+// 회원 탈퇴 응답 인터페이스
+export interface WithdrawResponse {
+  success: boolean;
+  message?: string;
+}
+
 // 이메일 중복 확인
 export const checkEmailExists = async (email: string): Promise<boolean> => {
   const data = await post<{ exists: boolean }>("/auth/check-email", { email });
@@ -41,9 +47,15 @@ export const logout = async (): Promise<{ success: boolean }> => {
   return post<{ success: boolean }>("/auth/logout", {});
 };
 
+// 비밀번호 변경 처리
 export const changePassword = async (
   currentPassword: string,
   newPassword: string,
 ): Promise<PasswordChangeResponse> => {
   return patch<PasswordChangeResponse>("/auth/change-password", { currentPassword, newPassword });
+};
+
+// 회원 탈퇴 처리
+export const withdrawAccount = async (password: string): Promise<WithdrawResponse> => {
+  return post<WithdrawResponse>("/auth/withdraw", { password });
 };

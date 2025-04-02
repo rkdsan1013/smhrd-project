@@ -68,6 +68,12 @@ const changeUserPassword = async (uuid, newPassword) => {
   return result;
 };
 
+const deleteUserByUuid = async (uuid) => {
+  const sql = "DELETE FROM users WHERE uuid = :uuid";
+  const [result] = await pool.query(sql, { uuid });
+  return result;
+};
+
 module.exports = {
   getUserByEmail,
   getUserByUuid,
@@ -75,4 +81,5 @@ module.exports = {
   updateUserProfile,
   getProfileByUuid,
   changeUserPassword,
+  deleteUserByUuid,
 };

@@ -1,7 +1,6 @@
 // /frontend/src/components/ProfileCard.tsx
 import React, { useState, useEffect, useLayoutEffect, useRef, ChangeEvent } from "react";
-import { logout } from "../services/authService";
-import { changePassword } from "../services/authService";
+import { logout, changePassword, withdrawAccount } from "../services/authService";
 import { updateUserProfile } from "../services/userService";
 import { validateName, validatePassword } from "../utils/validators";
 import { useUserProfile } from "../contexts/UserProfileContext";
@@ -221,15 +220,27 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
   };
 
   // 탈퇴 확인 화면에서 "탈퇴" 버튼 클릭 시 입력값 검증 후 처리 (validator 사용)
-  const handleConfirmWithdraw = () => {
+  const handleConfirmWithdraw = async () => {
+    // 입력한 비밀번호 검증
     const passResult = validatePassword(withdrawPassword);
     if (!passResult.valid) {
       setFormError(passResult.message || "비밀번호가 유효하지 않습니다.");
       return;
     }
-    // 탈퇴 처리 로직 (실제 API 호출 등 추가 가능)
-    alert("회원 탈퇴 처리되었습니다.");
-    onLogout();
+
+    try {
+      // API 호출해서 회원 탈퇴 처리 (백엔드의 /auth/withdraw 엔드포인트)
+      const response = await withdrawAccount(withdrawPassword);
+      if (response.success) {
+        alert("회원 탈퇴 처리되었습니다.");
+        await logout(); // 로그아웃 처리
+        window.dispatchEvent(new CustomEvent("userSignedOut"));
+      } else {
+        setFormError(response.message || "회원 탈퇴에 실패했습니다.");
+      }
+    } catch (error: any) {
+      setFormError(error.message || "회원 탈퇴 중 오류가 발생했습니다.");
+    }
   };
 
   // 계정 관리 모드에서 "돌아가기" 버튼 클릭
