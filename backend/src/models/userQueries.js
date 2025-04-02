@@ -27,8 +27,25 @@ const getProfileByUuid = async (uuid) => {
   return rows[0];
 };
 
+// 사용자 프로필 업데이트 (이름, 프로필 사진 업데이트)
+const updateUserProfile = async (uuid, { name, profilePicture }) => {
+  const sql = `
+    UPDATE user_profiles 
+    SET name = :name,
+        profile_picture = :profilePicture
+    WHERE uuid = :uuid
+  `;
+  const [result] = await pool.query(sql, { name, profilePicture, uuid });
+
+  // 업데이트 후 DB에서 최신 프로필을 조회하여 반환
+  if (result.affectedRows === 0) return null;
+  const [rows] = await pool.query("SELECT * FROM user_profiles WHERE uuid = :uuid", { uuid });
+  return rows[0];
+};
+
 module.exports = {
   getUserByEmail,
   updateUserProfilePicture,
+  updateUserProfile, // 새로 추가
   getProfileByUuid,
 };
