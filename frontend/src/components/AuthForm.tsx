@@ -1,5 +1,15 @@
 // /frontend/src/AuthForm.tsx
-import React, { useEffect, useRef, useState, useCallback, useLayoutEffect } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  useLayoutEffect,
+  ChangeEvent,
+  FocusEvent,
+  KeyboardEvent,
+  FormEvent,
+} from "react";
 import { validateEmail, validatePassword, validateFullProfile } from "../utils/validators";
 import { formatYear, formatTwoDigits, getMaxDay } from "../utils/dateUtils";
 import { checkEmailExists, signIn, signUp } from "../services/authService";
@@ -20,7 +30,7 @@ const labelClass =
   "absolute left-0 top-4 z-10 text-sm text-gray-500 whitespace-nowrap origin-top-left duration-300 transform -translate-y-6 scale-75 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100 peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600";
 
 const AuthForm: React.FC = () => {
-  // 상태 변수
+  // 상태 변수 그룹
   const [formState, setFormState] = useState<FormState>("start");
   const [errorMsg, setErrorMsg] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -38,7 +48,7 @@ const AuthForm: React.FC = () => {
   const [showOverride, setShowOverride] = useState(false);
   const [hasMounted, setHasMounted] = useState(false);
 
-  // ref
+  // ref 그룹
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
@@ -48,17 +58,22 @@ const AuthForm: React.FC = () => {
   const cardOuterRef = useRef<HTMLDivElement>(null);
   const cardInnerRef = useRef<HTMLDivElement>(null);
 
-  // 초기 마운트 플래그 설정 및 포커스 관리
+  // 초기 마운트 및 포커스 관리
   useEffect(() => {
     setHasMounted(true);
   }, []);
+
   useEffect(() => {
-    if (formState === "start") emailRef.current?.focus();
-    else if (formState === "signin" || formState === "signup") passwordRef.current?.focus();
-    else if (formState === "profile") nameRef.current?.focus();
+    if (formState === "start") {
+      emailRef.current?.focus();
+    } else if (formState === "signin" || formState === "signup") {
+      passwordRef.current?.focus();
+    } else if (formState === "profile") {
+      nameRef.current?.focus();
+    }
   }, [formState]);
 
-  // 생일 보정
+  // 생일 입력 값 보정
   useEffect(() => {
     if (birthYear && birthMonth && birthDay) {
       const y = parseInt(birthYear, 10);
@@ -72,24 +87,28 @@ const AuthForm: React.FC = () => {
     }
   }, [birthYear, birthMonth, birthDay]);
 
-  // 헬퍼 함수
+  // 공통 헬퍼 함수
   const formatError = (error: unknown): string =>
     error instanceof Error ? error.message.replace(/^Error:\s*/, "") : String(error);
 
+  // 입력값 변경 공통 핸들러 (불필요한 중복 제거)
   const handleChange = useCallback(
     (setter: React.Dispatch<React.SetStateAction<string>>) =>
-      (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setter(e.target.value);
         setErrorMsg("");
       },
     [],
   );
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (formState !== "start" && e.key === "Escape") handleBack();
+  // 키보드 이벤트 핸들러
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (formState !== "start" && e.key === "Escape") {
+      handleBack();
+    }
   };
 
-  // 뒤로가기 처리
+  // 뒤로가기 처리 - 상태에 따라 초기화할 변수들을 그룹화
   const handleBack = useCallback(() => {
     if (formState === "profile") {
       setFormState("signup");
@@ -110,8 +129,8 @@ const AuthForm: React.FC = () => {
     setErrorMsg("");
   }, [formState]);
 
-  // 파일 선택 처리
-  const handleProfilePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 파일 선택 처리 및 미리보기 생성
+  const handleProfilePictureChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setProfilePicture(file);
@@ -121,8 +140,8 @@ const AuthForm: React.FC = () => {
     }
   };
 
-  // 생일 입력 핸들러
-  const handleBirthYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 생일 입력 관련 개별 핸들러
+  const handleBirthYearChange = (e: ChangeEvent<HTMLInputElement>) => {
     setShowOverride(false);
     setParadoxFlag(false);
     const val = e.target.value.replace(/[^0-9]/g, "").slice(0, 4);
@@ -130,10 +149,14 @@ const AuthForm: React.FC = () => {
     setErrorMsg("");
     if (val.length === 4) birthMonthRef.current?.focus();
   };
-  const handleBirthYearBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    if (e.target.value && e.target.value.length < 4) setBirthYear(formatYear(e.target.value));
+
+  const handleBirthYearBlur = (e: FocusEvent<HTMLInputElement>) => {
+    if (e.target.value && e.target.value.length < 4) {
+      setBirthYear(formatYear(e.target.value));
+    }
   };
-  const handleBirthMonthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+
+  const handleBirthMonthChange = (e: ChangeEvent<HTMLInputElement>) => {
     setShowOverride(false);
     setParadoxFlag(false);
     const val = e.target.value.replace(/[^0-9]/g, "").slice(0, 2);
@@ -141,31 +164,37 @@ const AuthForm: React.FC = () => {
     setErrorMsg("");
     if (val.length === 2) birthDayRef.current?.focus();
   };
-  const handleBirthMonthBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    if (e.target.value) setBirthMonth(formatTwoDigits(e.target.value, 12));
+
+  const handleBirthMonthBlur = (e: FocusEvent<HTMLInputElement>) => {
+    if (e.target.value) {
+      setBirthMonth(formatTwoDigits(e.target.value, 12));
+    }
   };
-  const handleBirthDayChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+
+  const handleBirthDayChange = (e: ChangeEvent<HTMLInputElement>) => {
     setShowOverride(false);
     setParadoxFlag(false);
     const val = e.target.value.replace(/[^0-9]/g, "").slice(0, 2);
     setBirthDay(val);
     setErrorMsg("");
   };
-  const handleBirthDayBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+
+  const handleBirthDayBlur = (e: FocusEvent<HTMLInputElement>) => {
     const current = e.target.value;
-    if (!current) setBirthDay("");
-    else {
+    if (!current) {
+      setBirthDay("");
+    } else {
       let maxDay = 31;
       if (birthYear && birthMonth) maxDay = getMaxDay(birthYear, birthMonth);
       setBirthDay(formatTwoDigits(current, maxDay));
     }
   };
 
-  // 제출 관련 함수
+  // 제출 관련 함수 (폼 상태별로 분기)
   const handleStartSubmit = async () => {
     const emailValidation = validateEmail(email);
     if (!emailValidation.valid) {
-      setErrorMsg(emailValidation.message || "유효한 이메일 주소를 입력해주세요.");
+      setErrorMsg(emailValidation.message || "유효한 이메일 주소를 입력해 주세요.");
       return;
     }
     try {
@@ -184,8 +213,11 @@ const AuthForm: React.FC = () => {
     }
     try {
       const resp = await signIn(email, password);
-      if (resp.success) handleAuthSuccess(resp, "로그인 성공:");
-      else setErrorMsg("로그인에 실패했습니다.");
+      if (resp.success) {
+        handleAuthSuccess(resp, "로그인 성공:");
+      } else {
+        setErrorMsg("로그인에 실패하였습니다.");
+      }
     } catch (error) {
       setErrorMsg(formatError(error));
     }
@@ -194,7 +226,7 @@ const AuthForm: React.FC = () => {
   const handleSignUpSubmit = async () => {
     const emailValidation = validateEmail(email);
     if (!emailValidation.valid) {
-      setErrorMsg(emailValidation.message || "유효한 이메일 주소를 입력해주세요.");
+      setErrorMsg(emailValidation.message || "유효한 이메일 주소를 입력해 주세요.");
       return;
     }
     const passwordValidation = validatePassword(password);
@@ -220,7 +252,7 @@ const AuthForm: React.FC = () => {
     );
     if (!profileValidation.valid) {
       if (profileValidation.requiresOverride) setShowOverride(true);
-      setErrorMsg(profileValidation.message || "프로필 정보를 확인해주세요.");
+      setErrorMsg(profileValidation.message || "프로필 정보를 확인해 주세요.");
       return;
     }
     setShowOverride(false);
@@ -238,19 +270,24 @@ const AuthForm: React.FC = () => {
       formData.append("paradox_flag", paradoxFlag ? "1" : "0");
       if (profilePicture) formData.append("profilePicture", profilePicture);
       const resp = await signUp(formData);
-      if (resp.success) handleAuthSuccess(resp, "회원가입 성공:");
-      else setErrorMsg("회원가입에 실패했습니다.");
+      if (resp.success) {
+        handleAuthSuccess(resp, "회원가입 성공:");
+      } else {
+        setErrorMsg("회원가입에 실패하였습니다.");
+      }
     } catch (error) {
       setErrorMsg(formatError(error));
     }
   };
 
+  // 인증 성공 후 처리
   const handleAuthSuccess = (resp: { user?: { uuid: string; email: string } }, msg: string) => {
     console.log(msg, resp);
     window.dispatchEvent(new CustomEvent("userSignedIn", { detail: { user: resp.user } }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // 폼 제출 핸들러
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
     setIsLoading(true);
@@ -264,7 +301,7 @@ const AuthForm: React.FC = () => {
     }
   };
 
-  // 폼 높이 애니메이션
+  // 카드 높이 애니메이션 (폼 컨테이너)
   useLayoutEffect(() => {
     const outer = cardOuterRef.current;
     const inner = cardInnerRef.current;
@@ -409,7 +446,7 @@ const AuthForm: React.FC = () => {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth="2"
-                          d="m14.304 4.844 2.852 2.852M7 7H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-4.5m2.409-9.91a2.017 2.017 0 0 1 0 2.853l-6.844 6.844L8 14l.713-3.565 6.844-6.844a2.015 2.015 0 0 1 2.852 0Z"
+                          d="m14.304 4.844 2.852 2.852M7 7H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-4.5"
                         />
                       </svg>
                     </div>
@@ -503,7 +540,6 @@ const AuthForm: React.FC = () => {
                         />
                         <span>남성</span>
                       </label>
-
                       <label
                         className={`flex items-center justify-center w-24 py-2 border rounded-lg transition-colors duration-300 ease-in-out focus-within:ring-2 focus-within:ring-blue-300 cursor-pointer ${
                           gender === "female"
