@@ -30,7 +30,6 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
 
   const [receivedRequests, setReceivedRequests] = useState<ReceivedFriendRequest[]>([]);
 
-  // 친구 목록 불러오기
   useEffect(() => {
     if (activeTab === "list" && !isAdding) {
       const loadFriends = async () => {
@@ -48,7 +47,6 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
     }
   }, [isAdding, activeTab]);
 
-  // 친구 요청 목록 불러오기
   useEffect(() => {
     if (activeTab === "requests") {
       const loadRequests = async () => {
@@ -63,13 +61,26 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
     }
   }, [activeTab]);
 
+  const sortSearchResults = (list: SearchResultUser[]) => {
+    return [...list].sort((a, b) => {
+      const weight = (status: string | null | undefined) => {
+        if (!status) return 0;
+        if (status === "pending") return 1;
+        if (status === "accepted") return 2;
+        return 3;
+      };
+      return weight(a.friendStatus) - weight(b.friendStatus);
+    });
+  };
+
   const handleSearch = async () => {
     if (!searchKeyword.trim()) return;
     try {
       setSearchLoading(true);
       setSearchError("");
       const results = await searchUsers(searchKeyword);
-      setSearchResults(results);
+      const sorted = sortSearchResults(results);
+      setSearchResults(sorted);
     } catch (err: any) {
       setSearchError(err.message || "검색 실패");
     } finally {
@@ -117,7 +128,6 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-lg w-80">
-      {/* 헤더 */}
       <div className="flex items-center justify-between p-3">
         <div className="flex w-full">
           <button
@@ -152,67 +162,69 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
         </button>
       </div>
 
-      {/* 본문 */}
-      <div className="p-4 max-h-72 overflow-y-auto">
-        {/* 친구 목록 탭 */}
+      <div className="p-4">
         {activeTab === "list" && (
           <>
             {isAdding ? (
-              <div className="space-y-3">
-                <div className="flex space-x-2">
-                  <input
-                    type="text"
-                    value={searchKeyword}
-                    onChange={(e) => setSearchKeyword(e.target.value)}
-                    placeholder="이메일 또는 이름으로 검색"
-                    className="flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  />
-                  <button
-                    onClick={handleSearch}
-                    className="px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
-                  >
-                    검색
-                  </button>
+              <>
+                <div className="space-y-3 mb-3">
+                  <div className="flex space-x-2">
+                    <input
+                      type="text"
+                      value={searchKeyword}
+                      onChange={(e) => setSearchKeyword(e.target.value)}
+                      placeholder="이메일 또는 이름으로 검색"
+                      className="flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    />
+                    <button
+                      onClick={handleSearch}
+                      className="px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
+                    >
+                      검색
+                    </button>
+                  </div>
                 </div>
 
-                {searchLoading ? (
-                  <p className="text-center text-gray-500">검색 중...</p>
-                ) : searchError ? (
-                  <p className="text-red-500 text-center">{searchError}</p>
-                ) : searchResults.length === 0 ? (
-                  <p className="text-center text-gray-500 text-sm">검색 결과 없음</p>
-                ) : (
-                  <ul className="space-y-4">
-                    {searchResults.map((user) => (
-                      <li key={user.uuid} className="flex items-center justify-between space-x-3">
-                        <div>
-                          <p className="font-semibold">{user.name}</p>
-                          <p className="text-sm text-gray-500">{user.email}</p>
-                        </div>
-                        <button
-                          disabled={
-                            user.friendStatus === "pending" || user.friendStatus === "accepted"
-                          }
-                          onClick={() => handleSendFriendRequest(user.uuid)}
-                          className={`px-2 py-1 text-sm rounded ${
-                            user.friendStatus === "accepted"
-                              ? "bg-gray-300 text-gray-400 cursor-not-allowed"
+                <div className="h-60 overflow-y-auto pr-1">
+                  {searchLoading ? (
+                    <p className="text-center text-gray-500">검색 중...</p>
+                  ) : searchError ? (
+                    <p className="text-red-500 text-center">{searchError}</p>
+                  ) : searchResults.length === 0 ? (
+                    <p className="text-center text-gray-500 text-sm">검색 결과 없음</p>
+                  ) : (
+                    <ul className="space-y-4">
+                      {searchResults.map((user) => (
+                        <li key={user.uuid} className="flex items-center justify-between space-x-3">
+                          <div>
+                            <p className="font-semibold">{user.name}</p>
+                            <p className="text-sm text-gray-500">{user.email}</p>
+                          </div>
+                          <button
+                            disabled={
+                              user.friendStatus === "pending" || user.friendStatus === "accepted"
+                            }
+                            onClick={() => handleSendFriendRequest(user.uuid)}
+                            className={`px-2 py-1 text-sm rounded ${
+                              user.friendStatus === "accepted"
+                                ? "bg-gray-300 text-gray-400 cursor-not-allowed"
+                                : user.friendStatus === "pending"
+                                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                : "bg-green-500 text-white hover:bg-green-600"
+                            }`}
+                          >
+                            {user.friendStatus === "accepted"
+                              ? "친구"
                               : user.friendStatus === "pending"
-                              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                              : "bg-green-500 text-white hover:bg-green-600"
-                          }`}
-                        >
-                          {user.friendStatus === "accepted"
-                            ? "이미 친구"
-                            : user.friendStatus === "pending"
-                            ? "요청됨"
-                            : "친구 요청"}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+                              ? "요청됨"
+                              : "친구 요청"}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </>
             ) : loading ? (
               <p className="text-center text-gray-500 text-sm">불러오는 중...</p>
             ) : error ? (
@@ -220,7 +232,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
             ) : friends.length === 0 ? (
               <p className="text-center text-gray-500 text-sm">친구가 없습니다.</p>
             ) : (
-              <ul className="space-y-4">
+              <ul className="space-y-4 max-h-60 overflow-y-auto pr-1">
                 {friends.map((friend) => (
                   <li key={friend.uuid} className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
@@ -250,9 +262,8 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
           </>
         )}
 
-        {/* 친구 요청 탭 */}
         {activeTab === "requests" && (
-          <div className="space-y-4">
+          <div className="space-y-4 max-h-72 overflow-y-auto pr-1">
             {receivedRequests.length === 0 ? (
               <p className="text-center text-gray-500 text-sm">받은 친구 요청이 없습니다.</p>
             ) : (
