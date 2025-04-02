@@ -1,6 +1,7 @@
 // /frontend/src/components/ProfileCard.tsx
 import React, { useState, useEffect, useLayoutEffect, useRef, ChangeEvent } from "react";
 import { logout } from "../services/authService";
+import { changePassword } from "../services/authService";
 import { updateUserProfile } from "../services/userService";
 import { validateName, validatePassword } from "../utils/validators";
 import { useUserProfile } from "../contexts/UserProfileContext";
@@ -134,9 +135,9 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     );
   };
 
-  // 수정 내용 저장 (프로필 수정 또는 비밀번호 변경)
   const onSaveEdit = async () => {
     if (!isEditing) return;
+
     if (isChangingPassword) {
       if (!currentPassword.trim()) {
         setFormError("현재 비밀번호를 입력해주세요.");
@@ -151,8 +152,24 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
         setFormError("변경할 비밀번호가 서로 일치하지 않습니다.");
         return;
       }
-      // 비밀번호 변경 처리 예시
-      alert("비밀번호가 변경되었습니다.");
+
+      // 비밀번호 변경 처리 로직: API 호출
+      try {
+        const response = await changePassword(currentPassword, newPassword);
+        if (response.success) {
+          alert("비밀번호가 변경되었습니다.");
+          // 비밀번호 변경 성공 시 입력값 초기화 후 비밀번호 변경 폼 종료
+          setIsChangingPassword(false);
+          setCurrentPassword("");
+          setNewPassword("");
+          setConfirmNewPassword("");
+          setFormError("");
+        } else {
+          setFormError(response.message || "비밀번호 변경에 실패했습니다.");
+        }
+      } catch (error: any) {
+        setFormError(error.message || "비밀번호 변경 중 오류가 발생했습니다.");
+      }
     } else {
       const nameResult = validateName(editedName);
       if (!nameResult.valid) {

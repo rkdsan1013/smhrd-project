@@ -16,4 +16,7 @@ router.post("/refresh", authController.refreshToken);
 router.post("/logout", authController.logout);
 router.get("/me", verifyToken, authController.getCurrentUser);
 
+// 비밀번호 변경: 인증된 사용자만 접근
+router.patch("/change-password", verifyToken, authController.changePassword);
+
 module.exports = router;

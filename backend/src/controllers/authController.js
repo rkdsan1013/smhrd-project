@@ -155,3 +155,42 @@ exports.logout = (req, res) => {
   res.clearCookie("accessToken").clearCookie("refreshToken");
   res.json({ success: true, message: "로그아웃되었습니다." });
 };
+
+// 비밀번호 변경 처리
+exports.changePassword = async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ message: "현재 비밀번호와 새 비밀번호를 모두 입력해주세요." });
+  }
+
+  const newPassValidation = validatePassword(newPassword);
+  if (!newPassValidation.valid) {
+    return res
+      .status(400)
+      .json({ message: newPassValidation.message || "새 비밀번호가 유효하지 않습니다." });
+  }
+
+  try {
+    const uuid = req.user.uuid;
+    // getUserByUuid를 사용하여 password를 포함한 사용자 정보를 조회
+    const results = await userModel.getUserByUuid(uuid);
+    if (!results || results.length === 0) {
+      return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+    }
+    const user = results[0];
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "현재 비밀번호가 일치하지 않습니다." });
+    }
+
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+    await userModel.changeUserPassword(uuid, hashedNewPassword);
+
+    res.json({ success: true, message: "비밀번호가 성공적으로 변경되었습니다." });
+  } catch (error) {
+    console.error("[changePassword] Error:", error);
+    res.status(500).json({ message: "비밀번호 변경 중 오류가 발생했습니다." });
+  }
+};

@@ -8,6 +8,12 @@ const getUserByEmail = async (email) => {
   return rows;
 };
 
+const getUserByUuid = async (uuid) => {
+  const sql = "SELECT uuid, email, password FROM users WHERE uuid = :uuid";
+  const [rows] = await pool.query(sql, { uuid });
+  return rows;
+};
+
 // 사용자 프로필 사진 업데이트
 const updateUserProfilePicture = async (uuid, profilePicture) => {
   const sql = "UPDATE user_profiles SET profile_picture = :profilePicture WHERE uuid = :uuid";
@@ -55,9 +61,18 @@ const updateUserProfile = async (uuid, updateData) => {
   return rows[0];
 };
 
+// 사용자의 UUID와 새 해시된 비밀번호를 받아서 'users' 테이블의 password 값을 업데이트
+const changeUserPassword = async (uuid, newPassword) => {
+  const sql = "UPDATE users SET password = :newPassword WHERE uuid = :uuid";
+  const [result] = await pool.query(sql, { newPassword, uuid });
+  return result;
+};
+
 module.exports = {
   getUserByEmail,
+  getUserByUuid,
   updateUserProfilePicture,
   updateUserProfile,
   getProfileByUuid,
+  changeUserPassword,
 };

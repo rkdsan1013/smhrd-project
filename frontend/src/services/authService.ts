@@ -1,10 +1,16 @@
 // /frontend/src/services/authService.ts
-import { post } from "./apiClient";
+import { post, patch } from "./apiClient";
 
 // 인증 응답 인터페이스
 export interface AuthResponse {
   success: boolean;
   user?: { uuid: string; email: string };
+}
+
+// 비밀번호 변경 응답 인터페이스
+export interface PasswordChangeResponse {
+  success: boolean;
+  message?: string;
 }
 
 // 이메일 중복 확인
@@ -33,4 +39,11 @@ export const refreshTokens = async (renewRefresh: boolean): Promise<AuthResponse
 // 로그아웃 처리
 export const logout = async (): Promise<{ success: boolean }> => {
   return post<{ success: boolean }>("/auth/logout", {});
+};
+
+export const changePassword = async (
+  currentPassword: string,
+  newPassword: string,
+): Promise<PasswordChangeResponse> => {
+  return patch<PasswordChangeResponse>("/auth/change-password", { currentPassword, newPassword });
 };
