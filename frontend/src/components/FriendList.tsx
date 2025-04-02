@@ -126,6 +126,10 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
     }
   };
 
+  const handleFriendClick = (uuid: string) => {
+    alert(`친구 UUID: ${uuid}`);
+  };
+
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-lg w-80">
       <div className="flex items-center justify-between p-3">
@@ -195,30 +199,35 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                   ) : (
                     <ul className="space-y-4">
                       {searchResults.map((user) => (
-                        <li key={user.uuid} className="flex items-center justify-between space-x-3">
-                          <div>
-                            <p className="font-semibold">{user.name}</p>
-                            <p className="text-sm text-gray-500">{user.email}</p>
+                        <li
+                          key={user.uuid}
+                          className="flex items-center justify-between space-x-3 hover:bg-gray-100 p-2 rounded"
+                        >
+                          <div className="w-4/6 overflow-hidden">
+                            <p className="font-semibold truncate">{user.name}</p>
+                            <p className="text-sm text-gray-500 truncate">{user.email}</p>
                           </div>
-                          <button
-                            disabled={
-                              user.friendStatus === "pending" || user.friendStatus === "accepted"
-                            }
-                            onClick={() => handleSendFriendRequest(user.uuid)}
-                            className={`px-2 py-1 text-sm rounded ${
-                              user.friendStatus === "accepted"
-                                ? "bg-gray-300 text-gray-400 cursor-not-allowed"
+                          <div className="flex-shrink-0">
+                            <button
+                              disabled={
+                                user.friendStatus === "pending" || user.friendStatus === "accepted"
+                              }
+                              onClick={() => handleSendFriendRequest(user.uuid)}
+                              className={`px-3 py-1 text-sm whitespace-nowrap rounded ${
+                                user.friendStatus === "accepted"
+                                  ? "bg-gray-300 text-gray-400 cursor-not-allowed"
+                                  : user.friendStatus === "pending"
+                                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                  : "bg-green-500 text-white hover:bg-green-600"
+                              }`}
+                            >
+                              {user.friendStatus === "accepted"
+                                ? "이미 친구"
                                 : user.friendStatus === "pending"
-                                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                                : "bg-green-500 text-white hover:bg-green-600"
-                            }`}
-                          >
-                            {user.friendStatus === "accepted"
-                              ? "친구"
-                              : user.friendStatus === "pending"
-                              ? "요청됨"
-                              : "친구 요청"}
-                          </button>
+                                ? "요청됨"
+                                : "친구 요청"}
+                            </button>
+                          </div>
                         </li>
                       ))}
                     </ul>
@@ -234,26 +243,32 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
             ) : (
               <ul className="space-y-4 max-h-60 overflow-y-auto pr-1">
                 {friends.map((friend) => (
-                  <li key={friend.uuid} className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                      <svg
-                        className="h-5 w-5 text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M5.121 17.804A10 10 0 1119 12.001M15 11h.01M9 11h.01M7 15s1.5 2 5 2 5-2 5-2"
-                        />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="font-semibold">{friend.name}</p>
-                      <p className="text-sm text-gray-500">{friend.email}</p>
+                  <li
+                    key={friend.uuid}
+                    className="flex items-center justify-between space-x-3 cursor-pointer hover:bg-gray-100 p-2 rounded"
+                    onClick={() => handleFriendClick(friend.uuid)}
+                  >
+                    <div className="flex items-center space-x-3 overflow-hidden w-full">
+                      <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
+                        <svg
+                          className="h-5 w-5 text-white"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M5.121 17.804A10 10 0 1119 12.001M15 11h.01M9 11h.01M7 15s1.5 2 5 2 5-2 5-2"
+                          />
+                        </svg>
+                      </div>
+                      <div className="overflow-hidden w-full">
+                        <p className="font-semibold truncate">{friend.name}</p>
+                        <p className="text-sm text-gray-500 truncate">{friend.email}</p>
+                      </div>
                     </div>
                   </li>
                 ))}
@@ -269,10 +284,13 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
             ) : (
               <ul className="space-y-4">
                 {receivedRequests.map((req) => (
-                  <li key={req.uuid} className="flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold">{req.name}</p>
-                      <p className="text-sm text-gray-500">{req.email}</p>
+                  <li
+                    key={req.uuid}
+                    className="flex items-center justify-between hover:bg-gray-100 p-2 rounded"
+                  >
+                    <div className="overflow-hidden w-3/5">
+                      <p className="font-semibold truncate">{req.name}</p>
+                      <p className="text-sm text-gray-500 truncate">{req.email}</p>
                     </div>
                     <div className="space-x-2">
                       <button
