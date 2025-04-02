@@ -5,6 +5,10 @@ import {
   searchUsers,
   SearchResultUser,
   sendFriendRequest,
+  fetchReceivedFriendRequests,
+  ReceivedFriendRequest,
+  acceptFriendRequest,
+  declineFriendRequest,
 } from "../services/friendService";
 
 interface FriendListProps {
@@ -14,6 +18,7 @@ interface FriendListProps {
 const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
   const [activeTab, setActiveTab] = useState<"list" | "requests">("list");
   const [isAdding, setIsAdding] = useState(false);
+
   const [searchKeyword, setSearchKeyword] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResultUser[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -23,6 +28,9 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const [receivedRequests, setReceivedRequests] = useState<ReceivedFriendRequest[]>([]);
+
+  // 친구 목록 불러오기
   useEffect(() => {
     if (activeTab === "list" && !isAdding) {
       const loadFriends = async () => {
@@ -39,6 +47,21 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
       loadFriends();
     }
   }, [isAdding, activeTab]);
+
+  // 친구 요청 목록 불러오기
+  useEffect(() => {
+    if (activeTab === "requests") {
+      const loadRequests = async () => {
+        try {
+          const data = await fetchReceivedFriendRequests();
+          setReceivedRequests(data);
+        } catch (err) {
+          console.error("친구 요청 목록 불러오기 실패", err);
+        }
+      };
+      loadRequests();
+    }
+  }, [activeTab]);
 
   const handleSearch = async () => {
     if (!searchKeyword.trim()) return;
@@ -71,6 +94,24 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
       );
     } catch (err: any) {
       alert(err.message || "친구 요청 실패");
+    }
+  };
+
+  const handleAccept = async (uuid: string) => {
+    try {
+      await acceptFriendRequest(uuid);
+      setReceivedRequests((prev) => prev.filter((r) => r.uuid !== uuid));
+    } catch (err: any) {
+      alert(err.message || "수락 실패");
+    }
+  };
+
+  const handleDecline = async (uuid: string) => {
+    try {
+      await declineFriendRequest(uuid);
+      setReceivedRequests((prev) => prev.filter((r) => r.uuid !== uuid));
+    } catch (err: any) {
+      alert(err.message || "거절 실패");
     }
   };
 
@@ -113,6 +154,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
 
       {/* 본문 */}
       <div className="p-4 max-h-72 overflow-y-auto">
+        {/* 친구 목록 탭 */}
         {activeTab === "list" && (
           <>
             {isAdding ? (
@@ -208,25 +250,37 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
           </>
         )}
 
+        {/* 친구 요청 탭 */}
         {activeTab === "requests" && (
           <div className="space-y-4">
-            <p className="text-sm text-gray-500">친구 요청 목록</p>
-            <ul className="space-y-4">
-              <li className="flex items-center justify-between">
-                <div>
-                  <p className="font-semibold">이영희</p>
-                  <p className="text-sm text-gray-500">young@example.com</p>
-                </div>
-                <div className="space-x-2">
-                  <button className="px-2 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600">
-                    수락
-                  </button>
-                  <button className="px-2 py-1 text-sm bg-gray-300 text-gray-800 rounded hover:bg-gray-400">
-                    거절
-                  </button>
-                </div>
-              </li>
-            </ul>
+            {receivedRequests.length === 0 ? (
+              <p className="text-center text-gray-500 text-sm">받은 친구 요청이 없습니다.</p>
+            ) : (
+              <ul className="space-y-4">
+                {receivedRequests.map((req) => (
+                  <li key={req.uuid} className="flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold">{req.name}</p>
+                      <p className="text-sm text-gray-500">{req.email}</p>
+                    </div>
+                    <div className="space-x-2">
+                      <button
+                        onClick={() => handleAccept(req.uuid)}
+                        className="px-2 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+                      >
+                        수락
+                      </button>
+                      <button
+                        onClick={() => handleDecline(req.uuid)}
+                        className="px-2 py-1 text-sm bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
+                      >
+                        거절
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         )}
       </div>

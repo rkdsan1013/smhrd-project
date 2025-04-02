@@ -4,6 +4,9 @@ const {
   searchUsersByKeyword,
   checkFriendStatus,
   createFriendRequest,
+  acceptFriendRequest,
+  declineFriendRequest,
+  getReceivedFriendRequests,
 } = require("./friendQueries");
 
 module.exports = {
@@ -12,4 +15,7 @@ module.exports = {
   searchUsersByKeyword,
   checkFriendStatus,
   createFriendRequest,
+  acceptFriendRequest,
+  declineFriendRequest,
+  getReceivedFriendRequests,
 };

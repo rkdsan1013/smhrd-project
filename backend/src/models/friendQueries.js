@@ -70,10 +70,73 @@ const createFriendRequest = async (userUuid, targetUuid) => {
   return result;
 };
 
+// 친구 요청 상태 확인
+const acceptFriendRequest = async (receiverUuid, requesterUuid) => {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const [rows] = await connection.query(
+      `SELECT * FROM friends 
+         WHERE user_uuid = ? AND friend_uuid = ? AND status = 'pending'`,
+      [requesterUuid, receiverUuid],
+    );
+
+    if (!rows || rows.length === 0) {
+      await connection.rollback();
+      return false;
+    }
+
+    await connection.query(
+      `UPDATE friends SET status = 'accepted' 
+         WHERE user_uuid = ? AND friend_uuid = ?`,
+      [requesterUuid, receiverUuid],
+    );
+
+    await connection.query(
+      `INSERT IGNORE INTO friends (user_uuid, friend_uuid, status)
+         VALUES (?, ?, 'accepted')`,
+      [receiverUuid, requesterUuid],
+    );
+
+    await connection.commit();
+    return true;
+  } catch (err) {
+    await connection.rollback();
+    throw err;
+  } finally {
+    connection.release();
+  }
+};
+
+const declineFriendRequest = async (receiverUuid, requesterUuid) => {
+  const sql = `
+      DELETE FROM friends 
+      WHERE user_uuid = ? AND friend_uuid = ? AND status = 'pending'
+    `;
+  const [result] = await pool.query(sql, [requesterUuid, receiverUuid]);
+  return result.affectedRows > 0;
+};
+
+const getReceivedFriendRequests = async (receiverUuid) => {
+  const sql = `
+      SELECT u.uuid, u.email, up.name, up.profile_picture AS profilePicture
+      FROM friends f
+      JOIN users u ON f.user_uuid = u.uuid
+      LEFT JOIN user_profiles up ON u.uuid = up.uuid
+      WHERE f.friend_uuid = :receiverUuid AND f.status = 'pending'
+    `;
+  const [rows] = await pool.query(sql, { receiverUuid });
+  return rows;
+};
+
 module.exports = {
   getAcceptedFriendUuids,
   getFriendProfileByUuid,
   searchUsersByKeyword,
   checkFriendStatus,
   createFriendRequest,
+  acceptFriendRequest,
+  declineFriendRequest,
+  getReceivedFriendRequests,
 };
