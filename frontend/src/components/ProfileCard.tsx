@@ -77,7 +77,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     setHasMounted(true);
   }, []);
 
-  // 내용 변경에 따른 모달 높이 애니메이션
+  // 내용 변경에 따른 모달 높이 애니메이션 조절
   useLayoutEffect(() => {
     if (outerRef.current && innerRef.current) {
       const newHeight = innerRef.current.offsetHeight;
@@ -247,14 +247,14 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     setIsWithdrawing(false);
   };
 
-  // 계정 관리에서 비밀번호 변경 모드로 전환
+  // 계정 관리에서 비밀번호 변경 모드 전환
   const onChangePasswordFromAccount = () => {
     if (formError) setFormError("");
     setIsManagingAccount(false);
     setIsChangingPassword(true);
   };
 
-  // 계정 관리에서 회원 탈퇴 모드로 전환
+  // 계정 관리에서 회원 탈퇴 모드 전환
   const onWithdraw = () => {
     if (formError) setFormError("");
     setIsWithdrawing(true);
@@ -379,11 +379,15 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
             {!isEditing ? (
               <>
                 <div className="mb-6 flex flex-col items-center">
-                  <img
-                    src={profilePreview || ""}
-                    alt={profile.name}
-                    className="w-24 h-24 rounded-full object-cover"
-                  />
+                  {profilePreview ? (
+                    <img
+                      src={profilePreview}
+                      alt={profile.name}
+                      className="w-24 h-24 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 bg-gray-200 rounded-full"></div>
+                  )}
                 </div>
                 <div className="w-full text-center mb-4">
                   <div className="text-2xl font-bold whitespace-nowrap overflow-ellipsis overflow-hidden">
@@ -429,14 +433,18 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
                   </div>
                 </div>
               ) : (
-                // 계정 관리 본문: 프로필 정보 및 행동 버튼
+                // 계정 관리 본문: 프로필 정보 및 버튼들
                 <div className="w-full flex flex-col items-center text-center mb-4">
                   <div className="mb-6">
-                    <img
-                      src={profilePreview || ""}
-                      alt={profile.name}
-                      className="w-24 h-24 rounded-full object-cover"
-                    />
+                    {profilePreview ? (
+                      <img
+                        src={profilePreview}
+                        alt={profile.name}
+                        className="w-24 h-24 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-24 h-24 bg-gray-200 rounded-full"></div>
+                    )}
                   </div>
                   <div className="text-2xl font-bold whitespace-nowrap overflow-ellipsis overflow-hidden">
                     {profile.name}
@@ -528,43 +536,11 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full bg-gray-200 flex items-center justify-center rounded-full">
-                          <svg
-                            className="h-6 w-6 text-gray-400"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M13 10a1 1 0 0 1 1-1h.01a1 1 0 1 1 0 2H14a1 1 0 0 1-1-1Z"
-                              clipRule="evenodd"
-                            />
-                            <path
-                              fillRule="evenodd"
-                              d="M2 6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12c0 .556-.227 1.06-.593 1.422A.999.999 0 0 1 20.5 20H4a2.002 2.002 0 0 1-2-2V6Zm6.892 12 3.833-5.356-3.99-4.322a1 1 0 0 0-1.549.097L4 12.879V6h16v9.95l-3.257-3.619a1 1 0 0 0-1.557.088L11.2 18H8.892Z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        </div>
+                        <div className="w-full h-full bg-gray-200 rounded-full"></div>
                       )}
                     </div>
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <svg
-                        className="h-6 w-6 text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke="currentColor"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="m14.304 4.844 2.852 2.852M7 7H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-4.5m2.409-9.91a2.017 2.017 0 0 1 0 2.853l-6.844 6.844L8 14l.713-3.565 6.844-6.844a2.015 2.015 0 0 1 2.852 0Z"
-                        />
-                      </svg>
-                    </div>
+                    {/* 오버레이: 항상 존재하며, 호버 시 bg-black/50로 어두워짐 */}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors duration-300" />
                   </label>
                   <input
                     type="file"
