@@ -1,9 +1,9 @@
 // /frontend/src/components/ProfileCard.tsx
 import React, { useState, useEffect, useLayoutEffect, useRef, ChangeEvent } from "react";
 import { logout } from "../services/authService";
-import { useUserProfile } from "../hooks/useUserProfile";
 import { updateUserProfile } from "../services/userService";
 import { validateName, validatePassword } from "../utils/validators";
+import { useUserProfile } from "../contexts/UserProfileContext";
 
 const baseInputClass =
   "peer block w-full border-0 border-b-2 pb-2.5 pt-4 text-base bg-transparent focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600 transition-all duration-300 ease-in-out";
@@ -21,7 +21,7 @@ const getDisplayGender = (gender?: string): string => {
 };
 
 const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
-  const { profile, loading, error, forceRefresh, version } = useUserProfile();
+  const { profile, loading, error, reloadProfile } = useUserProfile();
 
   // 상태 관리
   const [isVisible, setIsVisible] = useState(false);
@@ -33,7 +33,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
   const [profilePreview, setProfilePreview] = useState<string | null>(
-    profile?.profilePicture ?? null,
+    profile && profile.profilePicture ? `${profile.profilePicture}?v=${profile.version}` : null,
   );
   const [formError, setFormError] = useState("");
 
@@ -53,7 +53,9 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
   useEffect(() => {
     if (profile && !isEditing) {
       setEditedName(profile.name);
-      setProfilePreview(profile.profilePicture ?? null);
+      setProfilePreview(
+        profile.profilePicture ? `${profile.profilePicture}?v=${profile.version}` : null,
+      );
     }
   }, [profile, isEditing]);
 
@@ -103,7 +105,9 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
       setIsEditing(true);
       if (profile) {
         setEditedName(profile.name);
-        setProfilePreview(profile.profilePicture ? `${profile.profilePicture}?v=${version}` : null);
+        setProfilePreview(
+          profile.profilePicture ? `${profile.profilePicture}?v=${profile.version}` : null,
+        );
       }
     }, 0);
   };
@@ -112,7 +116,9 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     setIsEditing(false);
     setIsChangingPassword(false);
     setProfilePicture(null);
-    setProfilePreview(profile ? profile.profilePicture ?? null : null);
+    setProfilePreview(
+      profile && profile.profilePicture ? `${profile.profilePicture}?v=${profile.version}` : null,
+    );
     setFormError("");
   };
 
@@ -150,7 +156,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
           setIsEditing(false);
           setProfilePicture(null);
           setFormError("");
-          forceRefresh();
+          await reloadProfile(); // 전역 상태 갱신: 새 버전이 적용됨
         } else {
           setFormError("프로필 업데이트에 실패했습니다.");
         }
@@ -166,7 +172,9 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     setNewPassword("");
     setConfirmNewPassword("");
     setProfilePicture(null);
-    setProfilePreview(profile ? profile.profilePicture ?? null : null);
+    setProfilePreview(
+      profile && profile.profilePicture ? `${profile.profilePicture}?v=${profile.version}` : null,
+    );
     setFormError("");
   };
 
@@ -330,7 +338,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
                 <div className="w-24 h-24 mb-4">
                   {profile.profilePicture ? (
                     <img
-                      src={`${profile.profilePicture}?v=${version}`}
+                      src={`${profile.profilePicture}?v=${profile.version || ""}`}
                       alt={profile.name}
                       className="w-24 h-24 rounded-full object-cover"
                     />

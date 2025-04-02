@@ -1,6 +1,6 @@
 // /frontend/src/components/Footer.tsx
 import React, { useState } from "react";
-import { useUserProfile } from "../hooks/useUserProfile";
+import { useUserProfile } from "../contexts/UserProfileContext";
 import ProfileCard from "./ProfileCard";
 
 const Footer: React.FC = () => {
@@ -36,7 +36,7 @@ const Footer: React.FC = () => {
               <>
                 {profile.profilePicture ? (
                   <img
-                    src={profile.profilePicture}
+                    src={`${profile.profilePicture}?v=${profile.version || ""}`}
                     alt={profile.name}
                     className="w-12 h-12 rounded-full object-cover"
                   />
