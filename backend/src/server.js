@@ -12,6 +12,7 @@ const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const voteRoutes = require("./routes/voteRoutes");
 const groupRoutes = require("./routes/groupRoutes");
+const friendRoutes = require("./routes/friendRoutes");
 
 const app = express();
 
@@ -35,6 +36,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/votes", voteRoutes);
 app.use("/api/groups", groupRoutes);
+app.use("/api/friends", friendRoutes);
+
 // app.use("/api/schedules", scheduleRoutes);
 // app.use("/api/chats", chatRoutes);
 

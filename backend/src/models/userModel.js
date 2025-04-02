@@ -12,5 +12,5 @@ module.exports = {
   updateUserProfilePicture,
   signUpUser,
   getProfileByUuid,
-  getFriendsByUuid, // 친구 목록 조회 함수 추가
+  getFriendsByUuid,
 };

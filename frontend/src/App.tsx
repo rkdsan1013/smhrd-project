@@ -4,7 +4,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { get, post } from "./services/apiClient";
 import LandingPage from "./pages/LandingPage";
 import MainPage from "./pages/MainPage";
-import Test from "./pages/Test";
 import { UserProvider, useUser } from "./contexts/UserContext";
 import startTokenRefreshPolling from "./utils/tokenManager";
 

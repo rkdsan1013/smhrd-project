@@ -1,20 +1,37 @@
-// /frontend/src/services/userService.ts
 import { get, post } from "./apiClient";
-import { IUserProfile } from "../hooks/useUserProfile";
 
-// 친구 목록 조회 응답 인터페이스
-export interface FriendsResponse {
-  friends: { uuid: string; name: string }[];
+// 친구 목록
+export interface Friend {
+  uuid: string;
+  name: string;
+  email: string;
+  profilePicture?: string;
+  status: "accepted" | "pending" | "blocked";
 }
 
-// 친구 목록 조회
-export const fetchFriends = async (uuid: string): Promise<FriendsResponse> => {
-  return get<FriendsResponse>(`/users/friends/${uuid}`, { withCredentials: true });
+// 검색 결과
+export interface SearchResultUser {
+  uuid: string;
+  name: string;
+  email: string;
+  profilePicture?: string;
+}
+
+// ✅ 친구 목록 가져오기
+export const fetchFriendList = async (): Promise<Friend[]> => {
+  const res = await get<{ success: boolean; friends: Friend[] }>("/friends");
+  return res.friends;
 };
 
-// 친구 정보 조회
-export const fetchFriendProfile = async (
-  friendUuid: string,
-): Promise<{ profile: IUserProfile }> => {
-  return get<{ profile: IUserProfile }>(`/users/${friendUuid}`, { withCredentials: true });
+// ✅ POST 방식으로 친구 검색하기
+export const searchUsers = async (keyword: string): Promise<SearchResultUser[]> => {
+  const res = await post<{ success: boolean; users: SearchResultUser[] }>("/friends/search", {
+    keyword,
+  });
+  return res.users;
+};
+
+// ✅ 친구 요청 보내기 (옵션)
+export const sendFriendRequest = async (targetUuid: string): Promise<void> => {
+  await post("/friends", { targetUuid });
 };

@@ -2,21 +2,27 @@
 import React, { useState } from "react";
 import { useUserProfile } from "../hooks/useUserProfile";
 import ProfileCard from "./ProfileCard";
+import FriendList from "./FriendList"; // 친구 모달 컴포넌트 import
 
 const Footer: React.FC = () => {
   const { profile, loading, error } = useUserProfile();
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showFriendListModal, setShowFriendListModal] = useState(false);
 
   const handleFriendListClick = () => {
-    alert("친구 목록으로 이동합니다.");
+    setShowFriendListModal(true);
   };
 
   const handleProfileClick = () => {
     setShowProfileModal(true);
   };
 
-  const closeModal = () => {
+  const closeProfileModal = () => {
     setShowProfileModal(false);
+  };
+
+  const closeFriendListModal = () => {
+    setShowFriendListModal(false);
   };
 
   return (
@@ -53,8 +59,8 @@ const Footer: React.FC = () => {
             )}
           </div>
 
-          {/* 오른쪽: 친구 목록 버튼 */}
-          <div>
+          {/* 오른쪽: 친구 목록 버튼 + 모달 */}
+          <div className="relative">
             <button
               onClick={handleFriendListClick}
               title="친구 목록"
@@ -62,12 +68,19 @@ const Footer: React.FC = () => {
             >
               친구 목록
             </button>
+
+            {/* 버튼 위에 띄우는 모달 */}
+            {showFriendListModal && (
+              <div className="absolute bottom-full right-0 mb-4 z-50">
+                <FriendList onClose={closeFriendListModal} />
+              </div>
+            )}
           </div>
         </div>
       </footer>
 
       {/* ProfileCard 모달 렌더링 (프로필 정보가 있을 경우에만) */}
-      {showProfileModal && profile && <ProfileCard onClose={closeModal} />}
+      {showProfileModal && profile && <ProfileCard onClose={closeProfileModal} />}
     </>
   );
 };

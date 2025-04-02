@@ -10,8 +10,6 @@ router.get("/profile", verifyToken, userController.getProfile);
 
 // 타인의 프로필 조회 (uuid 파라미터)
 router.get("/:uuid", verifyToken, userController.getProfileByUuid);
-// 친구 목록 조회 (uuid 파라미터)
-router.get("/friends/:uuid", verifyToken, userController.getFriends);
 
 // 자신의 프로필 정보 업데이트
 router.patch("/profile", verifyToken, userController.updateProfile);
