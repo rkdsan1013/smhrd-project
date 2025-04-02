@@ -11,6 +11,7 @@ const {
 
 const { signUpUser } = require("./userTransactions");
 
+// 모듈로 함수들을 재export
 module.exports = {
   getUserByEmail,
   getUserByUuid,
