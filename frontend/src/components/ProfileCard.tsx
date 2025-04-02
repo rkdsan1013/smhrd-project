@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
+// /frontend/src/components/ProfileCard.tsx
+import React, { useState, useEffect, useLayoutEffect, useRef, ChangeEvent } from "react";
 import { logout } from "../services/authService";
-import { useUserProfile } from "../hooks/useUserProfile";
+import { useUserProfile } from "../hooks/useUserProfile"; // forceRefresh와 version 포함
 import { updateUserProfile } from "../services/userService";
 import { validateName, validatePassword } from "../utils/validators";
 
@@ -20,10 +21,9 @@ const getDisplayGender = (gender?: string): string => {
 };
 
 const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
-  // 프로필, 로딩, 에러 상태
-  const { profile, loading, error } = useUserProfile();
+  const { profile, loading, error, forceRefresh, version } = useUserProfile();
 
-  // 모달, 편집, 비밀번호 변경, 입력값 및 에러 관리
+  // 상태 관리
   const [isVisible, setIsVisible] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -33,33 +33,31 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
   const [profilePreview, setProfilePreview] = useState<string | null>(
-    profile && profile.profilePicture ? profile.profilePicture : null,
+    profile?.profilePicture ?? null,
   );
-  const [formError, setFormError] = useState<string>("");
+  const [formError, setFormError] = useState("");
 
-  // 높이 애니메이션용 ref들
+  // 동적 높이 애니메이션용 ref
   const outerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
   const oldHeightRef = useRef<number | null>(null);
   const [hasMounted, setHasMounted] = useState(false);
 
-  // 모달 fade-in 효과 (50ms 후 표시)
+  // 모달 fade-in 효과
   useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 50);
     return () => clearTimeout(timer);
   }, []);
 
-  // 프로필 로드시 초기값 설정
+  // 프로필 변경 시 읽기 모드에서 최신 값을 반영
   useEffect(() => {
     if (profile && !isEditing) {
       setEditedName(profile.name);
-      if (!profilePreview && typeof profile.profilePicture === "string") {
-        setProfilePreview(profile.profilePicture);
-      }
+      setProfilePreview(profile.profilePicture ?? null);
     }
-  }, [profile, isEditing, profilePreview]);
+  }, [profile, isEditing]);
 
-  // 초기 마운트 후 동적 영역 높이 설정
+  // 초기 마운트 후 동적 높이 설정
   useEffect(() => {
     if (outerRef.current && innerRef.current) {
       outerRef.current.style.height = `${innerRef.current.offsetHeight}px`;
@@ -87,8 +85,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     }
   }, [hasMounted, isEditing, isChangingPassword, formError]);
 
-  // 파일 선택 처리 (프로필 사진 변경)
-  const onProfilePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 사진 파일 선택 및 미리보기 업데이트
+  const onProfilePictureChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setProfilePicture(file);
@@ -98,16 +96,18 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     }
   };
 
-  // 편집 모드 전환 (현재 높이 저장 후 전환)
+  // 편집 모드 전환 시 최신 프로필 사진 URL(버전 포함) 반영
   const onEditProfile = () => {
     if (outerRef.current) oldHeightRef.current = outerRef.current.offsetHeight;
     setTimeout(() => {
       setIsEditing(true);
-      if (profile) setEditedName(profile.name);
+      if (profile) {
+        setEditedName(profile.name);
+        setProfilePreview(profile.profilePicture ? `${profile.profilePicture}?v=${version}` : null);
+      }
     }, 0);
   };
 
-  // 편집 취소 시 초기화
   const onCancelEdit = () => {
     setIsEditing(false);
     setIsChangingPassword(false);
@@ -116,11 +116,9 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     setFormError("");
   };
 
-  // 저장 전 검증 및 백엔드 요청 (프로필 수정 및 비밀번호 변경 분기 처리)
   const onSaveEdit = async () => {
     if (!isEditing) return;
     if (isChangingPassword) {
-      // 비밀번호 변경 검증
       if (!currentPassword.trim()) {
         setFormError("현재 비밀번호를 입력해주세요.");
         return;
@@ -134,16 +132,14 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
         setFormError("변경할 비밀번호가 서로 일치하지 않습니다.");
         return;
       }
-      // 비밀번호 변경 API 호출 로직 추가 가능 (여기서는 생략)
+      // 비밀번호 변경 처리 (예시 생략)
       alert("비밀번호가 변경되었습니다.");
     } else {
-      // 이름 검증
       const nameResult = validateName(editedName);
       if (!nameResult.valid) {
         setFormError(nameResult.message || "유효하지 않은 이름입니다.");
         return;
       }
-      // FormData 생성 및 값 추가
       const formData = new FormData();
       formData.append("name", editedName);
       if (profilePicture) formData.append("profilePicture", profilePicture);
@@ -153,9 +149,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
           alert("프로필이 업데이트되었습니다.");
           setIsEditing(false);
           setProfilePicture(null);
-          setProfilePreview(profile ? profile.profilePicture ?? null : null);
           setFormError("");
-          // 필요시 업데이트된 프로필 데이터를 다시 반영하는 로직 추가 가능
+          forceRefresh();
         } else {
           setFormError("프로필 업데이트에 실패했습니다.");
         }
@@ -165,7 +160,6 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     }
   };
 
-  // 비밀번호 변경 모드 활성화
   const onChangePassword = () => {
     setIsChangingPassword(true);
     setCurrentPassword("");
@@ -176,13 +170,11 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     setFormError("");
   };
 
-  // 모달 닫기
   const onCloseModal = () => {
     setIsVisible(false);
     setTimeout(onClose, 300);
   };
 
-  // 로그아웃
   const onLogout = async () => {
     try {
       await logout();
@@ -225,14 +217,14 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center">
-      {/* 오버레이 */}
+      {/* Overlay */}
       <div
         className={`absolute inset-0 bg-black/60 transition-opacity duration-300 ${
           isVisible ? "opacity-100" : "opacity-0"
         }`}
         onClick={onCloseModal}
       />
-      {/* 모달 */}
+      {/* Modal Container */}
       <div
         className={`relative bg-white rounded-lg shadow-xl w-96 select-none transition-opacity duration-300 ${
           isVisible ? "opacity-100" : "opacity-0"
@@ -244,7 +236,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
           position: "absolute",
         }}
       >
-        {/* 헤더 */}
+        {/* Header */}
         <div className="flex justify-between items-center p-4 border-b border-gray-200">
           <h2 className="text-xl font-bold">
             {isEditing ? (isChangingPassword ? "비밀번호 변경" : "프로필 수정") : "프로필 정보"}
@@ -269,10 +261,10 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
             </svg>
           </button>
         </div>
-        {/* 동적 내용 영역 (애니메이션 적용) */}
+        {/* Dynamic Content Area */}
         <div ref={outerRef} style={{ overflow: "hidden" }}>
           <div ref={innerRef} className="p-6 flex flex-col items-center">
-            {/* 프로필 사진 영역 */}
+            {/* Profile Picture Section */}
             <div className="mb-6 flex flex-col items-center">
               {isEditing && !isChangingPassword ? (
                 <>
@@ -338,7 +330,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
                 <div className="w-24 h-24 mb-4">
                   {profile.profilePicture ? (
                     <img
-                      src={profile.profilePicture}
+                      src={`${profile.profilePicture}?v=${version}`}
                       alt={profile.name}
                       className="w-24 h-24 rounded-full object-cover"
                     />
@@ -366,7 +358,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
                 </div>
               )}
             </div>
-            {/* 입력 폼: 이름/이메일 또는 비밀번호 입력 */}
+            {/* Input Form */}
             <div className="w-full text-center mb-4">
               {isEditing && !isChangingPassword ? (
                 <>
@@ -440,7 +432,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
                 </>
               )}
             </div>
-            {/* 편집 모드에서 비밀번호 변경 버튼 */}
+            {/* Password change button in edit mode */}
             {isEditing && !isChangingPassword && (
               <div className="w-full mt-4">
                 <button
@@ -451,7 +443,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
                 </button>
               </div>
             )}
-            {/* 읽기 모드: 생일, 성별 등 정보 */}
+            {/* Read Mode: Extra Information */}
             {!isEditing && (
               <div className="w-full text-left mt-4">
                 {profile.birthdate && (
@@ -460,16 +452,15 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
                 {profile.gender && (
                   <p className="text-gray-600 truncate">성별: {getDisplayGender(profile.gender)}</p>
                 )}
-                {profile.paradoxFlag && (
+                {Boolean(profile.paradoxFlag) && (
                   <p className="text-sm text-blue-500 truncate">시간여행은 순조로우신가요?</p>
                 )}
               </div>
             )}
-            {/* 검증 에러 메시지 */}
             {formError && <div className="w-full mt-2 text-red-500 text-sm">{formError}</div>}
           </div>
         </div>
-        {/* 푸터 */}
+        {/* Modal Footer */}
         <div className="p-4 border-t border-gray-200 w-full">
           {isEditing ? (
             <div className="flex justify-between">

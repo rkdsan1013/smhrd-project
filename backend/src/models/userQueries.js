@@ -28,16 +28,28 @@ const getProfileByUuid = async (uuid) => {
 };
 
 // 사용자 프로필 업데이트 (이름, 프로필 사진 업데이트)
-const updateUserProfile = async (uuid, { name, profilePicture }) => {
-  const sql = `
-    UPDATE user_profiles 
-    SET name = :name,
-        profile_picture = :profilePicture
-    WHERE uuid = :uuid
-  `;
-  const [result] = await pool.query(sql, { name, profilePicture, uuid });
+const updateUserProfile = async (uuid, updateData) => {
+  // 전달된 updateData에서 업데이트할 필드를 동적으로 구성
+  let fields = [];
+  let params = { uuid };
 
-  // 업데이트 후 DB에서 최신 프로필을 조회하여 반환
+  if (typeof updateData.name !== "undefined") {
+    fields.push("name = :name");
+    params.name = updateData.name;
+  }
+  // profilePicture 필드가 전달된 경우에만 처리 (예: req.file이 있을 때)
+  if (Object.prototype.hasOwnProperty.call(updateData, "profilePicture")) {
+    fields.push("profile_picture = :profilePicture");
+    params.profilePicture = updateData.profilePicture;
+  }
+
+  // 업데이트 할 필드가 없다면 null 반환 (혹은 적절한 예외 처리)
+  if (fields.length === 0) return null;
+
+  const sql = `UPDATE user_profiles SET ${fields.join(", ")} WHERE uuid = :uuid`;
+  const [result] = await pool.query(sql, params);
+
+  // 업데이트가 실패했을 경우
   if (result.affectedRows === 0) return null;
   const [rows] = await pool.query("SELECT * FROM user_profiles WHERE uuid = :uuid", { uuid });
   return rows[0];
@@ -46,6 +58,6 @@ const updateUserProfile = async (uuid, { name, profilePicture }) => {
 module.exports = {
   getUserByEmail,
   updateUserProfilePicture,
-  updateUserProfile, // 새로 추가
+  updateUserProfile,
   getProfileByUuid,
 };

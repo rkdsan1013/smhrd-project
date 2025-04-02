@@ -66,7 +66,7 @@ const Footer: React.FC = () => {
         </div>
       </footer>
 
-      {/* ProfileCard 모달 렌더링 (프로필 정보가 있을 경우에만) */}
+      {/* ProfileCard 모달 렌더링 (프로필 정보가 있을 경우) */}
       {showProfileModal && profile && <ProfileCard onClose={closeModal} />}
     </>
   );
