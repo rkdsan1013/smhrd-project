@@ -137,7 +137,7 @@ export const validateFullProfile = (
     if (birthTimestamp > todayTimestamp) {
       message = "미래에서 온 당신, 타임머신은 아직 불법입니다!";
     } else if (age > 130) {
-      message = "너무 오래 살 수는 없습니다. 당신은 영원히 젊어야 합니다!";
+      message = "너무 오래 살 수는 없습니다. 당신은 영원히 젊어야 해요!";
     }
     return { valid: false, message, requiresOverride: true };
   }
