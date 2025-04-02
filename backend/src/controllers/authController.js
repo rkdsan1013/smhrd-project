@@ -34,8 +34,8 @@ exports.checkEmail = async (req, res) => {
 // 회원가입 처리
 exports.signUp = async (req, res) => {
   const { email, password, name, gender, birthdate } = req.body;
-  // 클라이언트에서 전달한 paradox_flag를 읽어 Boolean으로 변환
-  const paradoxFlag = req.body.paradox_flag === "1";
+  // 클라이언트에서 전달한 paradoxFlag를 읽어 Boolean으로 변환
+  const paradoxFlag = req.body.paradoxFlag === "1";
 
   const emailValidation = validateEmail(email);
   if (!emailValidation.valid) {

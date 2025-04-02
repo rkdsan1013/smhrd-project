@@ -29,3 +29,8 @@ export const signUp = async (payload: FormData): Promise<AuthResponse> => {
 export const refreshTokens = async (renewRefresh: boolean): Promise<AuthResponse> => {
   return post<AuthResponse>("/auth/refresh", { renewRefresh });
 };
+
+// 로그아웃 처리
+export const logout = async (): Promise<{ success: boolean }> => {
+  return post<{ success: boolean }>("/auth/logout", {});
+};
