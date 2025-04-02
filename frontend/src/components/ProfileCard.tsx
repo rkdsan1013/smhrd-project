@@ -1,7 +1,7 @@
 // /frontend/src/components/ProfileCard.tsx
 import React, { useState, useEffect, useLayoutEffect, useRef, ChangeEvent } from "react";
 import { logout } from "../services/authService";
-import { useUserProfile } from "../hooks/useUserProfile"; // forceRefresh와 version 포함
+import { useUserProfile } from "../hooks/useUserProfile";
 import { updateUserProfile } from "../services/userService";
 import { validateName, validatePassword } from "../utils/validators";
 
