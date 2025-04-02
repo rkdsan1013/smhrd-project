@@ -15,6 +15,7 @@ export interface SearchResultUser {
   name: string;
   email: string;
   profilePicture?: string;
+  friendStatus?: "pending" | "accepted" | null;
 }
 
 // ✅ 친구 목록 가져오기
@@ -31,7 +32,7 @@ export const searchUsers = async (keyword: string): Promise<SearchResultUser[]> 
   return res.users;
 };
 
-// ✅ 친구 요청 보내기 (옵션)
+// ✅ 친구 요청 보내기
 export const sendFriendRequest = async (targetUuid: string): Promise<void> => {
   await post("/friends", { targetUuid });
 };
