@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { useUserProfile } from "../contexts/UserProfileContext";
 import ProfileCard from "./ProfileCard";
+import Icons from "./Icons";
 
 const Footer: React.FC = () => {
   const { profile, loading, error } = useUserProfile();
@@ -26,10 +27,11 @@ const Footer: React.FC = () => {
           {/* 왼쪽: 클릭 가능한 프로필 카드 */}
           <div
             onClick={handleProfileClick}
-            className="flex items-center space-x-3 cursor-pointer p-3 rounded-lg bg-gray-100 hover:shadow-md transition duration-200"
+            className="flex items-center space-x-3 p-3 rounded-lg bg-gray-100 hover:shadow-md transition duration-200"
           >
             {loading ? (
-              <div className="text-gray-700 text-sm">Loading...</div>
+              // 로딩 중에는 텍스트 대신 스피너 아이콘을 표시함.
+              <Icons name="spinner" className="animate-spin w-8 h-8 text-gray-200 fill-blue-600" />
             ) : error ? (
               <div className="text-red-500 text-sm">{error}</div>
             ) : profile ? (

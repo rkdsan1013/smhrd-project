@@ -13,6 +13,7 @@ import React, {
 import { validateEmail, validatePassword, validateFullProfile } from "../utils/validators";
 import { formatYear, formatTwoDigits, getMaxDay } from "../utils/dateUtils";
 import { checkEmailExists, signIn, signUp } from "../services/authService";
+import Icons from "./Icons";
 
 type FormState = "start" | "signin" | "signup" | "profile";
 
@@ -30,7 +31,7 @@ const labelClass =
   "absolute left-0 top-4 z-10 text-sm text-gray-500 whitespace-nowrap origin-top-left duration-300 transform -translate-y-6 scale-75 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100 peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600";
 
 const AuthForm: React.FC = () => {
-  // 상태 변수 그룹
+  // 상태 변수들
   const [formState, setFormState] = useState<FormState>("start");
   const [errorMsg, setErrorMsg] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -91,12 +92,20 @@ const AuthForm: React.FC = () => {
   const formatError = (error: unknown): string =>
     error instanceof Error ? error.message.replace(/^Error:\s*/, "") : String(error);
 
-  // 입력값 변경 공통 핸들러 (불필요한 중복 제거)
+  // 입력값 변경 핸들러 (중복 제거)
   const handleChange = useCallback(
     (setter: React.Dispatch<React.SetStateAction<string>>) =>
       (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setter(e.target.value);
         setErrorMsg("");
+        // 생일 입력란 변경 시 시간 여행자 버튼은 사라지도록 처리
+        if (
+          e.target.id === "birthYear" ||
+          e.target.id === "birthMonth" ||
+          e.target.id === "birthDay"
+        ) {
+          setShowOverride(false);
+        }
       },
     [],
   );
@@ -108,7 +117,7 @@ const AuthForm: React.FC = () => {
     }
   };
 
-  // 뒤로가기 처리 - 상태에 따라 초기화할 변수들을 그룹화
+  // 뒤로가기 처리 (상태에 따라 초기화할 변수들 그룹화)
   const handleBack = useCallback(() => {
     if (formState === "profile") {
       setFormState("signup");
@@ -142,12 +151,13 @@ const AuthForm: React.FC = () => {
 
   // 생일 입력 관련 개별 핸들러
   const handleBirthYearChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setShowOverride(false);
     setParadoxFlag(false);
     const val = e.target.value.replace(/[^0-9]/g, "").slice(0, 4);
     setBirthYear(val);
     setErrorMsg("");
     if (val.length === 4) birthMonthRef.current?.focus();
+    // 생일 입력란 변경시 시간 여행자 버튼 숨김
+    setShowOverride(false);
   };
 
   const handleBirthYearBlur = (e: FocusEvent<HTMLInputElement>) => {
@@ -157,12 +167,12 @@ const AuthForm: React.FC = () => {
   };
 
   const handleBirthMonthChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setShowOverride(false);
     setParadoxFlag(false);
     const val = e.target.value.replace(/[^0-9]/g, "").slice(0, 2);
     setBirthMonth(val);
     setErrorMsg("");
     if (val.length === 2) birthDayRef.current?.focus();
+    setShowOverride(false);
   };
 
   const handleBirthMonthBlur = (e: FocusEvent<HTMLInputElement>) => {
@@ -172,11 +182,11 @@ const AuthForm: React.FC = () => {
   };
 
   const handleBirthDayChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setShowOverride(false);
     setParadoxFlag(false);
     const val = e.target.value.replace(/[^0-9]/g, "").slice(0, 2);
     setBirthDay(val);
     setErrorMsg("");
+    setShowOverride(false);
   };
 
   const handleBirthDayBlur = (e: FocusEvent<HTMLInputElement>) => {
@@ -190,7 +200,7 @@ const AuthForm: React.FC = () => {
     }
   };
 
-  // 제출 관련 함수 (폼 상태별로 분기)
+  // 제출 관련 함수 (폼 상태별 분기)
   const handleStartSubmit = async () => {
     const emailValidation = validateEmail(email);
     if (!emailValidation.valid) {
@@ -255,7 +265,8 @@ const AuthForm: React.FC = () => {
       setErrorMsg(profileValidation.message || "프로필 정보를 확인해 주세요.");
       return;
     }
-    setShowOverride(false);
+    // *가입하기 버튼 클릭 시 시간 여행자 버튼은 자동으로 사라지지 않고,
+    // 생일 입력란을 수정할 때만 사라지도록 setShowOverride(false)는 제거합니다.
     const formattedBirthdate = `${birthYear.padStart(4, "0")}-${birthMonth.padStart(
       2,
       "0",
@@ -338,10 +349,15 @@ const AuthForm: React.FC = () => {
                   ref={emailRef}
                   value={email}
                   onChange={handleChange(setEmail)}
-                  disabled={formState !== "start"}
-                  className={`${baseInputClass} ${
-                    formState !== "start" ? "opacity-50 text-gray-500" : "text-gray-900"
-                  }`}
+                  disabled={isLoading || formState !== "start"}
+                  className={`
+                    ${baseInputClass} 
+                    ${
+                      isLoading || formState !== "start"
+                        ? "opacity-50 text-gray-500"
+                        : "text-gray-900"
+                    }
+                  `}
                   placeholder=" "
                 />
                 <label htmlFor="email" className={labelClass}>
@@ -357,7 +373,11 @@ const AuthForm: React.FC = () => {
                   ref={passwordRef}
                   value={password}
                   onChange={handleChange(setPassword)}
-                  className={`${baseInputClass} text-gray-900`}
+                  disabled={isLoading}
+                  className={`
+                    ${baseInputClass} 
+                    ${isLoading ? "opacity-50 text-gray-500" : "text-gray-900"}
+                  `}
                   placeholder=" "
                 />
                 <label htmlFor="password" className={labelClass}>
@@ -374,7 +394,11 @@ const AuthForm: React.FC = () => {
                     ref={passwordRef}
                     value={password}
                     onChange={handleChange(setPassword)}
-                    className={`${baseInputClass} text-gray-900`}
+                    disabled={isLoading}
+                    className={`
+                      ${baseInputClass} 
+                      ${isLoading ? "opacity-50 text-gray-500" : "text-gray-900"}
+                    `}
                     placeholder=" "
                   />
                   <label htmlFor="password" className={labelClass}>
@@ -387,7 +411,11 @@ const AuthForm: React.FC = () => {
                     id="confirmPassword"
                     value={confirmPassword}
                     onChange={handleChange(setConfirmPassword)}
-                    className={`${baseInputClass} text-gray-900`}
+                    disabled={isLoading}
+                    className={`
+                      ${baseInputClass} 
+                      ${isLoading ? "opacity-50 text-gray-500" : "text-gray-900"}
+                    `}
                     placeholder=" "
                   />
                   <label htmlFor="confirmPassword" className={labelClass}>
@@ -401,7 +429,7 @@ const AuthForm: React.FC = () => {
                 <div className="mb-6 flex flex-col items-center">
                   <label
                     htmlFor="profilePicture"
-                    className="relative group cursor-pointer w-32 h-32 mb-2 rounded-full overflow-hidden"
+                    className="relative group w-32 h-32 mb-2 rounded-full overflow-hidden"
                   >
                     <div className="w-full h-full">
                       {profilePreview ? (
@@ -421,6 +449,7 @@ const AuthForm: React.FC = () => {
                     id="profilePicture"
                     accept="image/*"
                     onChange={handleProfilePictureChange}
+                    disabled={isLoading}
                     className="hidden"
                   />
                 </div>
@@ -431,7 +460,11 @@ const AuthForm: React.FC = () => {
                     ref={nameRef}
                     value={name}
                     onChange={handleChange(setName)}
-                    className={`${baseInputClass} text-gray-900`}
+                    disabled={isLoading}
+                    className={`
+                      ${baseInputClass} 
+                      ${isLoading ? "opacity-50 text-gray-500" : "text-gray-900"}
+                    `}
                     placeholder=" "
                   />
                   <label htmlFor="name" className={labelClass}>
@@ -452,7 +485,12 @@ const AuthForm: React.FC = () => {
                       placeholder="YYYY"
                       maxLength={4}
                       inputMode="numeric"
-                      className="block w-1/3 border-b-2 pb-2 pt-2 text-base text-center text-gray-900 bg-transparent focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600 transition-all duration-300 ease-in-out"
+                      disabled={isLoading}
+                      className={`
+                        block w-1/3 border-b-2 pb-2 pt-2 text-base text-center 
+                        ${isLoading ? "opacity-50 text-gray-500" : "text-gray-900"} 
+                        bg-transparent focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600 transition-all duration-300 ease-in-out
+                      `}
                     />
                     <span className="text-gray-500">|</span>
                     <input
@@ -466,7 +504,12 @@ const AuthForm: React.FC = () => {
                       placeholder="MM"
                       maxLength={2}
                       inputMode="numeric"
-                      className="block w-1/3 border-b-2 pb-2 pt-2 text-base text-center text-gray-900 bg-transparent focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600 transition-all duration-300 ease-in-out"
+                      disabled={isLoading}
+                      className={`
+                        block w-1/3 border-b-2 pb-2 pt-2 text-base text-center 
+                        ${isLoading ? "opacity-50 text-gray-500" : "text-gray-900"} 
+                        bg-transparent focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600 transition-all duration-300 ease-in-out
+                      `}
                     />
                     <span className="text-gray-500">|</span>
                     <input
@@ -480,7 +523,12 @@ const AuthForm: React.FC = () => {
                       placeholder="DD"
                       maxLength={2}
                       inputMode="numeric"
-                      className="block w-1/3 border-b-2 pb-2 pt-2 text-base text-center text-gray-900 bg-transparent focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600 transition-all duration-300 ease-in-out"
+                      disabled={isLoading}
+                      className={`
+                        block w-1/3 border-b-2 pb-2 pt-2 text-base text-center 
+                        ${isLoading ? "opacity-50 text-gray-500" : "text-gray-900"} 
+                        bg-transparent focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600 transition-all duration-300 ease-in-out
+                      `}
                     />
                   </div>
                 </div>
@@ -489,11 +537,16 @@ const AuthForm: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex space-x-4">
                       <label
-                        className={`flex items-center justify-center w-24 py-2 border rounded-lg transition-colors duration-300 ease-in-out focus-within:ring-2 focus-within:ring-blue-300 cursor-pointer ${
-                          gender === "male"
-                            ? "bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
-                            : "bg-white text-blue-500 border-blue-500 hover:bg-blue-100"
-                        }`}
+                        className={`
+                          flex items-center justify-center w-24 py-2 border rounded-lg transition-colors duration-300 ease-in-out 
+                          focus-within:ring-2 focus-within:ring-blue-300
+                          ${isLoading ? "opacity-50" : ""}
+                          ${
+                            gender === "male"
+                              ? "bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
+                              : "bg-white text-blue-500 border-blue-500 hover:bg-blue-100"
+                          }
+                        `}
                       >
                         <input
                           type="radio"
@@ -501,16 +554,22 @@ const AuthForm: React.FC = () => {
                           value="male"
                           checked={gender === "male"}
                           onChange={handleChange(setGender)}
+                          disabled={isLoading}
                           className="sr-only"
                         />
                         <span>남성</span>
                       </label>
                       <label
-                        className={`flex items-center justify-center w-24 py-2 border rounded-lg transition-colors duration-300 ease-in-out focus-within:ring-2 focus-within:ring-blue-300 cursor-pointer ${
-                          gender === "female"
-                            ? "bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
-                            : "bg-white text-blue-500 border-blue-500 hover:bg-blue-100"
-                        }`}
+                        className={`
+                          flex items-center justify-center w-24 py-2 border rounded-lg transition-colors duration-300 ease-in-out 
+                          focus-within:ring-2 focus-within:ring-blue-300
+                          ${isLoading ? "opacity-50" : ""}
+                          ${
+                            gender === "female"
+                              ? "bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
+                              : "bg-white text-blue-500 border-blue-500 hover:bg-blue-100"
+                          }
+                        `}
                       >
                         <input
                           type="radio"
@@ -518,6 +577,7 @@ const AuthForm: React.FC = () => {
                           value="female"
                           checked={gender === "female"}
                           onChange={handleChange(setGender)}
+                          disabled={isLoading}
                           className="sr-only"
                         />
                         <span>여성</span>
@@ -528,11 +588,17 @@ const AuthForm: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setParadoxFlag((prev) => !prev)}
-                          className={`flex items-center justify-center w-32 py-2 border rounded-lg transition-colors duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-300 cursor-pointer ${
-                            paradoxFlag
-                              ? "bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
-                              : "bg-white text-blue-500 border-blue-500 hover:bg-blue-100"
-                          }`}
+                          disabled={isLoading}
+                          className={`
+                            flex items-center justify-center w-32 py-2 border rounded-lg transition-colors duration-300 ease-in-out 
+                            focus:outline-none focus:ring-2 focus:ring-blue-300
+                            ${isLoading ? "opacity-50" : ""}
+                            ${
+                              paradoxFlag
+                                ? "bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
+                                : "bg-white text-blue-500 border-blue-500 hover:bg-blue-100"
+                            }
+                          `}
                         >
                           시간 여행자
                         </button>
@@ -546,32 +612,14 @@ const AuthForm: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-2 mb-4 text-white bg-blue-500 rounded-lg transition-colors duration-300 ease-in-out hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:opacity-60"
+              className="w-full h-10 mb-4 text-white bg-blue-500 rounded-lg transition-colors duration-300 ease-in-out hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:opacity-60"
             >
               <div className="flex items-center justify-center">
-                {isLoading && (
-                  <svg
-                    className="animate-spin mr-2 h-5 w-5 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                    />
-                  </svg>
+                {isLoading ? (
+                  <Icons name="spinner" className="animate-spin h-5 w-5 text-white/50 fill-white" />
+                ) : (
+                  <span>{formConfig[formState].buttonLabel}</span>
                 )}
-                <span>{formConfig[formState].buttonLabel}</span>
               </div>
             </button>
             {formState !== "start" && (
@@ -579,7 +627,7 @@ const AuthForm: React.FC = () => {
                 type="button"
                 onClick={handleBack}
                 disabled={isLoading}
-                className="w-full py-2 text-blue-500 border border-blue-500 rounded-lg hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-300 transition-colors duration-300 ease-in-out"
+                className="w-full h-10 py-2 text-blue-500 border border-blue-500 rounded-lg hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-300 transition-colors duration-300 ease-in-out"
               >
                 뒤로가기
               </button>

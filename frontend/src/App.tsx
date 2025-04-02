@@ -6,6 +6,7 @@ import LandingPage from "./pages/LandingPage";
 import MainPage from "./pages/MainPage";
 import { UserProvider, useUser } from "./contexts/UserContext";
 import startTokenRefreshPolling from "./utils/tokenManager";
+import Icons from "./components/Icons";
 
 const AppContent: React.FC = () => {
   const { setUserUuid } = useUser();
@@ -89,31 +90,12 @@ const AppContent: React.FC = () => {
   if (!isAuthChecked) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <svg
-          className="animate-spin h-12 w-12 text-blue-500"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <circle
-            className="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            strokeWidth="4"
-          />
-          <path
-            className="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-          />
-        </svg>
+        <Icons name="spinner" className="animate-spin w-12 h-12 text-gray-200 fill-blue-600" />
       </div>
     );
   }
 
-  // 페이지 전환 애니메이션: 로그인 상태에 따라 TestPage 또는 LandingPage가 자연스럽게 페이드 슬라이드로 전환됨
+  // 페이지 전환 애니메이션
   return (
     <div className="h-screen bg-gray-100 overflow-hidden">
       <AnimatePresence mode="wait">
