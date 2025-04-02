@@ -1,5 +1,14 @@
 const friendModel = require("../models/friendModel");
 
+// 서버 주소 포함한 프로필 사진 URL 생성 함수
+const formatProfile = (profile) => {
+  const serverUrl = process.env.SERVER_URL || "http://localhost:5000";
+  if (profile.profilePicture && !profile.profilePicture.startsWith("http")) {
+    profile.profilePicture = serverUrl + profile.profilePicture;
+  }
+  return profile;
+};
+
 exports.fetchFriends = async (req, res) => {
   try {
     const userUuid = req.user.uuid;
@@ -12,11 +21,12 @@ exports.fetchFriends = async (req, res) => {
     const friends = await Promise.all(
       friendUuids.map(async (friend) => {
         const profile = await friendModel.getFriendProfileByUuid(friend.uuid);
+        const formatted = formatProfile(profile);
         return {
-          uuid: profile.uuid,
-          name: profile.name,
-          email: profile.email,
-          profilePicture: profile.profilePicture || null,
+          uuid: formatted.uuid,
+          name: formatted.name,
+          email: formatted.email,
+          profilePicture: formatted.profilePicture || null,
           status: "accepted",
         };
       }),
@@ -39,7 +49,8 @@ exports.searchUsers = async (req, res) => {
     }
 
     const users = await friendModel.searchUsersByKeyword(keyword, selfUuid);
-    res.json({ success: true, users });
+    const formattedUsers = users.map(formatProfile);
+    res.json({ success: true, users: formattedUsers });
   } catch (error) {
     console.error("[searchUsers] Error:", error);
     res.status(500).json({ success: false, message: "유저 검색 중 오류가 발생했습니다." });
@@ -71,7 +82,6 @@ exports.sendFriendRequest = async (req, res) => {
   }
 };
 
-// 친구 요청 수락
 exports.acceptFriendRequest = async (req, res) => {
   try {
     const receiverUuid = req.user.uuid;
@@ -89,7 +99,6 @@ exports.acceptFriendRequest = async (req, res) => {
   }
 };
 
-// 친구 요청 거절
 exports.declineFriendRequest = async (req, res) => {
   try {
     const receiverUuid = req.user.uuid;
@@ -107,15 +116,29 @@ exports.declineFriendRequest = async (req, res) => {
   }
 };
 
-// 친구 요청 목록 조회
 exports.getReceivedRequests = async (req, res) => {
   try {
     const receiverUuid = req.user.uuid;
     const rows = await friendModel.getReceivedFriendRequests(receiverUuid);
-
-    res.json({ success: true, requests: rows });
+    const formatted = rows.map(formatProfile);
+    res.json({ success: true, requests: formatted });
   } catch (err) {
     console.error("[getReceivedRequests] Error:", err);
     res.status(500).json({ success: false, message: "요청 목록을 불러오지 못했습니다." });
+  }
+};
+
+exports.getUserProfileByUuid = async (req, res) => {
+  try {
+    const { uuid } = req.params;
+    const user = await friendModel.getUserProfileByUuid(uuid);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "유저를 찾을 수 없습니다." });
+    }
+    const formatted = formatProfile(user);
+    res.json({ success: true, user: formatted });
+  } catch (error) {
+    console.error("[getUserProfileByUuid] Error:", error);
+    res.status(500).json({ success: false, message: "서버 오류" });
   }
 };

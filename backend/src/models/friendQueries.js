@@ -127,7 +127,24 @@ const getReceivedFriendRequests = async (receiverUuid) => {
       WHERE f.friend_uuid = :receiverUuid AND f.status = 'pending'
     `;
   const [rows] = await pool.query(sql, { receiverUuid });
-  return rows;
+  return rows.map((profile) => {
+    const serverUrl = process.env.SERVER_URL || "http://localhost:5000";
+    if (profile.profilePicture) {
+      profile.profilePicture = serverUrl + profile.profilePicture;
+    }
+    return profile;
+  });
+};
+
+const getUserProfileByUuid = async (uuid) => {
+  const sql = `
+      SELECT u.uuid, u.email, up.name, up.profile_picture AS profilePicture
+      FROM users u
+      LEFT JOIN user_profiles up ON u.uuid = up.uuid
+      WHERE u.uuid = :uuid
+    `;
+  const [rows] = await pool.query(sql, { uuid });
+  return rows[0];
 };
 
 module.exports = {
@@ -139,4 +156,5 @@ module.exports = {
   acceptFriendRequest,
   declineFriendRequest,
   getReceivedFriendRequests,
+  getUserProfileByUuid,
 };

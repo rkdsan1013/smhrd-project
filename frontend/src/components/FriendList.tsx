@@ -10,6 +10,7 @@ import {
   acceptFriendRequest,
   declineFriendRequest,
 } from "../services/friendService";
+import FriendProfileCard from "./FriendProfileCard";
 
 interface FriendListProps {
   onClose: () => void;
@@ -18,7 +19,6 @@ interface FriendListProps {
 const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
   const [activeTab, setActiveTab] = useState<"list" | "requests">("list");
   const [isAdding, setIsAdding] = useState(false);
-
   const [searchKeyword, setSearchKeyword] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResultUser[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -29,6 +29,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
   const [error, setError] = useState("");
 
   const [receivedRequests, setReceivedRequests] = useState<ReceivedFriendRequest[]>([]);
+  const [selectedFriendUuid, setSelectedFriendUuid] = useState<string | null>(null);
 
   useEffect(() => {
     if (activeTab === "list" && !isAdding) {
@@ -127,11 +128,16 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
   };
 
   const handleFriendClick = (uuid: string) => {
-    alert(`친구 UUID: ${uuid}`);
+    setSelectedFriendUuid(uuid);
+  };
+
+  const closeFriendProfile = () => {
+    setSelectedFriendUuid(null);
   };
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-lg w-80">
+      {/* 헤더 */}
       <div className="flex items-center justify-between p-3">
         <div className="flex w-full">
           <button
@@ -166,6 +172,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
         </button>
       </div>
 
+      {/* 본문 */}
       <div className="p-4">
         {activeTab === "list" && (
           <>
@@ -203,9 +210,35 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                           key={user.uuid}
                           className="flex items-center justify-between space-x-3 hover:bg-gray-100 p-2 rounded"
                         >
-                          <div className="w-4/6 overflow-hidden">
-                            <p className="font-semibold truncate">{user.name}</p>
-                            <p className="text-sm text-gray-500 truncate">{user.email}</p>
+                          <div className="flex items-center space-x-3 overflow-hidden">
+                            {user.profilePicture ? (
+                              <img
+                                src={user.profilePicture}
+                                alt={user.name}
+                                className="w-10 h-10 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
+                                <svg
+                                  className="h-5 w-5 text-white"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M5.121 17.804A10 10 0 1119 12.001M15 11h.01M9 11h.01M7 15s1.5 2 5 2 5-2 5-2"
+                                  />
+                                </svg>
+                              </div>
+                            )}
+                            <div className="w-32 overflow-hidden">
+                              <p className="font-semibold truncate">{user.name}</p>
+                              <p className="text-sm text-gray-500 truncate">{user.email}</p>
+                            </div>
                           </div>
                           <div className="flex-shrink-0">
                             <button
@@ -248,24 +281,32 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                     className="flex items-center justify-between space-x-3 cursor-pointer hover:bg-gray-100 p-2 rounded"
                     onClick={() => handleFriendClick(friend.uuid)}
                   >
-                    <div className="flex items-center space-x-3 overflow-hidden w-full">
-                      <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                        <svg
-                          className="h-5 w-5 text-white"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M5.121 17.804A10 10 0 1119 12.001M15 11h.01M9 11h.01M7 15s1.5 2 5 2 5-2 5-2"
-                          />
-                        </svg>
-                      </div>
-                      <div className="overflow-hidden w-full">
+                    <div className="flex items-center space-x-3 overflow-hidden">
+                      {friend.profilePicture ? (
+                        <img
+                          src={friend.profilePicture}
+                          alt={friend.name}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
+                          <svg
+                            className="h-5 w-5 text-white"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M5.121 17.804A10 10 0 1119 12.001M15 11h.01M9 11h.01M7 15s1.5 2 5 2 5-2 5-2"
+                            />
+                          </svg>
+                        </div>
+                      )}
+                      <div className="overflow-hidden">
                         <p className="font-semibold truncate">{friend.name}</p>
                         <p className="text-sm text-gray-500 truncate">{friend.email}</p>
                       </div>
@@ -288,9 +329,35 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                     key={req.uuid}
                     className="flex items-center justify-between hover:bg-gray-100 p-2 rounded"
                   >
-                    <div className="overflow-hidden w-3/5">
-                      <p className="font-semibold truncate">{req.name}</p>
-                      <p className="text-sm text-gray-500 truncate">{req.email}</p>
+                    <div className="flex items-center space-x-3 overflow-hidden">
+                      {req.profilePicture ? (
+                        <img
+                          src={req.profilePicture}
+                          alt={req.name}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
+                          <svg
+                            className="h-5 w-5 text-white"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M5.121 17.804A10 10 0 1119 12.001M15 11h.01M9 11h.01M7 15s1.5 2 5 2 5-2 5-2"
+                            />
+                          </svg>
+                        </div>
+                      )}
+                      <div className="w-28 overflow-hidden">
+                        <p className="font-semibold truncate">{req.name}</p>
+                        <p className="text-sm text-gray-500 truncate">{req.email}</p>
+                      </div>
                     </div>
                     <div className="space-x-2">
                       <button
@@ -323,6 +390,10 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
             {isAdding ? "친구 목록" : "친구 추가"}
           </button>
         </div>
+      )}
+
+      {selectedFriendUuid && (
+        <FriendProfileCard uuid={selectedFriendUuid} onClose={closeFriendProfile} />
       )}
     </div>
   );

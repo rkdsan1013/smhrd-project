@@ -9,5 +9,6 @@ router.post("/search", verifyToken, friendController.searchUsers);
 router.patch("/:uuid/accept", verifyToken, friendController.acceptFriendRequest);
 router.delete("/:uuid/decline", verifyToken, friendController.declineFriendRequest);
 router.get("/received", verifyToken, friendController.getReceivedRequests);
+router.get("/:uuid", verifyToken, friendController.getUserProfileByUuid);
 
 module.exports = router;

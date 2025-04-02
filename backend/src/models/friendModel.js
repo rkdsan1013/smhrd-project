@@ -7,6 +7,7 @@ const {
   acceptFriendRequest,
   declineFriendRequest,
   getReceivedFriendRequests,
+  getUserProfileByUuid,
 } = require("./friendQueries");
 
 module.exports = {
@@ -18,4 +19,5 @@ module.exports = {
   acceptFriendRequest,
   declineFriendRequest,
   getReceivedFriendRequests,
+  getUserProfileByUuid,
 };

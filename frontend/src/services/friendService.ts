@@ -61,3 +61,8 @@ export const acceptFriendRequest = async (uuid: string) => {
 export const declineFriendRequest = async (uuid: string) => {
   await remove(`/friends/${uuid}/decline`);
 };
+
+export const getUserProfileByUuid = async (uuid: string) => {
+  const res = await get<{ success: boolean; user: Friend }>(`/friends/${uuid}`);
+  return res.user;
+};
