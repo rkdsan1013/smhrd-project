@@ -1,10 +1,10 @@
 // /frontend/src/components/AuthForm.tsx
 import React, {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   useCallback,
-  useLayoutEffect,
   ChangeEvent,
   FocusEvent,
   KeyboardEvent,
@@ -15,7 +15,9 @@ import { formatYear, formatTwoDigits, getMaxDay } from "../utils/dateUtils";
 import { checkEmailExists, signIn, signUp } from "../services/authService";
 import Icons from "./Icons";
 
+// 폼 상태 및 오류 필드 타입 정의
 type FormState = "start" | "signin" | "signup" | "profile";
+type ErrorField = "email" | "password" | "confirmPassword" | "name" | null;
 
 const formConfig: Record<FormState, { title: string; buttonLabel: string }> = {
   start: { title: "시작하기", buttonLabel: "시작하기" },
@@ -26,7 +28,6 @@ const formConfig: Record<FormState, { title: string; buttonLabel: string }> = {
 
 const baseInputClass =
   "peer block w-full border-0 border-b-2 pb-2.5 pt-4 text-base bg-transparent focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600 transition-all duration-300 ease-in-out";
-
 const labelClass =
   "absolute left-0 top-4 z-10 text-sm text-gray-500 whitespace-nowrap origin-top-left duration-300 transform -translate-y-6 scale-75 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100 peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600";
 
@@ -49,9 +50,13 @@ const AuthForm: React.FC = () => {
   const [showOverride, setShowOverride] = useState(false);
   const [hasMounted, setHasMounted] = useState(false);
 
+  // 오류가 발생한 필드를 저장하는 상태
+  const [errorField, setErrorField] = useState<ErrorField>(null);
+
   // ref 그룹
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
+  const confirmPasswordRef = useRef<HTMLInputElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
   const birthYearRef = useRef<HTMLInputElement>(null);
   const birthMonthRef = useRef<HTMLInputElement>(null);
@@ -59,20 +64,70 @@ const AuthForm: React.FC = () => {
   const cardOuterRef = useRef<HTMLDivElement>(null);
   const cardInnerRef = useRef<HTMLDivElement>(null);
 
-  // 초기 마운트 및 포커스 관리
+  // 컴포넌트 최초 마운트 확인
   useEffect(() => {
     setHasMounted(true);
   }, []);
 
-  useEffect(() => {
+  // 폼 상태 전환 시 (예, "profile" 전환) 해당 입력란으로 포커스 부여 (useLayoutEffect로 DOM 갱신 후 처리)
+  useLayoutEffect(() => {
     if (formState === "start") {
       emailRef.current?.focus();
     } else if (formState === "signin" || formState === "signup") {
       passwordRef.current?.focus();
-    } else if (formState === "profile") {
-      nameRef.current?.focus();
     }
   }, [formState]);
+
+  // 회원가입폼에서 정보입력폼("profile")으로 전환 시, 약간의 딜레이를 두고 이름 입력란에 포커스
+  useEffect(() => {
+    if (formState === "profile") {
+      setTimeout(() => {
+        nameRef.current?.focus();
+      }, 50);
+    }
+  }, [formState]);
+
+  // 로딩 완료 후, errorMsg와 errorField가 있으면 해당 필드로 포커스
+  useEffect(() => {
+    if (!isLoading && errorMsg && errorField) {
+      switch (errorField) {
+        case "email":
+          emailRef.current?.focus();
+          break;
+        case "password":
+          passwordRef.current?.focus();
+          break;
+        case "confirmPassword":
+          confirmPasswordRef.current?.focus();
+          break;
+        case "name":
+          nameRef.current?.focus();
+          break;
+      }
+      setErrorField(null);
+    }
+  }, [errorMsg, isLoading, errorField]);
+
+  // 카드 높이 애니메이션 (폼 크기 변경 효과)
+  useLayoutEffect(() => {
+    const outer = cardOuterRef.current;
+    const inner = cardInnerRef.current;
+    if (!outer || !inner) return;
+    const newHeight = inner.offsetHeight;
+    if (!hasMounted) {
+      outer.style.transition = "none";
+      outer.style.height = `${newHeight}px`;
+      return;
+    }
+    const currentHeight = parseFloat(window.getComputedStyle(outer).height || "0");
+    if (Math.round(currentHeight) === Math.round(newHeight)) return;
+    outer.style.transition = "none";
+    outer.style.height = `${currentHeight}px`;
+    // 강제 리플로우
+    outer.getBoundingClientRect();
+    outer.style.transition = "height 0.3s ease-in-out";
+    outer.style.height = `${newHeight}px`;
+  }, [hasMounted, formState, errorMsg, showOverride]);
 
   // 생일 입력 값 보정
   useEffect(() => {
@@ -98,27 +153,23 @@ const AuthForm: React.FC = () => {
       (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setter(e.target.value);
         setErrorMsg("");
-        // 생일 입력란 변경 시 시간 여행자 버튼은 사라지도록 처리
-        if (
-          e.target.id === "birthYear" ||
-          e.target.id === "birthMonth" ||
-          e.target.id === "birthDay"
-        ) {
+        if (["birthYear", "birthMonth", "birthDay"].includes(e.target.id)) {
           setShowOverride(false);
         }
       },
     [],
   );
 
-  // 키보드 이벤트 핸들러
+  // 키보드 이벤트 핸들러 (Escape 누르면 뒤로가기)
   const handleKeyDown = (e: KeyboardEvent) => {
     if (formState !== "start" && e.key === "Escape") {
       handleBack();
     }
   };
 
-  // 뒤로가기 처리 (상태에 따라 초기화할 변수들 그룹화)
+  // 뒤로가기 처리 (폼 상태별 초기화)
   const handleBack = useCallback(() => {
+    setErrorMsg("");
     if (formState === "profile") {
       setFormState("signup");
       setName("");
@@ -135,10 +186,9 @@ const AuthForm: React.FC = () => {
       setPassword("");
       setConfirmPassword("");
     }
-    setErrorMsg("");
   }, [formState]);
 
-  // 파일 선택 처리 및 미리보기 생성
+  // 파일 선택 및 미리보기 처리
   const handleProfilePictureChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -149,15 +199,13 @@ const AuthForm: React.FC = () => {
     }
   };
 
-  // 생일 입력 관련 개별 핸들러
+  // 생일 입력 관련 핸들러
   const handleBirthYearChange = (e: ChangeEvent<HTMLInputElement>) => {
     setParadoxFlag(false);
     const val = e.target.value.replace(/[^0-9]/g, "").slice(0, 4);
     setBirthYear(val);
     setErrorMsg("");
     if (val.length === 4) birthMonthRef.current?.focus();
-    // 생일 입력란 변경시 시간 여행자 버튼 숨김
-    setShowOverride(false);
   };
 
   const handleBirthYearBlur = (e: FocusEvent<HTMLInputElement>) => {
@@ -172,7 +220,6 @@ const AuthForm: React.FC = () => {
     setBirthMonth(val);
     setErrorMsg("");
     if (val.length === 2) birthDayRef.current?.focus();
-    setShowOverride(false);
   };
 
   const handleBirthMonthBlur = (e: FocusEvent<HTMLInputElement>) => {
@@ -186,7 +233,6 @@ const AuthForm: React.FC = () => {
     const val = e.target.value.replace(/[^0-9]/g, "").slice(0, 2);
     setBirthDay(val);
     setErrorMsg("");
-    setShowOverride(false);
   };
 
   const handleBirthDayBlur = (e: FocusEvent<HTMLInputElement>) => {
@@ -200,11 +246,12 @@ const AuthForm: React.FC = () => {
     }
   };
 
-  // 제출 관련 함수 (폼 상태별 분기)
+  // 제출 함수: 시작(이메일 입력)
   const handleStartSubmit = async () => {
     const emailValidation = validateEmail(email);
     if (!emailValidation.valid) {
       setErrorMsg(emailValidation.message || "유효한 이메일 주소를 입력해 주세요.");
+      setErrorField("email");
       return;
     }
     try {
@@ -212,13 +259,16 @@ const AuthForm: React.FC = () => {
       setFormState(exists ? "signin" : "signup");
     } catch (error) {
       setErrorMsg(formatError(error));
+      setErrorField("email");
     }
   };
 
+  // 제출 함수: 로그인
   const handleSignInSubmit = async () => {
     const passwordValidation = validatePassword(password);
     if (!passwordValidation.valid) {
       setErrorMsg(passwordValidation.message || "비밀번호가 유효하지 않습니다.");
+      setErrorField("password");
       return;
     }
     try {
@@ -227,30 +277,38 @@ const AuthForm: React.FC = () => {
         handleAuthSuccess(resp, "로그인 성공:");
       } else {
         setErrorMsg("로그인에 실패하였습니다.");
+        setErrorField("password");
       }
     } catch (error) {
       setErrorMsg(formatError(error));
+      setErrorField("password");
     }
   };
 
+  // 제출 함수: 회원가입 (검증 후 정보입력 폼으로 전환)
   const handleSignUpSubmit = async () => {
     const emailValidation = validateEmail(email);
     if (!emailValidation.valid) {
       setErrorMsg(emailValidation.message || "유효한 이메일 주소를 입력해 주세요.");
+      setErrorField("email");
       return;
     }
     const passwordValidation = validatePassword(password);
     if (!passwordValidation.valid) {
       setErrorMsg(passwordValidation.message || "비밀번호가 유효하지 않습니다.");
+      setErrorField("password");
       return;
     }
     if (password !== confirmPassword) {
       setErrorMsg("비밀번호가 일치하지 않습니다.");
+      setErrorField("confirmPassword");
       return;
     }
+    // 검증 통과 후 정보입력폼("profile")으로 전환
     setFormState("profile");
   };
 
+  // 제출 함수: 프로필 입력(최종 회원가입)
   const handleProfileSubmit = async () => {
     const profileValidation = validateFullProfile(
       name,
@@ -263,10 +321,9 @@ const AuthForm: React.FC = () => {
     if (!profileValidation.valid) {
       if (profileValidation.requiresOverride) setShowOverride(true);
       setErrorMsg(profileValidation.message || "프로필 정보를 확인해 주세요.");
+      setErrorField("name");
       return;
     }
-    // *가입하기 버튼 클릭 시 시간 여행자 버튼은 자동으로 사라지지 않고,
-    // 생일 입력란을 수정할 때만 사라지도록 setShowOverride(false)는 제거합니다.
     const formattedBirthdate = `${birthYear.padStart(4, "0")}-${birthMonth.padStart(
       2,
       "0",
@@ -278,16 +335,18 @@ const AuthForm: React.FC = () => {
       formData.append("name", name);
       formData.append("gender", gender);
       formData.append("birthdate", formattedBirthdate);
-      formData.append("paradox_flag", paradoxFlag ? "1" : "0");
+      formData.append("paradoxFlag", paradoxFlag ? "1" : "0");
       if (profilePicture) formData.append("profilePicture", profilePicture);
       const resp = await signUp(formData);
       if (resp.success) {
         handleAuthSuccess(resp, "회원가입 성공:");
       } else {
         setErrorMsg("회원가입에 실패하였습니다.");
+        setErrorField("name");
       }
     } catch (error) {
       setErrorMsg(formatError(error));
+      setErrorField("name");
     }
   };
 
@@ -312,7 +371,7 @@ const AuthForm: React.FC = () => {
     }
   };
 
-  // 카드 높이 애니메이션 (폼 컨테이너)
+  // 카드 높이 애니메이션: inner 높이를 기준으로 외부 컨테이너 높이 조정
   useLayoutEffect(() => {
     const outer = cardOuterRef.current;
     const inner = cardInnerRef.current;
@@ -351,7 +410,7 @@ const AuthForm: React.FC = () => {
                   onChange={handleChange(setEmail)}
                   disabled={isLoading || formState !== "start"}
                   className={`
-                    ${baseInputClass} 
+                    ${baseInputClass}
                     ${
                       isLoading || formState !== "start"
                         ? "opacity-50 text-gray-500"
@@ -375,7 +434,7 @@ const AuthForm: React.FC = () => {
                   onChange={handleChange(setPassword)}
                   disabled={isLoading}
                   className={`
-                    ${baseInputClass} 
+                    ${baseInputClass}
                     ${isLoading ? "opacity-50 text-gray-500" : "text-gray-900"}
                   `}
                   placeholder=" "
@@ -396,7 +455,7 @@ const AuthForm: React.FC = () => {
                     onChange={handleChange(setPassword)}
                     disabled={isLoading}
                     className={`
-                      ${baseInputClass} 
+                      ${baseInputClass}
                       ${isLoading ? "opacity-50 text-gray-500" : "text-gray-900"}
                     `}
                     placeholder=" "
@@ -409,11 +468,12 @@ const AuthForm: React.FC = () => {
                   <input
                     type="password"
                     id="confirmPassword"
+                    ref={confirmPasswordRef}
                     value={confirmPassword}
                     onChange={handleChange(setConfirmPassword)}
                     disabled={isLoading}
                     className={`
-                      ${baseInputClass} 
+                      ${baseInputClass}
                       ${isLoading ? "opacity-50 text-gray-500" : "text-gray-900"}
                     `}
                     placeholder=" "
@@ -462,7 +522,7 @@ const AuthForm: React.FC = () => {
                     onChange={handleChange(setName)}
                     disabled={isLoading}
                     className={`
-                      ${baseInputClass} 
+                      ${baseInputClass}
                       ${isLoading ? "opacity-50 text-gray-500" : "text-gray-900"}
                     `}
                     placeholder=" "
@@ -487,8 +547,8 @@ const AuthForm: React.FC = () => {
                       inputMode="numeric"
                       disabled={isLoading}
                       className={`
-                        block w-1/3 border-b-2 pb-2 pt-2 text-base text-center 
-                        ${isLoading ? "opacity-50 text-gray-500" : "text-gray-900"} 
+                        block w-1/3 border-b-2 pb-2 pt-2 text-base text-center
+                        ${isLoading ? "opacity-50 text-gray-500" : "text-gray-900"}
                         bg-transparent focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600 transition-all duration-300 ease-in-out
                       `}
                     />
@@ -506,8 +566,8 @@ const AuthForm: React.FC = () => {
                       inputMode="numeric"
                       disabled={isLoading}
                       className={`
-                        block w-1/3 border-b-2 pb-2 pt-2 text-base text-center 
-                        ${isLoading ? "opacity-50 text-gray-500" : "text-gray-900"} 
+                        block w-1/3 border-b-2 pb-2 pt-2 text-base text-center
+                        ${isLoading ? "opacity-50 text-gray-500" : "text-gray-900"}
                         bg-transparent focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600 transition-all duration-300 ease-in-out
                       `}
                     />
@@ -525,8 +585,8 @@ const AuthForm: React.FC = () => {
                       inputMode="numeric"
                       disabled={isLoading}
                       className={`
-                        block w-1/3 border-b-2 pb-2 pt-2 text-base text-center 
-                        ${isLoading ? "opacity-50 text-gray-500" : "text-gray-900"} 
+                        block w-1/3 border-b-2 pb-2 pt-2 text-base text-center
+                        ${isLoading ? "opacity-50 text-gray-500" : "text-gray-900"}
                         bg-transparent focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600 transition-all duration-300 ease-in-out
                       `}
                     />
@@ -538,7 +598,7 @@ const AuthForm: React.FC = () => {
                     <div className="flex space-x-4">
                       <label
                         className={`
-                          flex items-center justify-center w-24 py-2 border rounded-lg transition-colors duration-300 ease-in-out 
+                          flex items-center justify-center w-24 py-2 border rounded-lg transition-colors duration-300 ease-in-out
                           focus-within:ring-2 focus-within:ring-blue-300
                           ${isLoading ? "opacity-50" : ""}
                           ${
@@ -561,7 +621,7 @@ const AuthForm: React.FC = () => {
                       </label>
                       <label
                         className={`
-                          flex items-center justify-center w-24 py-2 border rounded-lg transition-colors duration-300 ease-in-out 
+                          flex items-center justify-center w-24 py-2 border rounded-lg transition-colors duration-300 ease-in-out
                           focus-within:ring-2 focus-within:ring-blue-300
                           ${isLoading ? "opacity-50" : ""}
                           ${
@@ -590,7 +650,7 @@ const AuthForm: React.FC = () => {
                           onClick={() => setParadoxFlag((prev) => !prev)}
                           disabled={isLoading}
                           className={`
-                            flex items-center justify-center w-32 py-2 border rounded-lg transition-colors duration-300 ease-in-out 
+                            flex items-center justify-center w-32 py-2 border rounded-lg transition-colors duration-300 ease-in-out
                             focus:outline-none focus:ring-2 focus:ring-blue-300
                             ${isLoading ? "opacity-50" : ""}
                             ${
