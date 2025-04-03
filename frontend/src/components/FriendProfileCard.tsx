@@ -1,3 +1,4 @@
+// FriendProfileCard.tsx (수정본)
 import React, { useEffect, useState, useRef } from "react";
 import { getUserProfileByUuid } from "../services/friendService";
 
@@ -10,7 +11,6 @@ const FriendProfileCard: React.FC<FriendProfileCardProps> = ({ uuid, onClose }) 
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isVisible, setIsVisible] = useState(false);
-
   const outerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -35,6 +35,10 @@ const FriendProfileCard: React.FC<FriendProfileCardProps> = ({ uuid, onClose }) 
   const handleClose = () => {
     setIsVisible(false);
     setTimeout(onClose, 300);
+  };
+
+  const handleManageFriend = () => {
+    alert("친구 관리 기능 준비 중");
   };
 
   if (loading) {
@@ -66,7 +70,7 @@ const FriendProfileCard: React.FC<FriendProfileCardProps> = ({ uuid, onClose }) 
       {/* 카드 */}
       <div
         ref={outerRef}
-        className={`relative bg-white rounded-lg shadow-xl w-96 p-6 transition-opacity duration-300 ${
+        className={`relative bg-white rounded-lg shadow-xl w-96 transition-opacity duration-300 ${
           isVisible ? "opacity-100" : "opacity-0"
         }`}
         style={{
@@ -77,7 +81,7 @@ const FriendProfileCard: React.FC<FriendProfileCardProps> = ({ uuid, onClose }) 
         }}
       >
         {/* 헤더 */}
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center p-4 border-b border-gray-200">
           <h2 className="text-xl font-bold">친구 프로필</h2>
           <button
             onClick={handleClose}
@@ -87,8 +91,8 @@ const FriendProfileCard: React.FC<FriendProfileCardProps> = ({ uuid, onClose }) 
           </button>
         </div>
 
-        {/* 프로필 정보 */}
-        <div className="flex flex-col items-center">
+        {/* 본문 */}
+        <div className="p-6 flex flex-col items-center">
           <div className="w-24 h-24 mb-4">
             {profile.profilePicture ? (
               <img
@@ -115,11 +119,20 @@ const FriendProfileCard: React.FC<FriendProfileCardProps> = ({ uuid, onClose }) 
               </div>
             )}
           </div>
-
           <div className="text-center w-full">
             <p className="text-lg font-semibold truncate">{profile.name}</p>
             <p className="text-sm text-gray-500 truncate">{profile.email}</p>
           </div>
+        </div>
+
+        {/* 푸터 */}
+        <div className="p-4 border-t border-gray-200 flex justify-end">
+          <button
+            onClick={handleManageFriend}
+            className="px-4 py-2 text-sm rounded bg-gray-300 hover:bg-gray-400 text-gray-800"
+          >
+            친구 관리
+          </button>
         </div>
       </div>
     </div>

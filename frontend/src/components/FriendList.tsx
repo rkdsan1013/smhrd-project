@@ -10,7 +10,10 @@ import {
   acceptFriendRequest,
   declineFriendRequest,
 } from "../services/friendService";
+import { openOrCreateDMRoom } from "../services/chatService";
 import FriendProfileCard from "./FriendProfileCard";
+import Icons from "./Icons";
+// import DirectMessage from "./DirectMessage";
 
 interface FriendListProps {
   onClose: () => void;
@@ -30,6 +33,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
 
   const [receivedRequests, setReceivedRequests] = useState<ReceivedFriendRequest[]>([]);
   const [selectedFriendUuid, setSelectedFriendUuid] = useState<string | null>(null);
+  const [dmRoomUuid, setDmRoomUuid] = useState<string | null>(null);
 
   useEffect(() => {
     if (activeTab === "list" && !isAdding) {
@@ -134,6 +138,19 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
   const closeFriendProfile = () => {
     setSelectedFriendUuid(null);
   };
+
+  const handleMessageClick = async (friendUuid: string) => {
+    try {
+      const roomUuid = await openOrCreateDMRoom(friendUuid);
+      setDmRoomUuid(roomUuid);
+    } catch (err) {
+      alert("채팅방을 여는 데 실패했습니다.");
+    }
+  };
+
+  if (dmRoomUuid) {
+    // return <DirectMessage roomUuid={dmRoomUuid} onBack={() => setDmRoomUuid(null)} />;
+  }
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-lg w-80">
@@ -278,10 +295,13 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                 {friends.map((friend) => (
                   <li
                     key={friend.uuid}
-                    className="flex items-center justify-between space-x-3 cursor-pointer hover:bg-gray-100 p-2 rounded"
-                    onClick={() => handleFriendClick(friend.uuid)}
+                    className="flex items-center justify-between space-x-3 hover:bg-gray-100 p-2 rounded"
                   >
-                    <div className="flex items-center space-x-3 overflow-hidden">
+                    {/* 왼쪽 영역 (프로필 클릭 → 친구 상세) */}
+                    <div
+                      className="flex items-center space-x-3 overflow-hidden cursor-pointer flex-1"
+                      onClick={() => handleFriendClick(friend.uuid)}
+                    >
                       {friend.profilePicture ? (
                         <img
                           src={friend.profilePicture}
@@ -311,6 +331,18 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                         <p className="text-sm text-gray-500 truncate">{friend.email}</p>
                       </div>
                     </div>
+
+                    {/* 오른쪽 영역 (채팅 아이콘 버튼) */}
+                    <button
+                      className="text-blue-500 hover:text-blue-600"
+                      onClick={() => handleMessageClick(friend.uuid)}
+                      title="채팅하기"
+                    >
+                      <Icons
+                        name="chaticon"
+                        className="w-6 h-6 text-gray-400 hover:text-blue-400 duration-300"
+                      />
+                    </button>
                   </li>
                 ))}
               </ul>
