@@ -13,29 +13,54 @@ interface TooltipState {
   id: number;
   text: string;
   style: React.CSSProperties;
+  placement: "right" | "bottom";
 }
 
 interface TooltipProps {
   text: string;
   style: React.CSSProperties;
+  placement: "right" | "bottom";
   className?: string;
 }
 
-const Tooltip: React.FC<TooltipProps> = ({ text, style, className }) =>
+const Tooltip: React.FC<TooltipProps> = ({ text, style, placement, className }) =>
   ReactDOM.createPortal(
-    <div
-      style={style}
-      className={`fixed z-50 px-2 py-1 bg-gray-700 text-white rounded shadow transition-opacity duration-200 ${
-        className || "text-base whitespace-nowrap"
-      }`}
-    >
-      {text}
+    <div style={style} className="fixed z-50 transition-opacity duration-200">
+      <div
+        className={`relative bg-gray-700 text-white text-sm rounded-lg shadow-lg flex items-center whitespace-nowrap ${
+          className || "px-3 py-2"
+        }`}
+      >
+        {text}
+        {/* 화살표 요소 – 데스크탑은 왼쪽, 모바일은 위쪽에 위치 */}
+        {placement === "right" && (
+          <div className="absolute left-[-4px] top-1/2 transform -translate-y-1/2 rotate-45 bg-gray-700 w-3 h-3" />
+        )}
+        {placement === "bottom" && (
+          <div className="absolute top-[-4px] left-1/2 transform -translate-x-1/2 rotate-45 bg-gray-700 w-3 h-3" />
+        )}
+      </div>
     </div>,
     document.body,
   );
 
-const tooltipWidth = 150;
+const tooltipGap = 8; // 버튼과 툴팁 사이 간격
 const hoverDelay = 100; // 100ms delay
+
+const calcTooltipStyle = (rect: DOMRect, isDesktop: boolean): React.CSSProperties =>
+  isDesktop
+    ? {
+        position: "fixed",
+        left: rect.right + tooltipGap,
+        top: rect.top + rect.height / 2,
+        transform: "translateY(-50%)",
+      }
+    : {
+        position: "fixed",
+        left: rect.left + rect.width / 2,
+        top: rect.bottom + tooltipGap,
+        transform: "translateX(-50%)",
+      };
 
 const Sidebar: React.FC = () => {
   const [groups, setGroups] = useState<Group[]>([]);
@@ -54,31 +79,17 @@ const Sidebar: React.FC = () => {
 
   const navigateTo = (groupUuid: string) => alert(`그룹 UUID: ${groupUuid}로 이동합니다.`);
 
-  const calcTooltipStyle = (rect: DOMRect, isDesktop: boolean): React.CSSProperties =>
-    isDesktop
-      ? {
-          position: "fixed",
-          left: rect.right + 4,
-          top: rect.top + rect.height / 2,
-          transform: "translateY(-50%)",
-          maxWidth: tooltipWidth,
-        }
-      : {
-          position: "fixed",
-          left: rect.left + rect.width / 2,
-          top: rect.bottom + 4,
-          transform: "translateX(-50%)",
-          maxWidth: tooltipWidth,
-        };
-
   const addTooltip = (target: HTMLElement, text: string): number => {
     const rect = target.getBoundingClientRect();
-    const baseStyle = calcTooltipStyle(rect, window.innerWidth >= 768);
+    const isDesktop = window.innerWidth >= 768;
+    const placement: "right" | "bottom" = isDesktop ? "right" : "bottom";
+    const baseStyle = calcTooltipStyle(rect, isDesktop);
     const newId = tooltipIdCounter.current++;
     const newTooltip: TooltipState = {
       id: newId,
       text,
       style: { ...baseStyle, opacity: 0 },
+      placement,
     };
     setTooltips((prev) => [...prev, newTooltip]);
     requestAnimationFrame(() => {
@@ -102,7 +113,6 @@ const Sidebar: React.FC = () => {
 
   const handleMouseEnter = (e: React.MouseEvent<HTMLButtonElement>, text: string) => {
     const target = e.currentTarget;
-    // 만일 이전 tooltip ID가 남아있다면 제거
     target.removeAttribute("data-tooltip-id");
     hoverTimeoutRef.current = window.setTimeout(() => {
       if (target.matches(":hover")) {
@@ -210,7 +220,7 @@ const Sidebar: React.FC = () => {
         </div>
       </aside>
       {tooltips.map((tt) => (
-        <Tooltip key={tt.id} text={tt.text} style={tt.style} />
+        <Tooltip key={tt.id} text={tt.text} style={tt.style} placement={tt.placement} />
       ))}
     </>
   );
