@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
 import Icons from "./Icons";
+import GroupCreation from "./GroupCreation"; // 그룹 생성 모달
 
 interface Group {
   uuid: string;
@@ -32,7 +33,6 @@ const Tooltip: React.FC<TooltipProps> = ({ text, style, placement, className }) 
         }`}
       >
         {text}
-        {/* 화살표 요소 – 데스크탑은 왼쪽, 모바일은 위쪽에 위치 */}
         {placement === "right" && (
           <div className="absolute left-[-4px] top-1/2 transform -translate-y-1/2 rotate-45 bg-gray-700 w-3 h-3" />
         )}
@@ -67,6 +67,9 @@ const Sidebar: React.FC = () => {
   const [tooltips, setTooltips] = useState<TooltipState[]>([]);
   const tooltipIdCounter = useRef(0);
   const hoverTimeoutRef = useRef<number | null>(null);
+
+  // 그룹 생성 모달 상태
+  const [isGroupCreationModalOpen, setIsGroupCreationModalOpen] = useState(false);
 
   useEffect(() => {
     const dummyGroups: Group[] = Array.from({ length: 20 }, (_, i) => ({
@@ -192,7 +195,7 @@ const Sidebar: React.FC = () => {
           <div className="flex flex-row md:flex-col flex-shrink-0 p-1 gap-2">
             <div className="relative flex items-center justify-center">
               <button
-                onClick={() => navigateTo("create-group")}
+                onClick={() => setIsGroupCreationModalOpen(true)}
                 onMouseEnter={(e) => handleMouseEnter(e, "그룹 생성")}
                 onMouseLeave={handleMouseLeave}
                 className="flex items-center justify-center focus:outline-none"
@@ -222,6 +225,9 @@ const Sidebar: React.FC = () => {
       {tooltips.map((tt) => (
         <Tooltip key={tt.id} text={tt.text} style={tt.style} placement={tt.placement} />
       ))}
+      {isGroupCreationModalOpen && (
+        <GroupCreation onClose={() => setIsGroupCreationModalOpen(false)} />
+      )}
     </>
   );
 };
