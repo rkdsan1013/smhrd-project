@@ -1,6 +1,7 @@
 // /frontend/src/components/Sidebar.tsx
 import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
+import Icons from "./Icons";
 
 interface Group {
   uuid: string;
@@ -134,17 +135,12 @@ const Sidebar: React.FC = () => {
               onClick={() => navigateTo("home")}
               onMouseEnter={(e) => handleMouseEnter(e, "메인 화면")}
               onMouseLeave={handleMouseLeave}
-              className="flex items-center justify-center text-gray-700 hover:text-blue-600 focus:outline-none"
+              className="flex items-center justify-center focus:outline-none"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className="w-8 h-8"
-              >
-                <path d="M11.47 3.841a.75.75 0 011.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 1 0 1.061 1.06l8.69-8.689Z" />
-                <path d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.29 0 0 0 .091-.086L12 5.432Z" />
-              </svg>
+              <Icons
+                name="home"
+                className="w-8 h-8 text-gray-700 hover:text-blue-600 duration-300"
+              />
             </button>
           </div>
           <div className="flex items-center">
@@ -189,20 +185,12 @@ const Sidebar: React.FC = () => {
                 onClick={() => navigateTo("create-group")}
                 onMouseEnter={(e) => handleMouseEnter(e, "그룹 생성")}
                 onMouseLeave={handleMouseLeave}
-                className="flex items-center justify-center text-gray-700 hover:text-blue-600 focus:outline-none"
+                className="flex items-center justify-center focus:outline-none"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  className="w-8 h-8"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M12 3.75a.75.75 0 01.75.75v6.75h6.75a.75.75 0 110 1.5h-6.75v6.75a.75.75 0 01-1.5 0v-6.75H4.5a.75.75 0 010-1.5h6.75V4.5a.75.75 0 01.75-.75z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+                <Icons
+                  name="plus"
+                  className="w-8 h-8 text-gray-700 hover:text-blue-600 duration-300"
+                />
               </button>
             </div>
             <div className="relative flex items-center justify-center">
@@ -210,51 +198,12 @@ const Sidebar: React.FC = () => {
                 onClick={() => navigateTo("search-group")}
                 onMouseEnter={(e) => handleMouseEnter(e, "그룹 검색")}
                 onMouseLeave={handleMouseLeave}
-                className="flex items-center justify-center text-gray-700 hover:text-blue-600 focus:outline-none"
+                className="flex items-center justify-center focus:outline-none"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  className="w-8 h-8"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10.5 3.75a6.75 6.75 0 100 13.5 6.75 6.75 0 000-13.5zm-8.25 6a8.25 8.25 0 1114.59 5.28l4.69 4.69a.75.75 0 11-1.06 1.06l-4.69-4.69A8.25 8.25 0 012.25 9.75z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </button>
-            </div>
-            <div className="relative flex items-center justify-center">
-              <button
-                onClick={() => navigateTo("photo-album")}
-                onMouseEnter={(e) => handleMouseEnter(e, "사진첩")}
-                onMouseLeave={handleMouseLeave}
-                className="flex items-center justify-center text-gray-700 hover:text-blue-600 focus:outline-none"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  className="w-8 h-8"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zm2.25-.75a.75.75 0 00-.75.75v12a.75.75 0 00.75.75h16.5a.75.75 0 00.75-.75V6a.75.75 0 00-.75-.75H3.75z"
-                    clipRule="evenodd"
-                  />
-                  <path
-                    fillRule="evenodd"
-                    d="M3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061z"
-                    clipRule="evenodd"
-                  />
-                  <path
-                    fillRule="evenodd"
-                    d="M13.125 8.94a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+                <Icons
+                  name="search"
+                  className="w-8 h-8 text-gray-700 hover:text-blue-600 duration-300"
+                />
               </button>
             </div>
           </div>
