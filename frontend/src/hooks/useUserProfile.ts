@@ -13,12 +13,20 @@ export interface UserProfile {
   profilePicture?: string;
 }
 
-// 자신의 프로필 정보를 가져오는 훅
+// 자신의 프로필 정보를 가져오는 훅 (forceRefresh, version 포함)
 export const useUserProfile = () => {
   const { userUuid } = useUser();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
+  const [refresh, setRefresh] = useState<boolean>(false);
+  const [version, setVersion] = useState<number>(0);
+
+  // forceRefresh를 호출하면 refresh와 version이 업데이트됨
+  const forceRefresh = () => {
+    setRefresh((prev) => !prev);
+    setVersion((prev) => prev + 1);
+  };
 
   useEffect(() => {
     if (userUuid) {
@@ -39,7 +47,7 @@ export const useUserProfile = () => {
           setLoading(false);
         });
     }
-  }, [userUuid]);
+  }, [userUuid, refresh]);
 
-  return { profile, loading, error };
+  return { profile, loading, error, forceRefresh, version };
 };
