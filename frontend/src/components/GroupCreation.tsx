@@ -337,25 +337,26 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
         {/* 푸터 (버튼 영역) */}
         <div className="p-4 border-t border-gray-200">
           {step === "creation" ? (
-            <div className="flex justify-end">
+            <div className="grid grid-cols-2 gap-2" key="form-footer">
+              <div className="h-10 w-full" />
               <button
                 onClick={goToSettings}
-                className="w-full h-10 bg-green-500 rounded-lg transition-colors duration-300 hover:bg-green-600"
+                className="h-10 w-full bg-green-500 rounded-lg hover:bg-green-600 transition-colors duration-300"
               >
                 <span className="text-white text-sm">다음</span>
               </button>
             </div>
           ) : (
-            <div className="flex justify-between">
+            <div className="grid grid-cols-2 gap-2" key="form-footer">
               <button
                 onClick={goToCreation}
-                className="flex-1 mr-2 h-10 bg-gray-300 rounded-lg transition-colors duration-300 hover:bg-gray-400"
+                className="h-10 w-full bg-gray-300 rounded-lg hover:bg-gray-400 transition-colors duration-300"
               >
                 <span className="text-gray-800 text-sm">이전</span>
               </button>
               <button
                 onClick={onSubmitGroup}
-                className="flex-1 ml-2 h-10 bg-green-500 rounded-lg transition-colors duration-300 hover:bg-green-600"
+                className="h-10 w-full bg-green-500 rounded-lg hover:bg-green-600 transition-colors duration-300"
               >
                 <span className="text-white text-sm">생성</span>
               </button>

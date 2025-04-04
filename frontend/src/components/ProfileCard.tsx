@@ -44,12 +44,12 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
   );
   const [formError, setFormError] = useState("");
 
-  // 애니메이션용 ref (제공된 코드와 동일한 구조)
+  // 애니메이션용 ref
   const cardOuterRef = useRef<HTMLDivElement>(null);
   const cardInnerRef = useRef<HTMLDivElement>(null);
   const [hasMounted, setHasMounted] = useState(false);
 
-  // 모달이 처음 렌더링될 때 나타나도록 설정
+  // 모달이 처음 렌더링될 때 나타남
   useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 50);
     return () => clearTimeout(timer);
@@ -65,7 +65,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     }
   }, [profile, isEditing]);
 
-  // 최초 렌더 후 내부 컨텐츠 높이로 외부 컨테이너 높이를 설정
+  // 최초 렌더 후 내부 컨텐츠 높이로 외부 컨테이너 높이 설정
   useEffect(() => {
     if (cardOuterRef.current && cardInnerRef.current) {
       cardOuterRef.current.style.height = `${cardInnerRef.current.offsetHeight}px`;
@@ -78,7 +78,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
   useLayoutEffect(() => {
     const outer = cardOuterRef.current;
     const inner = cardInnerRef.current;
-    if (!outer || !inner) return;
+    if (!(outer && inner)) return;
     const newHeight = inner.offsetHeight;
     if (!hasMounted) {
       outer.style.transition = "none";
@@ -107,15 +107,14 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     }
   };
 
-  // 상태 전환 시 외부 컨테이너의 높이를 미리 기록하는 헬퍼 (카드 높이 애니메이션을 위해)
+  // 현재 높이 캡쳐 (애니메이션을 위해)
   const captureHeight = () => {
     if (cardOuterRef.current) {
-      // 강제 높이 기록 : useLayoutEffect에서 기존 높이를 계산할 수 있도록 하기 위해
       cardOuterRef.current.style.height = `${cardOuterRef.current.offsetHeight}px`;
     }
   };
 
-  // 핸들러들 — 상태 전환 전에 captureHeight() 호출
+  // 핸들러들 – 상태 전환 전에 captureHeight() 호출
   const handleCancelPasswordChange = () => {
     captureHeight();
     setIsChangingPassword(false);
@@ -387,14 +386,14 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
             <div className="w-full flex flex-col gap-1">
               <button
                 onClick={onChangePasswordFromAccount}
-                className="h-10 w-full bg-indigo-500 rounded-lg hover:bg-indigo-600 text-white text-sm"
+                className="h-10 w-full bg-indigo-500 rounded-lg hover:bg-indigo-600 transition-colors duration-300 text-white text-sm"
               >
                 비밀번호 변경
               </button>
               <div className="w-full text-left">
                 <span
                   onClick={onWithdraw}
-                  className="text-xs text-red-500 underline cursor-pointer"
+                  className="text-xs text-red-500 underline cursor-pointer transition-colors duration-300"
                 >
                   회원 탈퇴
                 </span>
@@ -409,10 +408,10 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
             tabIndex={0}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === "Escape") e.preventDefault();
-              // 핸들러는 useLayoutEffect 의존 로직에 따라 처리
             }}
           >
             <p className="text-lg font-semibold">정말로 회원 탈퇴를 진행하시겠습니까?</p>
+            <p className="text-sm text-gray-500">가입 정보 및 모든 데이터는 복구할 수 없습니다.</p>
             <div className="w-full relative">
               <input
                 type="password"
@@ -529,9 +528,6 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
                   이름
                 </label>
               </div>
-              <div className="text-gray-600 whitespace-nowrap overflow-ellipsis overflow-hidden">
-                {profile?.email}
-              </div>
             </div>
           </div>
         );
@@ -540,43 +536,44 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     }
   };
 
-  const renderFooter = () => {
+  // --- 별도의 Footer 컴포넌트 ---
+  const ProfileInfoFooter = () => (
+    <div className="flex justify-start items-center gap-2" key="profile-info-footer">
+      <button
+        onClick={onLogout}
+        className="h-10 w-10 bg-red-500 rounded-lg hover:bg-red-600 transition-colors duration-300 flex items-center justify-center"
+      >
+        <Icons name="logout" className="w-6 h-6 text-white" />
+      </button>
+      <button
+        onClick={onManageAccount}
+        className="h-10 w-10 bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors duration-300 flex items-center justify-center"
+      >
+        <Icons name="userSettings" className="w-6 h-6 text-white" />
+      </button>
+      <button
+        onClick={onEditProfile}
+        className="h-10 w-10 bg-green-500 rounded-lg hover:bg-green-600 transition-colors duration-300 flex items-center justify-center"
+      >
+        <Icons name="userEdit" className="w-6 h-6 text-white" />
+      </button>
+    </div>
+  );
+
+  const FormActionFooter = () => {
     switch (mode) {
-      case "view":
-        return (
-          <div className="flex justify-start items-center gap-2">
-            <button
-              onClick={onLogout}
-              className="h-10 w-10 bg-red-500 rounded-lg hover:bg-red-600 flex items-center justify-center"
-            >
-              <Icons name="logout" className="w-6 h-6 text-white" />
-            </button>
-            <button
-              onClick={onManageAccount}
-              className="h-10 w-10 bg-blue-500 rounded-lg hover:bg-blue-600 flex items-center justify-center"
-            >
-              <Icons name="userSettings" className="w-6 h-6 text-white" />
-            </button>
-            <button
-              onClick={onEditProfile}
-              className="h-10 w-10 bg-green-500 rounded-lg hover:bg-green-600 flex items-center justify-center"
-            >
-              <Icons name="userEdit" className="w-6 h-6 text-white" />
-            </button>
-          </div>
-        );
       case "changePassword":
         return (
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2" key="form-footer">
             <button
               onClick={handleCancelPasswordChange}
-              className="h-10 w-full bg-gray-300 rounded-lg hover:bg-gray-400"
+              className="h-10 w-full bg-gray-300 rounded-lg hover:bg-gray-400 transition-colors duration-300"
             >
               <span className="text-gray-800 text-sm">취소</span>
             </button>
             <button
               onClick={onSaveEdit}
-              className="h-10 w-full bg-green-500 rounded-lg hover:bg-green-600"
+              className="h-10 w-full bg-green-500 rounded-lg hover:bg-green-600 transition-colors duration-300"
             >
               <span className="text-white text-sm">비밀번호 변경</span>
             </button>
@@ -584,27 +581,27 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
         );
       case "withdraw":
         return (
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2" key="form-footer">
             <button
               onClick={handleCancelWithdraw}
-              className="h-10 w-full bg-gray-300 rounded-lg hover:bg-gray-400"
+              className="h-10 w-full bg-gray-300 rounded-lg hover:bg-gray-400 transition-colors duration-300"
             >
               <span className="text-gray-800 text-sm">취소</span>
             </button>
             <button
               onClick={handleConfirmWithdraw}
-              className="h-10 w-full bg-red-500 rounded-lg hover:bg-red-600"
+              className="h-10 w-full bg-red-500 rounded-lg hover:bg-red-600 transition-colors duration-300"
             >
-              <span className="text-white text-sm">탈퇴</span>
+              <span className="text-white text-sm">회원 탈퇴</span>
             </button>
           </div>
         );
       case "manage":
         return (
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2" key="form-footer">
             <button
               onClick={onBackFromAccountManage}
-              className="h-10 w-full bg-gray-300 rounded-lg hover:bg-gray-400"
+              className="h-10 w-full bg-gray-300 rounded-lg hover:bg-gray-400 transition-colors duration-300"
             >
               <span className="text-gray-800 text-sm">돌아가기</span>
             </button>
@@ -613,16 +610,16 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
         );
       case "edit":
         return (
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2" key="form-footer">
             <button
               onClick={onCancelEdit}
-              className="h-10 w-full bg-gray-300 rounded-lg hover:bg-gray-400"
+              className="h-10 w-full bg-gray-300 rounded-lg hover:bg-gray-400 transition-colors duration-300"
             >
               <span className="text-gray-800 text-sm">취소</span>
             </button>
             <button
               onClick={onSaveEdit}
-              className="h-10 w-full bg-green-500 rounded-lg hover:bg-green-600"
+              className="h-10 w-full bg-green-500 rounded-lg hover:bg-green-600 transition-colors duration-300"
             >
               <span className="text-white text-sm">저장</span>
             </button>
@@ -633,6 +630,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     }
   };
 
+  // --- 메인 렌더링 영역 ---
   if (loading) {
     return (
       <div className="fixed inset-0 flex items-center justify-center">
@@ -669,7 +667,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
           <h2 className="text-xl font-bold">{modalTitle()}</h2>
           <button
             onClick={onCloseModal}
-            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-300"
+            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-300 transition-colors duration-300"
           >
             <Icons name="close" className="w-6 h-6 text-gray-600" />
           </button>
@@ -680,7 +678,9 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
             {formError && <div className="w-full mt-2 text-red-500 text-sm">{formError}</div>}
           </div>
         </div>
-        <div className="p-4 border-t border-gray-200 w-full">{renderFooter()}</div>
+        <div className="p-4 border-t border-gray-200 w-full">
+          {mode === "view" ? <ProfileInfoFooter /> : <FormActionFooter />}
+        </div>
       </div>
     </div>
   );
