@@ -20,17 +20,35 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 },
 });
 
-// 업로드된 이미지를 처리: 자동 회전, 512x512 리사이즈 및 가운데 crop, webp 변환
+// 업로드된 이미지 자동 회전, 512x512 리사이즈, 가운데 crop, webp 변환 (단일 및 다중 파일 모두 처리)
 async function resizeImage(req, res, next) {
-  if (!req.file) return next();
   try {
-    const resizedBuffer = await sharp(req.file.buffer)
-      .rotate()
-      .resize(512, 512, { fit: "cover", position: "center" })
-      .toFormat("webp")
-      .toBuffer();
-    req.file.buffer = resizedBuffer;
-    req.file.convertedExtension = "webp";
+    // 단일 파일 처리 (upload.single 사용 시)
+    if (req.file) {
+      const resizedBuffer = await sharp(req.file.buffer)
+        .rotate()
+        .resize(512, 512, { fit: "cover", position: "center" })
+        .toFormat("webp")
+        .toBuffer();
+      req.file.buffer = resizedBuffer;
+      req.file.convertedExtension = "webp";
+    }
+    // 다중 파일 처리 (upload.fields 사용 시)
+    if (req.files) {
+      for (const key in req.files) {
+        if (Array.isArray(req.files[key])) {
+          for (let file of req.files[key]) {
+            const resizedBuffer = await sharp(file.buffer)
+              .rotate()
+              .resize(512, 512, { fit: "cover", position: "center" })
+              .toFormat("webp")
+              .toBuffer();
+            file.buffer = resizedBuffer;
+            file.convertedExtension = "webp";
+          }
+        }
+      }
+    }
     next();
   } catch (error) {
     next(error);

@@ -3,11 +3,11 @@ import React, { useState, useEffect, useRef, MouseEvent } from "react";
 import ReactDOM from "react-dom";
 import Icons from "./Icons";
 import GroupCreation from "./GroupCreation"; // 그룹 생성 모달
+import { getMyGroups, GroupInfo } from "../services/groupService"; // API 호출
 
-interface Group {
-  uuid: string;
-  image: string;
-  name: string;
+// 그룹 인터페이스 (백엔드에서 받아오는 데이터 구조와 맞추어 GroupInfo 사용)
+interface Group extends GroupInfo {
+  image: string; // 그룹 아이콘 URL로 사용할 속성
 }
 
 interface TooltipState {
@@ -25,12 +25,11 @@ interface TooltipProps {
 }
 
 const Tooltip: React.FC<TooltipProps> = ({ text, style, placement, className }) => {
-  // placement에 따라 Tailwind의 after: 클래스로 화살표 생성
+  // placement에 따라 화살표 스타일 결정
   const arrowClasses =
     placement === "right"
       ? "after:content-[''] after:absolute after:top-1/2 after:left-[-6px] after:-translate-y-1/2 after:border-t-[6px] after:border-b-[6px] after:border-t-transparent after:border-b-transparent after:border-r-[6px] after:border-r-gray-700/75"
       : "after:content-[''] after:absolute after:left-1/2 after:top-[-6px] after:-translate-x-1/2 after:border-l-[6px] after:border-r-[6px] after:border-l-transparent after:border-r-transparent after:border-b-[6px] after:border-b-gray-700/75";
-
   return ReactDOM.createPortal(
     <div
       style={style}
@@ -72,13 +71,23 @@ const Sidebar: React.FC = () => {
   const hoverTimeoutRef = useRef<number | null>(null);
   const [isGroupCreationModalOpen, setIsGroupCreationModalOpen] = useState(false);
 
+  // 그룹 데이터를 API 로부터 불러오기: 내가 가입한 그룹 리스트
   useEffect(() => {
-    const dummyGroups: Group[] = Array.from({ length: 20 }, (_, i) => ({
-      uuid: `uuid-${i + 1}`,
-      image: "",
-      name: `그룹 ${i + 1}`,
-    }));
-    setGroups(dummyGroups);
+    // 그룹 목록 API 호출 후 세팅
+    async function fetchGroups() {
+      try {
+        const fetchedGroups = await getMyGroups();
+        // 백엔드 데이터의 그룹 아이콘 필드를 image 속성으로 매핑
+        const mappedGroups: Group[] = fetchedGroups.map((group) => ({
+          ...group,
+          image: group.group_icon || "", // group_icon을 사용, 없으면 빈 문자열
+        }));
+        setGroups(mappedGroups);
+      } catch (error) {
+        console.error("그룹 데이터 불러오기 실패:", error);
+      }
+    }
+    fetchGroups();
   }, []);
 
   const navigateTo = (groupUuid: string) => {
@@ -97,10 +106,9 @@ const Sidebar: React.FC = () => {
       style: { ...baseStyle, opacity: 0 },
       placement,
     };
-
     setTooltips((prev) => [...prev, newTooltip]);
 
-    // 두 프레임 후에 opacity 변경
+    // 두 프레임 후 opacity를 1로 변경
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         setTooltips((prev) =>
@@ -108,7 +116,6 @@ const Sidebar: React.FC = () => {
         );
       });
     });
-
     return newId;
   };
 
@@ -153,7 +160,7 @@ const Sidebar: React.FC = () => {
           {/* 홈 버튼 */}
           <div className="flex-shrink-0 flex items-center justify-center relative">
             <button
-              onClick={() => navigateTo("home")}
+              onClick={() => alert("")}
               onMouseEnter={(e) => handleMouseEnter(e, "메인 화면")}
               onMouseLeave={handleMouseLeave}
               className="flex items-center justify-center focus:outline-none"
@@ -226,7 +233,7 @@ const Sidebar: React.FC = () => {
             </div>
             <div className="relative flex items-center justify-center">
               <button
-                onClick={() => navigateTo("search-group")}
+                onClick={() => alert("")}
                 onMouseEnter={(e) => handleMouseEnter(e, "그룹 검색")}
                 onMouseLeave={handleMouseLeave}
                 className="flex items-center justify-center focus:outline-none"

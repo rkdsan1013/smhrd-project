@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, ChangeEvent } from "react";
 import { validateName, validateDescription } from "../utils/validators";
 import Icons from "./Icons";
+import { createGroup } from "../services/groupService"; // Group creation API call
 
 const baseInputClass =
   "peer block w-full border-0 border-b-2 pb-2.5 pt-4 text-base bg-transparent focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600 transition-all duration-300 ease-in-out";
@@ -120,7 +121,7 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
     setStep("settings");
   };
 
-  // 그룹 생성 제출 시 최종 검증
+  // 그룹 생성 제출 시 최종 검증 및 API 호출
   const onSubmitGroup = async () => {
     const nameValidation = validateName(groupName);
     if (!nameValidation.valid) {
@@ -133,8 +134,15 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
       return;
     }
     try {
-      // API 호출: { groupName, groupDescription, groupIcon, groupPicture, groupVisibility }
-      alert("그룹이 생성되었습니다.");
+      const payload = {
+        name: groupName.trim(),
+        description: groupDescription.trim(),
+        groupIcon,
+        groupPicture,
+        visibility: groupVisibility,
+      };
+      const createdGroup = await createGroup(payload);
+      alert("그룹이 생성되었습니다. 그룹 ID: " + createdGroup.uuid);
       onCloseModal();
     } catch (error: any) {
       setFormError(error.message || "그룹 생성 중 오류가 발생했습니다.");
