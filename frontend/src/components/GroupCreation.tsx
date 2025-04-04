@@ -337,16 +337,10 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
         {/* 푸터 (버튼 영역) */}
         <div className="p-4 border-t border-gray-200">
           {step === "creation" ? (
-            <div className="flex justify-between">
-              <button
-                onClick={onCloseModal}
-                className="flex-1 mr-2 h-10 bg-gray-300 rounded-lg transition-colors duration-300 hover:bg-gray-400"
-              >
-                <span className="text-gray-800 text-sm">취소</span>
-              </button>
+            <div className="flex justify-end">
               <button
                 onClick={goToSettings}
-                className="flex-1 ml-2 h-10 bg-green-500 rounded-lg transition-colors duration-300 hover:bg-green-600"
+                className="w-full h-10 bg-green-500 rounded-lg transition-colors duration-300 hover:bg-green-600"
               >
                 <span className="text-white text-sm">다음</span>
               </button>
