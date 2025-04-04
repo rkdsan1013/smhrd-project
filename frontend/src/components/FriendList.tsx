@@ -114,6 +114,23 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
     };
   }, []);
 
+  useEffect(() => {
+    if (activeTab === "list" && !isAdding) {
+      loadFriends();
+    }
+  }, [isAdding, activeTab]);
+
+  useEffect(() => {
+    const handleFriendRemoved = ({ removedUuid }: { removedUuid: string }) => {
+      setFriends((prev) => prev.filter((f) => f.uuid !== removedUuid));
+    };
+
+    socket.on("friendRemoved", handleFriendRemoved);
+    return () => {
+      socket.off("friendRemoved", handleFriendRemoved);
+    };
+  }, []);
+
   const sortSearchResults = (list: SearchResultUser[]) => {
     return [...list].sort((a, b) => {
       const weight = (status: string | null | undefined) => {
@@ -211,12 +228,6 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
     }
   };
 
-  useEffect(() => {
-    if (activeTab === "list" && !isAdding) {
-      loadFriends();
-    }
-  }, [isAdding, activeTab]);
-
   if (dmRoomUuid && userUuid) {
     return (
       <DirectMessage
@@ -226,17 +237,6 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
       />
     );
   }
-
-  useEffect(() => {
-    const handleFriendRemoved = ({ removedUuid }: { removedUuid: string }) => {
-      setFriends((prev) => prev.filter((f) => f.uuid !== removedUuid));
-    };
-
-    socket.on("friendRemoved", handleFriendRemoved);
-    return () => {
-      socket.off("friendRemoved", handleFriendRemoved);
-    };
-  }, []);
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-lg w-80">
