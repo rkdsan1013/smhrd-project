@@ -175,7 +175,7 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
           <div ref={innerRef} className="p-6 space-y-6">
             {step === "creation" ? (
               <div className="flex flex-col items-center space-y-4">
-                {/* 그룹 아이콘 */}
+                {/* 그룹 아이콘 영역 */}
                 <div className="flex flex-col items-center">
                   <label
                     htmlFor="groupIcon"
@@ -192,7 +192,12 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
                         <div className="w-full h-full bg-gray-200" />
                       )}
                     </div>
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors duration-300" />
+                    {/* 배경 오버레이 */}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors duration-300"></div>
+                    {/* 중앙 아이콘 */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                      <Icons name="image" className="w-8 h-8 text-white" />
+                    </div>
                   </label>
                   <input
                     type="file"
@@ -297,7 +302,7 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
                     {groupVisibility === "public" ? "공개" : "비공개"}
                   </div>
                 </div>
-                {/* 그룹 배경 사진 */}
+                {/* 그룹 배경 사진 영역 */}
                 <div>
                   <label
                     htmlFor="groupPicture"
@@ -312,7 +317,12 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
                         />
                       )}
                     </div>
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors duration-300" />
+                    {/* 배경 오버레이 */}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors duration-300"></div>
+                    {/* 중앙 아이콘 */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                      <Icons name="image" className="w-8 h-8 text-white" />
+                    </div>
                   </label>
                   <input
                     type="file"

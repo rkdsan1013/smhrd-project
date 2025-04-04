@@ -475,12 +475,13 @@ const AuthForm: React.FC = () => {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm">
-                            이미지 선택
-                          </div>
+                          <div className="w-full h-full bg-gray-200" />
                         )}
                       </div>
                       <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                        <Icons name="image" className="w-8 h-8 text-white" />
+                      </div>
                     </label>
                     <input
                       type="file"

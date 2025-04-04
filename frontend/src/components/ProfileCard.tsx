@@ -502,6 +502,9 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
               >
                 <div className="w-full h-full">{renderImage()}</div>
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors duration-300" />
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                  <Icons name="image" className="w-8 h-8 text-white" />
+                </div>
               </label>
               <input
                 type="file"
