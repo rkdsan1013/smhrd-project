@@ -180,7 +180,7 @@ const Sidebar: React.FC = () => {
                     onClick={() => navigateTo(group.uuid)}
                     onMouseEnter={(e) => handleMouseEnter(e, group.name)}
                     onMouseLeave={handleMouseLeave}
-                    className="flex items-center justify-center hover:opacity-80 focus:outline-none"
+                    className="flex items-center justify-center rounded-full overflow-hidden hover:opacity-80 hover:scale-105 hover:shadow-lg transition-transform duration-200 transform focus:outline-none"
                   >
                     {group.image ? (
                       <img

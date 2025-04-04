@@ -96,7 +96,7 @@ const AppContent: React.FC = () => {
     );
   }
 
-  // 페이지 전환 애니메이션 : 로그인 상태면 MainPage (SocketProvider 포함), 아니면 LandingPage 렌더링
+  // 페이지 전환 애니메이션 : 로그인 상태면 MainPage, 아니면 LandingPage 렌더링
   return (
     <div className="h-screen bg-gray-100 overflow-hidden">
       <AnimatePresence mode="wait">

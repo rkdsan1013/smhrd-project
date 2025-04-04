@@ -6,7 +6,6 @@ import { validateName, validatePassword } from "../utils/validators";
 import { useUserProfile } from "../contexts/UserProfileContext";
 import Icons from "./Icons";
 
-// 기본 스타일
 const baseInputClass =
   "peer block w-full border-0 border-b-2 pb-2.5 pt-4 text-base bg-transparent focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600 transition-all duration-300 ease-in-out";
 const labelClass =
