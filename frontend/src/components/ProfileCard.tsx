@@ -278,6 +278,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
   const onLogout = async () => {
     try {
       await logout();
+      onCloseModal();
       window.dispatchEvent(new CustomEvent("userSignedOut"));
     } catch (err) {
       console.error("로그아웃 실패:", err);
@@ -338,20 +339,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
             onClick={onCloseModal}
             className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-300 transition-colors duration-300"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="w-6 h-6 text-gray-600"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <Icons name="close" className="w-6 h-6 text-gray-600" />
           </button>
         </div>
 
@@ -576,21 +564,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
                 onClick={onLogout}
                 className="flex items-center justify-center h-10 w-10 bg-red-500 rounded-lg hover:bg-red-600 transition-colors duration-300"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-6 h-6 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M20 12H8m12 0-4 4m4-4-4-4M9 4H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h2"
-                  />
-                </svg>
+                <Icons name="logout" className="w-6 h-6 text-white" />
               </button>
               <button
                 onClick={onEditProfile}

@@ -13,11 +13,11 @@ const Icons: React.FC<IconProps> = ({ name, className }) => {
   const iconMap: Record<string, React.ReactElement> = {
     spinner: (
       <svg
-        aria-hidden="true"
         className={defaultClass || "w-8 h-8 text-gray-200 animate-spin fill-blue-600"}
-        viewBox="0 0 100 101"
-        fill="none"
+        aria-hidden="true"
         xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 100 101"
       >
         <path
           d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
@@ -29,7 +29,41 @@ const Icons: React.FC<IconProps> = ({ name, className }) => {
         />
       </svg>
     ),
-    chaticon: (
+    close: (
+      <svg
+        className={defaultClass || "w-6 h-6 text-gray-800"}
+        aria-hidden="true"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          d="M6 18 17.94 6M18 18 6.06 6"
+        />
+      </svg>
+    ),
+    logout: (
+      <svg
+        className={defaultClass || "w-6 h-6 text-gray-800"}
+        aria-hidden="true"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          d="M20 12H8m12 0-4 4m4-4-4-4M9 4H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h2"
+        />
+      </svg>
+    ),
+    home: (
       <svg
         className={defaultClass || "w-6 h-6 text-gray-800"}
         aria-hidden="true"
@@ -39,13 +73,41 @@ const Icons: React.FC<IconProps> = ({ name, className }) => {
       >
         <path
           fill-rule="evenodd"
-          d="M4 3a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h1v2a1 1 0 0 0 1.707.707L9.414 13H15a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H4Z"
-          clipRule="evenodd"
+          d="M11.293 3.293a1 1 0 0 1 1.414 0l6 6 2 2a1 1 0 0 1-1.414 1.414L19 12.414V19a2 2 0 0 1-2 2h-3a1 1 0 0 1-1-1v-3h-2v3a1 1 0 0 1-1 1H7a2 2 0 0 1-2-2v-6.586l-.293.293a1 1 0 0 1-1.414-1.414l2-2 6-6Z"
+          clip-rule="evenodd"
         />
+      </svg>
+    ),
+    plus: (
+      <svg
+        className={defaultClass || "w-6 h-6 text-gray-800"}
+        aria-hidden="true"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
         <path
-          fill-rule="evenodd"
-          d="M8.023 17.215c.033-.03.066-.062.098-.094L10.243 15H15a3 3 0 0 0 3-3V8h2a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-1v2a1 1 0 0 1-1.707.707L14.586 18H9a1 1 0 0 1-.977-.785Z"
-          clipRule="evenodd"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          d="M5 12h14m-7 7V5"
+        />
+      </svg>
+    ),
+    search: (
+      <svg
+        className={defaultClass || "w-6 h-6 text-gray-800"}
+        aria-hidden="true"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeWidth="2"
+          d="m21 21-3.5-3.5M17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"
         />
       </svg>
     ),

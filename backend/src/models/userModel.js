@@ -1,10 +1,10 @@
 // /backend/src/models/userModel.js
 const {
   getUserByEmail,
-  updateUserProfilePicture,
-  getProfileByUuid,
   getUserByUuid,
+  updateUserProfilePicture,
   updateUserProfile,
+  getProfileByUuid,
   changeUserPassword,
   deleteUserByUuid,
 } = require("./userQueries");

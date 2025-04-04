@@ -1,4 +1,4 @@
-// backend/src/server.js
+// /backend/src/server.js
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
@@ -8,18 +8,11 @@ const http = require("http");
 
 dotenv.config();
 
-// (각자의 라우터, 미들웨어 등 필요에 따라 추가)
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
-const friendRoutes = require("./routes/friendRoutes");
-const chatRoutes = require("./routes/chatRoutes");
-
-const { initSocket } = require("./socket/socket");
+const groupRoutes = require("./routes/groupRoutes");
 
 const app = express();
-const server = http.createServer(app);
-
-initSocket(server);
 
 app.use(
   cors({
@@ -27,17 +20,17 @@ app.use(
     credentials: true,
   }),
 );
+
 app.use(express.json());
 app.use(cookieParser());
 
-// 정적 파일 제공
+// 정적 파일 제공 (예: uploads 폴더)
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
-// API 라우트 등록
+// API 라우트 설정
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/friends", friendRoutes);
-app.use("/api/chats", chatRoutes);
+app.use("/api/groups", groupRoutes);
 
 // 글로벌 에러 핸들러
 app.use((err, req, res, next) => {
@@ -46,6 +39,15 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
+
+// Express 앱을 포함한 HTTP 서버 생성
+const server = http.createServer(app);
+
+// Socket.IO 초기화 (웹소켓 기능 추가)
+const { initSocketIO } = require("./socket");
+initSocketIO(server);
+
+// 서버 실행
 server.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT} with WebSocket support`);
+  console.log(`Server is running on port ${PORT}`);
 });
