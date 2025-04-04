@@ -17,7 +17,7 @@ body {
   font-style: normal;
 }
 
-/* 5. 기타 스타일 (예: 스크롤바 숨김) */
+/* 5. 기타 스타일 */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
