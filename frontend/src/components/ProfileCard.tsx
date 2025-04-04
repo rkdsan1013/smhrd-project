@@ -69,7 +69,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     }
   }, [profile, isEditing]);
 
-  // 초기 마운트 후 높이 설정
+  // 초기 마운트 후 높이 설정 (내부 컨텐츠 높이에 맞게 outerRef의 높이를 설정)
   useEffect(() => {
     if (outerRef.current && innerRef.current) {
       outerRef.current.style.height = `${innerRef.current.offsetHeight}px`;
@@ -78,7 +78,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     setHasMounted(true);
   }, []);
 
-  // 내용 변경에 따른 모달 높이 애니메이션 조절
+  // 내용 변경에 따른 모달 높이 애니메이션 조절 (내부 컨텐츠에 따라 동적으로 높이 변화)
   useLayoutEffect(() => {
     if (outerRef.current && innerRef.current) {
       const newHeight = innerRef.current.offsetHeight;
@@ -109,7 +109,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     setFormError("");
   };
 
-  // 회원 탈퇴 모드 취소 → 계정 관리 화면으로 복귀 (함수명 간략화)
+  // 회원 탈퇴 모드 취소 → 계정 관리 화면으로 복귀
   const handleCancelWithdraw = () => {
     setIsWithdrawing(false);
     setIsManagingAccount(true);
@@ -347,8 +347,9 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
         <div ref={outerRef} style={{ overflow: "hidden" }}>
           <div ref={innerRef} className="p-6 flex flex-col items-center">
             {!isEditing ? (
-              <>
-                <div className="mb-6 flex flex-col items-center">
+              // 읽기 모드: 프로필 정보 표시
+              <div className="w-full flex flex-col space-y-4 items-center">
+                <div className="flex flex-col items-center">
                   {profilePreview ? (
                     <img
                       src={profilePreview}
@@ -359,7 +360,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
                     <div className="w-24 h-24 bg-gray-200 rounded-full"></div>
                   )}
                 </div>
-                <div className="w-full text-center mb-4">
+                <div className="w-full text-center">
                   <div className="text-2xl font-bold whitespace-nowrap overflow-ellipsis overflow-hidden">
                     {profile.name}
                   </div>
@@ -367,7 +368,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
                     {profile.email}
                   </div>
                 </div>
-                <div className="w-full text-left mt-4">
+                <div className="w-full text-left">
                   {profile.birthdate && (
                     <p className="text-gray-600 truncate">생일: {profile.birthdate}</p>
                   )}
@@ -382,13 +383,14 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
                     </p>
                   )}
                 </div>
-              </>
+              </div>
             ) : isEditing && isManagingAccount ? (
+              // 계정 관리 모드 내 폼
               isWithdrawing ? (
-                // 회원 탈퇴 본문: 프롬프트 및 입력란 (버튼은 푸터에서)
-                <div className="w-full flex flex-col items-center text-center mb-4">
-                  <p className="text-lg font-semibold mb-4">정말로 회원 탈퇴를 진행하시겠습니까?</p>
-                  <div className="w-full relative mb-3">
+                // 회원 탈퇴 폼
+                <div className="w-full flex flex-col space-y-4 items-center text-center">
+                  <p className="text-lg font-semibold">정말로 회원 탈퇴를 진행하시겠습니까?</p>
+                  <div className="w-full relative">
                     <input
                       type="password"
                       value={withdrawPassword}
@@ -403,9 +405,9 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
                   </div>
                 </div>
               ) : (
-                // 계정 관리 본문: 프로필 정보 및 버튼들
-                <div className="w-full flex flex-col items-center text-center mb-4">
-                  <div className="mb-6">
+                // 기본 계정 관리 폼
+                <div className="w-full flex flex-col space-y-4 items-center text-center">
+                  <div className="flex justify-center">
                     {profilePreview ? (
                       <img
                         src={profilePreview}
@@ -422,16 +424,16 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
                   <div className="text-gray-600 whitespace-nowrap overflow-ellipsis overflow-hidden">
                     {profile.email}
                   </div>
-                  <div className="mt-4 flex flex-col space-y-2 w-full">
+                  <div className="w-full flex flex-col space-y-2">
                     <button
                       onClick={onChangePasswordFromAccount}
-                      className="w-full h-10 flex items-center justify-center px-4 bg-indigo-500 rounded-lg hover:bg-indigo-600 transition-colors text-white text-sm"
+                      className="h-10 w-full bg-indigo-500 rounded-lg hover:bg-indigo-600 transition-colors text-white text-sm"
                     >
                       비밀번호 변경
                     </button>
                     <button
                       onClick={onWithdraw}
-                      className="w-full h-10 flex items-center justify-center px-4 bg-red-500 rounded-lg hover:bg-red-600 transition-colors text-white text-sm"
+                      className="h-10 w-full bg-red-500 rounded-lg hover:bg-red-600 transition-colors text-white text-sm"
                     >
                       회원 탈퇴
                     </button>
@@ -439,8 +441,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
                 </div>
               )
             ) : isEditing && isChangingPassword ? (
-              // 비밀번호 변경 본문: 입력 필드만 표시
-              <div className="w-full space-y-3">
+              // 비밀번호 변경 폼
+              <div className="w-full flex flex-col space-y-4">
                 <div className="relative">
                   <input
                     type="password"
@@ -491,12 +493,12 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
                 </div>
               </div>
             ) : (
-              // 기본 프로필 수정 본문: 프로필 사진 및 이름 편집 (이메일 표시)
-              <>
-                <div className="mb-6 flex flex-col items-center">
+              // 기본 프로필 수정 폼
+              <div className="w-full flex flex-col space-y-4 items-center">
+                <div className="flex flex-col items-center">
                   <label
                     htmlFor="profilePicture"
-                    className="relative group w-24 h-24 mb-2 rounded-full overflow-hidden"
+                    className="relative group w-24 h-24 rounded-full overflow-hidden"
                   >
                     <div className="w-full h-full">
                       {profilePreview ? (
@@ -509,7 +511,6 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
                         <div className="w-full h-full bg-gray-200 rounded-full"></div>
                       )}
                     </div>
-                    {/* 오버레이: 항상 존재하며, 호버 시 bg-black/50로 어두워짐 */}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors duration-300" />
                   </label>
                   <input
@@ -520,8 +521,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
                     className="hidden"
                   />
                 </div>
-                <div className="w-full text-center mb-4">
-                  <div className="relative mb-1">
+                <div className="w-full text-center">
+                  <div className="relative">
                     <input
                       type="text"
                       id="name"
@@ -541,107 +542,99 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
                     {profile.email}
                   </div>
                 </div>
-                <div className="w-full mt-4">
+                <div className="w-full">
                   <button
                     onClick={onManageAccount}
-                    className="w-full h-10 flex items-center justify-center px-4 bg-indigo-500 rounded-lg hover:bg-indigo-600 transition-colors text-white text-sm"
+                    className="h-10 w-full bg-indigo-500 rounded-lg hover:bg-indigo-600 transition-colors text-white text-sm"
                   >
                     계정 관리
                   </button>
                 </div>
-              </>
+              </div>
             )}
             {formError && <div className="w-full mt-2 text-red-500 text-sm">{formError}</div>}
           </div>
         </div>
 
         {/* Footer */}
-        {!isEditing ? (
-          // 읽기 모드: 로그아웃, 프로필 수정 버튼
-          <div className="p-4 border-t border-gray-200 w-full">
-            <div className="flex justify-between">
-              <button
-                onClick={onLogout}
-                className="flex items-center justify-center h-10 w-10 bg-red-500 rounded-lg hover:bg-red-600 transition-colors duration-300"
-              >
-                <Icons name="logout" className="w-6 h-6 text-white" />
-              </button>
-              <button
-                onClick={onEditProfile}
-                className="flex items-center justify-center h-10 px-4 bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors duration-300"
-              >
-                <span className="text-white text-sm">프로필 수정</span>
-              </button>
+        <div className="p-4 border-t border-gray-200 w-full">
+          {!isEditing ? (
+            // 읽기 모드: 두 개의 버튼이 grid-cols-2로 각각 50%씩 차지함
+            <div className="grid grid-cols-2 gap-2">
+              <div className="flex items-center justify-start">
+                <button
+                  onClick={onLogout}
+                  className="h-10 w-10 bg-red-500 rounded-lg hover:bg-red-600 transition-colors duration-300 flex items-center justify-center"
+                >
+                  <Icons name="logout" className="w-6 h-6 text-white" />
+                </button>
+              </div>
+              <div className="flex items-center justify-center">
+                <button
+                  onClick={onEditProfile}
+                  className="h-10 w-full bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors duration-300 flex items-center justify-center"
+                >
+                  <span className="text-white text-sm block text-center">프로필 수정</span>
+                </button>
+              </div>
             </div>
-          </div>
-        ) : isChangingPassword ? (
-          // 비밀번호 변경 모드: 푸터 – 좌측 "취소"(계정 관리 복귀), 우측 "비밀번호 변경"
-          <div className="p-4 border-t border-gray-200 w-full">
-            <div className="flex justify-between">
+          ) : isEditing && isChangingPassword ? (
+            <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={handleCancelPasswordChange}
-                className="flex-1 mr-2 h-10 bg-gray-300 rounded-lg hover:bg-gray-400 transition-colors duration-300"
+                className="h-10 w-full bg-gray-300 rounded-lg hover:bg-gray-400 transition-colors duration-300"
               >
                 <span className="text-gray-800 text-sm block">취소</span>
               </button>
               <button
                 onClick={onSaveEdit}
-                className="flex-1 ml-2 h-10 bg-green-500 rounded-lg hover:bg-green-600 transition-colors duration-300"
+                className="h-10 w-full bg-green-500 rounded-lg hover:bg-green-600 transition-colors duration-300"
               >
                 <span className="text-white text-sm block">비밀번호 변경</span>
               </button>
             </div>
-          </div>
-        ) : isWithdrawing ? (
-          // 회원 탈퇴 모드: 푸터 – 좌측 "취소"(계정 관리 복귀), 우측 "탈퇴"
-          <div className="p-4 border-t border-gray-200 w-full">
-            <div className="flex justify-between">
+          ) : isEditing && isWithdrawing ? (
+            <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={handleCancelWithdraw}
-                className="flex-1 mr-2 h-10 bg-gray-300 rounded-lg hover:bg-gray-400 transition-colors duration-300"
+                className="h-10 w-full bg-gray-300 rounded-lg hover:bg-gray-400 transition-colors duration-300"
               >
                 <span className="text-gray-800 text-sm block">취소</span>
               </button>
               <button
                 onClick={handleConfirmWithdraw}
-                className="flex-1 ml-2 h-10 bg-red-500 rounded-lg hover:bg-red-600 transition-colors duration-300"
+                className="h-10 w-full bg-red-500 rounded-lg hover:bg-red-600 transition-colors duration-300"
               >
                 <span className="text-white text-sm block">탈퇴</span>
               </button>
             </div>
-          </div>
-        ) : isManagingAccount ? (
-          // 계정 관리 모드: 푸터 – "돌아가기" 버튼
-          <div className="p-4 border-t border-gray-200 w-full">
-            <div className="flex justify-between">
+          ) : isEditing && isManagingAccount ? (
+            <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={onBackFromAccountManage}
-                className="flex-1 mr-2 h-10 bg-gray-300 rounded-lg hover:bg-gray-400 transition-colors duration-300"
+                className="h-10 w-full bg-gray-300 rounded-lg hover:bg-gray-400 transition-colors duration-300"
               >
                 <span className="text-gray-800 text-sm block">돌아가기</span>
               </button>
-              <div className="flex-1 ml-2 h-10" />
+              <div className="h-10 w-full" />
             </div>
-          </div>
-        ) : (
-          // 기본 프로필 수정 모드: 푸터 – "취소", "저장" 버튼
-          <div className="p-4 border-t border-gray-200 w-full">
-            <div className="flex justify-between">
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={onCancelEdit}
-                className="flex-1 mr-2 h-10 bg-gray-300 rounded-lg hover:bg-gray-400 transition-colors duration-300"
+                className="h-10 w-full bg-gray-300 rounded-lg hover:bg-gray-400 transition-colors duration-300"
               >
                 <span className="text-gray-800 text-sm block">취소</span>
               </button>
               <button
                 onClick={onSaveEdit}
-                className="flex-1 ml-2 h-10 bg-green-500 rounded-lg hover:bg-green-600 transition-colors duration-300"
+                className="h-10 w-full bg-green-500 rounded-lg hover:bg-green-600 transition-colors duration-300"
               >
                 <span className="text-white text-sm block">저장</span>
               </button>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

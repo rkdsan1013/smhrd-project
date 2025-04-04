@@ -43,7 +43,7 @@ const PORT = process.env.PORT || 5000;
 // Express 앱을 포함한 HTTP 서버 생성
 const server = http.createServer(app);
 
-// Socket.IO 초기화 (웹소켓 기능 추가)
+// Socket.IO 초기화 (분리된 핸들러들을 포함)
 const { initSocketIO } = require("./socket");
 initSocketIO(server);
 
