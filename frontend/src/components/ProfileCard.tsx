@@ -6,7 +6,13 @@ import { validateName, validatePassword } from "../utils/validators";
 import { useUserProfile } from "../contexts/UserProfileContext";
 import Icons from "./Icons";
 
-// 타입 및 유틸
+// 기본 스타일
+const baseInputClass =
+  "peer block w-full border-0 border-b-2 pb-2.5 pt-4 text-base bg-transparent focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600 transition-all duration-300 ease-in-out";
+const labelClass =
+  "absolute left-0 top-4 z-10 text-sm text-gray-500 whitespace-nowrap origin-top-left duration-300 transform -translate-y-6 scale-75 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100 peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600";
+
+// 타입 및 유틸 함수
 interface ProfileCardProps {
   onClose: () => void;
 }
@@ -19,16 +25,10 @@ const getDisplayGender = (gender?: string): string => {
   return lower === "male" ? "남성" : lower === "female" ? "여성" : gender;
 };
 
-const baseInputClass =
-  "peer block w-full border-0 border-b-2 pb-2.5 pt-4 text-base bg-transparent focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600 transition-all duration-300 ease-in-out";
-const labelClass =
-  "absolute left-0 top-4 z-10 text-sm text-gray-500 whitespace-nowrap origin-top-left duration-300 transform -translate-y-6 scale-75 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100 peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600";
-
-// ProfileCard 컴포넌트
 const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
   const { profile, loading, error, reloadProfile } = useUserProfile();
 
-  // 상태 변수
+  // 상태 변수들
   const [isVisible, setIsVisible] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isManagingAccount, setIsManagingAccount] = useState(false);
@@ -45,7 +45,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
   );
   const [formError, setFormError] = useState("");
 
-  // 모달 높이 조절 ref
+  // 모달 높이 조절용 ref
   const outerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
   const oldHeightRef = useRef<number | null>(null);
@@ -131,12 +131,14 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     setConfirmNewPassword("");
     setFormError("");
   };
+
   const handleCancelWithdraw = () => {
     setIsWithdrawing(false);
     setIsManagingAccount(true);
     setWithdrawPassword("");
     setFormError("");
   };
+
   const handleConfirmWithdraw = async () => {
     const passResult = validatePassword(withdrawPassword);
     if (!passResult.valid) {
@@ -156,19 +158,22 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
       setFormError(error.message || "회원 탈퇴 중 오류가 발생하였습니다.");
     }
   };
+
   const onProfilePictureChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (formError) setFormError("");
+      formError && setFormError("");
       setProfilePicture(file);
       const reader = new FileReader();
       reader.onloadend = () => setProfilePreview(reader.result as string);
       reader.readAsDataURL(file);
     }
   };
+
   const onEditProfile = () => {
-    if (formError) setFormError("");
+    formError && setFormError("");
     if (outerRef.current) oldHeightRef.current = outerRef.current.offsetHeight;
+    // 프로필 수정 모드로 전환 (계정 관리와 별도)
     setIsEditing(true);
     setIsManagingAccount(false);
     setIsChangingPassword(false);
@@ -180,6 +185,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
       );
     }
   };
+
+  // 필 수정 폼 취소 → 뷰 모드로 복귀
   const onCancelEdit = () => {
     setIsEditing(false);
     setIsManagingAccount(false);
@@ -192,6 +199,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
       profile?.profilePicture ? `${profile.profilePicture}?v=${profile.version}` : null,
     );
   };
+
   const onSaveEdit = async () => {
     if (!isEditing) return;
     if (isChangingPassword) {
@@ -249,36 +257,46 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
       setFormError(error.message || "업데이트 중 오류가 발생하였습니다.");
     }
   };
-  // 뷰 모드의 계정 관리 버튼: 계정 관리 화면 전환 (isEditing 및 isManagingAccount true)
+
+  // 뷰 모드의 계정 관리 버튼: 계정 관리 화면으로 전환
   const onManageAccount = () => {
-    if (formError) setFormError("");
+    formError && setFormError("");
     resetEditForm();
     setIsEditing(true);
     setIsManagingAccount(true);
     setIsChangingPassword(false);
     setIsWithdrawing(false);
   };
+
   const onChangePasswordFromAccount = () => {
-    if (formError) setFormError("");
+    formError && setFormError("");
     setIsManagingAccount(false);
     setIsChangingPassword(true);
   };
+
   const onWithdraw = () => {
-    if (formError) setFormError("");
+    formError && setFormError("");
     setIsWithdrawing(true);
   };
-  // 계정 관리 화면 '돌아가기': 뷰 모드 복귀
+
+  // 계정 관리 화면 '돌아가기' → 뷰 모드 복귀
   const onBackFromAccountManage = () => {
-    if (formError) setFormError("");
+    formError && setFormError("");
     setIsManagingAccount(false);
     setIsWithdrawing(false);
     setIsEditing(false);
   };
+
+  // 모달 종료 시 모든 편집 상태 초기화
   const onCloseModal = () => {
     setIsVisible(false);
+    setIsEditing(false);
     setIsManagingAccount(false);
+    setIsChangingPassword(false);
+    setIsWithdrawing(false);
     setTimeout(onClose, 300);
   };
+
   const onLogout = async () => {
     try {
       await logout();
@@ -299,6 +317,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     : isChangingPassword
     ? "changePassword"
     : "edit";
+
   const modalTitle = () => {
     switch (mode) {
       case "view":
@@ -361,32 +380,37 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
         return (
           <div className="w-full flex flex-col space-y-4 items-center text-center">
             <div className="flex justify-center">{renderImage()}</div>
-            <div className="text-2xl font-bold whitespace-nowrap overflow-ellipsis overflow-hidden">
-              {profile?.name}
+            <div className="w-full text-center">
+              <div className="text-2xl font-bold whitespace-nowrap overflow-ellipsis overflow-hidden">
+                {profile?.name}
+              </div>
+              <div className="text-gray-600 whitespace-nowrap overflow-ellipsis overflow-hidden">
+                {profile?.email}
+              </div>
             </div>
-            <div className="text-gray-600 whitespace-nowrap overflow-ellipsis overflow-hidden">
-              {profile?.email}
-            </div>
-            <div className="w-full flex flex-col space-y-2">
+            <div className="w-full flex flex-col gap-1">
               <button
                 onClick={onChangePasswordFromAccount}
                 className="h-10 w-full bg-indigo-500 rounded-lg hover:bg-indigo-600 text-white text-sm"
               >
                 비밀번호 변경
               </button>
-              <button
-                onClick={onWithdraw}
-                className="h-10 w-full bg-red-500 rounded-lg hover:bg-red-600 text-white text-sm"
-              >
-                회원 탈퇴
-              </button>
+              {/* 회원 탈퇴 텍스트: 좌측 정렬 */}
+              <div className="w-full text-left">
+                <span
+                  onClick={onWithdraw}
+                  className="text-xs text-red-500 underline cursor-pointer"
+                >
+                  회원 탈퇴
+                </span>
+              </div>
             </div>
           </div>
         );
       case "withdraw":
         return (
           <div
-            className="w-full flex flex-col space-y-4 items-center text-center"
+            className="w-full flex flex-col space-y-4 items-center text-left"
             tabIndex={0}
             onKeyDown={handleFormKeyDown}
           >
@@ -514,7 +538,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     }
   };
 
-  // --- 푸터 ---
+  // --- 푸터 렌더링 ---
   const renderFooter = () => {
     switch (mode) {
       case "view":
@@ -608,7 +632,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     }
   };
 
-  // --- 로딩 및 에러 처리 ---
+  // --- 로딩/에러 처리 ---
   if (loading) {
     return (
       <div className="fixed inset-0 flex items-center justify-center">

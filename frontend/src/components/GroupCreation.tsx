@@ -222,11 +222,6 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
                     placeholder=" "
                     rows={3}
                   />
-                  {/*
-                    오버레이(div)가 이제 w-full 클래스를 추가하여
-                    플로팅 라벨 영역 전체(좌우 모두)를 커버하도록 했습니다.
-                    top: "-0.5rem", height: "1.5rem"로 라벨 두께 만큼만 가립니다.
-                  */}
                   <div
                     className="absolute left-0 w-full pointer-events-none"
                     style={{
@@ -315,7 +310,7 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
                     className="hidden"
                   />
                 </div>
-                {/* 그룹 설명 미리보기 (최대 10줄 보이고, 그 이상은 스크롤) */}
+                {/* 그룹 설명 미리보기 */}
                 <div className="text-left">
                   <p className="text-base font-medium text-gray-800 mb-1">그룹 설명</p>
                   <div style={{ maxHeight: "15rem", overflowY: "auto" }}>
