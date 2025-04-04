@@ -1,5 +1,5 @@
 // /frontend/src/components/Sidebar.tsx
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, MouseEvent } from "react";
 import ReactDOM from "react-dom";
 import Icons from "./Icons";
 import GroupCreation from "./GroupCreation"; // 그룹 생성 모달
@@ -24,28 +24,31 @@ interface TooltipProps {
   className?: string;
 }
 
-const Tooltip: React.FC<TooltipProps> = ({ text, style, placement, className }) =>
-  ReactDOM.createPortal(
-    <div style={style} className="fixed z-50 transition-opacity duration-200">
-      <div
-        className={`relative bg-gray-700 text-white text-sm rounded-lg shadow-lg flex items-center whitespace-nowrap ${
-          className || "px-3 py-2"
-        }`}
-      >
-        {text}
-        {placement === "right" && (
-          <div className="absolute left-[-4px] top-1/2 transform -translate-y-1/2 rotate-45 bg-gray-700 w-3 h-3" />
-        )}
-        {placement === "bottom" && (
-          <div className="absolute top-[-4px] left-1/2 transform -translate-x-1/2 rotate-45 bg-gray-700 w-3 h-3" />
-        )}
-      </div>
+const Tooltip: React.FC<TooltipProps> = ({ text, style, placement, className }) => {
+  // placement에 따라 Tailwind의 after: 클래스로 화살표 생성
+  const arrowClasses =
+    placement === "right"
+      ? "after:content-[''] after:absolute after:top-1/2 after:left-[-6px] after:-translate-y-1/2 after:border-t-[6px] after:border-b-[6px] after:border-t-transparent after:border-b-transparent after:border-r-[6px] after:border-r-gray-700/75"
+      : "after:content-[''] after:absolute after:left-1/2 after:top-[-6px] after:-translate-x-1/2 after:border-l-[6px] after:border-r-[6px] after:border-l-transparent after:border-r-transparent after:border-b-[6px] after:border-b-gray-700/75";
+
+  return ReactDOM.createPortal(
+    <div
+      style={style}
+      className={
+        `fixed z-50 transition-opacity duration-200 bg-gray-700/75 rounded-lg shadow-lg text-white text-sm flex items-center whitespace-nowrap ` +
+        (className || "px-3 py-2") +
+        " " +
+        arrowClasses
+      }
+    >
+      {text}
     </div>,
     document.body,
   );
+};
 
-const tooltipGap = 8; // 버튼과 툴팁 사이 간격
-const hoverDelay = 100; // 100ms delay
+const tooltipGap = 8; // 버튼과 툴팁 간격
+const hoverDelay = 100; // 딜레이 (ms)
 
 const calcTooltipStyle = (rect: DOMRect, isDesktop: boolean): React.CSSProperties =>
   isDesktop
@@ -67,20 +70,20 @@ const Sidebar: React.FC = () => {
   const [tooltips, setTooltips] = useState<TooltipState[]>([]);
   const tooltipIdCounter = useRef(0);
   const hoverTimeoutRef = useRef<number | null>(null);
-
-  // 그룹 생성 모달 상태
   const [isGroupCreationModalOpen, setIsGroupCreationModalOpen] = useState(false);
 
   useEffect(() => {
     const dummyGroups: Group[] = Array.from({ length: 20 }, (_, i) => ({
       uuid: `uuid-${i + 1}`,
-      image: ``,
+      image: "",
       name: `그룹 ${i + 1}`,
     }));
     setGroups(dummyGroups);
   }, []);
 
-  const navigateTo = (groupUuid: string) => alert(`그룹 UUID: ${groupUuid}로 이동합니다.`);
+  const navigateTo = (groupUuid: string) => {
+    alert(`그룹 UUID: ${groupUuid}로 이동합니다.`);
+  };
 
   const addTooltip = (target: HTMLElement, text: string): number => {
     const rect = target.getBoundingClientRect();
@@ -94,7 +97,10 @@ const Sidebar: React.FC = () => {
       style: { ...baseStyle, opacity: 0 },
       placement,
     };
+
     setTooltips((prev) => [...prev, newTooltip]);
+
+    // 두 프레임 후에 opacity 변경
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         setTooltips((prev) =>
@@ -102,6 +108,7 @@ const Sidebar: React.FC = () => {
         );
       });
     });
+
     return newId;
   };
 
@@ -114,7 +121,7 @@ const Sidebar: React.FC = () => {
     }, 200);
   };
 
-  const handleMouseEnter = (e: React.MouseEvent<HTMLButtonElement>, text: string) => {
+  const handleMouseEnter = (e: MouseEvent<HTMLButtonElement>, text: string) => {
     const target = e.currentTarget;
     target.removeAttribute("data-tooltip-id");
     hoverTimeoutRef.current = window.setTimeout(() => {
@@ -126,7 +133,7 @@ const Sidebar: React.FC = () => {
     }, hoverDelay);
   };
 
-  const handleMouseLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleMouseLeave = (e: MouseEvent<HTMLButtonElement>) => {
     const target = e.currentTarget;
     if (hoverTimeoutRef.current !== null) {
       clearTimeout(hoverTimeoutRef.current);
@@ -143,6 +150,7 @@ const Sidebar: React.FC = () => {
     <>
       <aside className="w-full h-20 md:w-20 md:h-full bg-white rounded-lg shadow-lg p-2">
         <div className="flex flex-row md:flex-col h-full">
+          {/* 홈 버튼 */}
           <div className="flex-shrink-0 flex items-center justify-center relative">
             <button
               onClick={() => navigateTo("home")}
@@ -156,10 +164,14 @@ const Sidebar: React.FC = () => {
               />
             </button>
           </div>
+
+          {/* 구분선 */}
           <div className="flex items-center">
             <div className="block md:hidden h-full border-l border-gray-300 mx-2" />
             <div className="hidden md:block w-full border-t border-gray-300 my-2" />
           </div>
+
+          {/* 그룹 목록 */}
           <div className="relative flex-1 overflow-auto mx-2 md:mx-0 my-1 md:my-2">
             <div className="no-scrollbar flex flex-row md:flex-col gap-3 overflow-auto w-full h-full px-4 md:px-0 md:py-4 items-center justify-start">
               {groups.map((group) => (
@@ -183,15 +195,21 @@ const Sidebar: React.FC = () => {
                 </div>
               ))}
             </div>
+            {/* 모바일 그라데이션 */}
             <div className="block md:hidden pointer-events-none absolute inset-y-0 left-0 w-4 z-0 bg-gradient-to-r from-white to-transparent" />
             <div className="block md:hidden pointer-events-none absolute inset-y-0 right-0 w-4 z-0 bg-gradient-to-l from-white to-transparent" />
+            {/* 데스크탑 그라데이션 */}
             <div className="hidden md:block pointer-events-none absolute inset-x-0 top-0 h-4 z-0 bg-gradient-to-b from-white to-transparent" />
             <div className="hidden md:block pointer-events-none absolute inset-x-0 bottom-0 h-4 z-0 bg-gradient-to-t from-white to-transparent" />
           </div>
+
+          {/* 구분선 */}
           <div className="flex items-center">
             <div className="block md:hidden h-full border-l border-gray-300 mx-2" />
             <div className="hidden md:block w-full border-t border-gray-300 my-2" />
           </div>
+
+          {/* 추가 기능 버튼 */}
           <div className="flex flex-row md:flex-col flex-shrink-0 p-1 gap-2">
             <div className="relative flex items-center justify-center">
               <button
@@ -222,9 +240,13 @@ const Sidebar: React.FC = () => {
           </div>
         </div>
       </aside>
+
+      {/* Tooltip 렌더링 */}
       {tooltips.map((tt) => (
         <Tooltip key={tt.id} text={tt.text} style={tt.style} placement={tt.placement} />
       ))}
+
+      {/* 그룹 생성 모달 */}
       {isGroupCreationModalOpen && (
         <GroupCreation onClose={() => setIsGroupCreationModalOpen(false)} />
       )}
