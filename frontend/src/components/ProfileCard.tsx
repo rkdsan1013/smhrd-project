@@ -362,7 +362,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
               {profile?.gender && (
                 <p className="text-gray-600 truncate">성별: {getDisplayGender(profile.gender)}</p>
               )}
-              {profile?.paradoxFlag === true && (
+              {Boolean(profile?.paradoxFlag) === true && (
                 <p className="text-sm text-blue-500 truncate">
                   시간 여행은 오늘도 순조롭게 진행 중인가요?
                 </p>
