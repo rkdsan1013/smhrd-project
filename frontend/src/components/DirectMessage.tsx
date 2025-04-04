@@ -41,9 +41,10 @@ const DirectMessage: React.FC<DirectMessageProps> = ({ roomUuid, currentUserUuid
     };
   }, [roomUuid]);
 
+  // ✅ 메시지 변경 시 가장 하단으로 스크롤
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: "smooth" });
+      scrollRef.current.scrollIntoView({ behavior: "auto" });
     }
   }, [messages]);
 
@@ -51,6 +52,14 @@ const DirectMessage: React.FC<DirectMessageProps> = ({ roomUuid, currentUserUuid
     if (!input.trim()) return;
     sendMessageSocket(roomUuid, input);
     setInput("");
+  };
+
+  // ✅ 엔터 키로 메시지 전송
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSendMessage();
+    }
   };
 
   return (
@@ -116,6 +125,7 @@ const DirectMessage: React.FC<DirectMessageProps> = ({ roomUuid, currentUserUuid
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown} // ✅ 엔터 키 입력 처리
           placeholder="메시지를 입력하세요"
           className="flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
