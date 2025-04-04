@@ -1,24 +1,24 @@
+// /frontend/src/components/GroupCreation.tsx
 import React, { useState, useEffect, useLayoutEffect, useRef, ChangeEvent } from "react";
 import Icons from "./Icons";
 
 const baseInputClass =
   "peer block w-full border-0 border-b-2 pb-2.5 pt-4 text-base bg-transparent focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600 transition-all duration-300 ease-in-out";
-
-// labelClass는 좌측 정렬되도록 left-0를 그대로 사용합니다.
 const labelClass =
-  "absolute left-0 top-4 z-10 text-sm text-gray-500 whitespace-nowrap origin-top-left transition-transform duration-300 transform -translate-y-6 scale-75 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100 peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600";
+  "absolute left-0 top-4 z-10 text-sm text-gray-500 whitespace-nowrap origin-top-left duration-300 transform -translate-y-6 scale-75 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100 peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600";
 
 interface GroupCreationProps {
   onClose: () => void;
 }
 
 const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
+  // 단계: "creation" (생성) / "settings" (설정)
   const [step, setStep] = useState<"creation" | "settings">("creation");
   const [isVisible, setIsVisible] = useState(false);
   const [hasMounted, setHasMounted] = useState(false);
   const [formError, setFormError] = useState("");
 
-  // 그룹 관련 상태
+  // 그룹 정보 상태
   const [groupName, setGroupName] = useState("");
   const [groupDescription, setGroupDescription] = useState("");
   const [groupIcon, setGroupIcon] = useState<File | null>(null);
@@ -27,7 +27,7 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
   const [groupPicturePreview, setGroupPicturePreview] = useState<string | null>(null);
   const [groupVisibility, setGroupVisibility] = useState<"public" | "private">("private");
 
-  // 모달 높이 조절 위한 Ref
+  // 모달 높이 조절용 Ref
   const outerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
   const oldHeightRef = useRef<number | null>(null);
@@ -38,7 +38,7 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
     return () => clearTimeout(timer);
   }, []);
 
-  // 초기 높이 설정
+  // 최초 마운트 시 모달 높이 설정
   useEffect(() => {
     if (outerRef.current && innerRef.current) {
       outerRef.current.style.height = `${innerRef.current.offsetHeight}px`;
@@ -47,7 +47,7 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
     setHasMounted(true);
   }, []);
 
-  // 높이 조절 함수
+  // 내용에 따라 모달 높이를 조절하는 함수
   const adjustHeight = () => {
     if (outerRef.current && innerRef.current) {
       const newHeight = innerRef.current.offsetHeight;
@@ -79,7 +79,7 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
     formError,
   ]);
 
-  // 파일 변경 이벤트 공통 핸들러
+  // 공통 파일 변경 이벤트 핸들러 함수
   const handleFileChange = (
     e: ChangeEvent<HTMLInputElement>,
     setFile: React.Dispatch<React.SetStateAction<File | null>>,
@@ -103,7 +103,7 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
 
   const onSubmitGroup = async () => {
     try {
-      // API 호출: {groupName, groupDescription, groupIcon, groupPicture, groupVisibility}
+      // API 호출: { groupName, groupDescription, groupIcon, groupPicture, groupVisibility }
       alert("그룹이 생성되었습니다.");
       onCloseModal();
     } catch (error: any) {
@@ -129,7 +129,7 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center">
-      {/* 오버레이 */}
+      {/* 배경 오버레이 */}
       <div
         className={`absolute inset-0 bg-black/60 transition-opacity duration-300 ${
           isVisible ? "opacity-100" : "opacity-0"
@@ -148,7 +148,7 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
           position: "absolute",
         }}
       >
-        {/* 헤더 */}
+        {/* 헤더 영역 */}
         <div className="flex justify-between items-center p-4 border-b border-gray-200">
           <h2 className="text-xl font-bold">{step === "creation" ? "그룹 생성" : "그룹 설정"}</h2>
           <button
@@ -223,8 +223,9 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
                     rows={3}
                   />
                   {/*
-                    오버레이는 플로팅 라벨이 떠 있는 영역(대략 높이 1.5rem, 위치는 -0.5rem)
-                    만 가리도록 설정합니다.
+                    오버레이(div)가 이제 w-full 클래스를 추가하여
+                    플로팅 라벨 영역 전체(좌우 모두)를 커버하도록 했습니다.
+                    top: "-0.5rem", height: "1.5rem"로 라벨 두께 만큼만 가립니다.
                   */}
                   <div
                     className="absolute left-0 w-full pointer-events-none"
@@ -314,7 +315,7 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
                     className="hidden"
                   />
                 </div>
-                {/* 그룹 설명 미리보기 (최대 10줄 보이고 그 이상은 스크롤) */}
+                {/* 그룹 설명 미리보기 (최대 10줄 보이고, 그 이상은 스크롤) */}
                 <div className="text-left">
                   <p className="text-base font-medium text-gray-800 mb-1">그룹 설명</p>
                   <div style={{ maxHeight: "15rem", overflowY: "auto" }}>
@@ -326,7 +327,7 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
             )}
           </div>
         </div>
-        {/* 푸터 버튼 영역 */}
+        {/* 푸터 (버튼 영역) */}
         <div className="p-4 border-t border-gray-200">
           {step === "creation" ? (
             <div className="flex justify-between">
