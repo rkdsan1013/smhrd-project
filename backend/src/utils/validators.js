@@ -1,5 +1,6 @@
 // /backend/src/utils/validators.js
 const validator = require("validator");
+const { normalizeName } = require("./normalize");
 
 const MIN_EMAIL_LENGTH = 5;
 const MAX_EMAIL_LENGTH = 254;
@@ -25,7 +26,7 @@ const validateEmail = (email) => {
   return { valid: true };
 };
 
-// 비밀번호 검사: 공백 제거, 길이 및 ASCII 검사
+// 비밀번호 검사: 공백 제거, 길이 및 ASCII 문자 검사
 const validatePassword = (password) => {
   const trimmedPassword = typeof password === "string" ? password.trim() : "";
   if (validator.isEmpty(trimmedPassword, { ignore_whitespace: true })) {
@@ -46,20 +47,21 @@ const validatePassword = (password) => {
   return { valid: true };
 };
 
-// 이름 검사: 공백 제거, 길이 및 형식 체크
+// 이름 검사: 입력값을 정규화한 후 길이와 형식을 체크
 const validateName = (name) => {
-  const trimmedName = typeof name === "string" ? name.trim() : "";
-  if (validator.isEmpty(trimmedName, { ignore_whitespace: true })) {
+  const normalizedName = normalizeName(name);
+
+  if (validator.isEmpty(normalizedName, { ignore_whitespace: true })) {
     return { valid: false, message: "이름을 입력해 주세요." };
   }
-  if (trimmedName.length < MIN_NAME_LENGTH) {
+  if (normalizedName.length < MIN_NAME_LENGTH) {
     return { valid: false, message: "이름이 너무 짧습니다. 최소 2자 이상 입력해 주세요." };
   }
-  if (trimmedName.length > MAX_NAME_LENGTH) {
+  if (normalizedName.length > MAX_NAME_LENGTH) {
     return { valid: false, message: "이름이 너무 깁니다. 50자 이하로 입력해 주세요." };
   }
   const nameRegex = /^[\p{L}\s.'-]+$/u;
-  if (!nameRegex.test(trimmedName)) {
+  if (!nameRegex.test(normalizedName)) {
     return { valid: false, message: "올바른 형식의 이름을 입력해 주세요." };
   }
   return { valid: true };
@@ -142,6 +144,19 @@ const validateFullProfile = (name, gender, year, month, day, paradoxFlag) => {
   return { valid: true };
 };
 
+// 프로필 수정 업데이트 검사: 이름이나 프로필 사진의 변경이 있는지 확인
+const validateUpdateProfile = (originalName, updatedName, newProfilePicture) => {
+  // 이름을 정규화하여 비교하고, 새로운 프로필 사진이 없을 경우 변경된 내용이 없다고 판단
+  if (normalizeName(originalName) === normalizeName(updatedName) && !newProfilePicture) {
+    return { valid: false, message: "변경된 내용이 없습니다." };
+  }
+  const nameValidation = validateName(updatedName);
+  if (!nameValidation.valid) {
+    return nameValidation;
+  }
+  return { valid: true };
+};
+
 module.exports = {
   validateEmail,
   validatePassword,
@@ -150,6 +165,7 @@ module.exports = {
   validateBirthDate,
   validateFullProfile,
   validateDescription,
+  validateUpdateProfile,
   MIN_EMAIL_LENGTH,
   MAX_EMAIL_LENGTH,
   MIN_PASSWORD_LENGTH,

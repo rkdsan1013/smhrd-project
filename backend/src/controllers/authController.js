@@ -12,6 +12,7 @@ const {
 } = require("../utils/jwtUtils");
 const userModel = require("../models/userModel");
 const { saveProfilePicture, deleteProfilePicture } = require("../utils/imageHelper");
+const { normalizeName } = require("../utils/normalize");
 
 // 이메일 중복 확인
 exports.checkEmail = async (req, res) => {
@@ -53,10 +54,13 @@ exports.signUp = async (req, res) => {
 
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
+    // 이름도 정규화하여 저장 (불필요한 공백 제거 및 단일화)
+    const normalizedName = normalizeName(name);
+
     const user = await userModel.signUpUser(
       email.trim().toLowerCase(),
       hashedPassword,
-      name,
+      normalizedName,
       gender,
       birthdate,
       paradoxFlag,

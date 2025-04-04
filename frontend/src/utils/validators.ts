@@ -1,5 +1,6 @@
 // /frontend/src/utils/validators.ts
 import validator from "validator";
+import { normalizeName } from "./normalize";
 
 export const MIN_EMAIL_LENGTH = 5;
 export const MAX_EMAIL_LENGTH = 254;
@@ -46,20 +47,21 @@ export const validatePassword = (password: string): { valid: boolean; message?: 
   return { valid: true };
 };
 
-// 이름 검사: 공백 제거, 길이 및 형식 체크
+// 이름 검사: 이름을 정규화한 후, 길이 및 형식 체크
 export const validateName = (name: string): { valid: boolean; message?: string } => {
-  const trimmedName = name.trim();
-  if (validator.isEmpty(trimmedName, { ignore_whitespace: true })) {
+  const normalizedName = normalizeName(name);
+
+  if (validator.isEmpty(normalizedName, { ignore_whitespace: true })) {
     return { valid: false, message: "이름을 입력해 주세요." };
   }
-  if (trimmedName.length < MIN_NAME_LENGTH) {
+  if (normalizedName.length < MIN_NAME_LENGTH) {
     return { valid: false, message: "이름이 너무 짧습니다. 최소 2자 이상 입력해 주세요." };
   }
-  if (trimmedName.length > MAX_NAME_LENGTH) {
+  if (normalizedName.length > MAX_NAME_LENGTH) {
     return { valid: false, message: "이름이 너무 깁니다. 50자 이하로 입력해 주세요." };
   }
   const nameRegex = /^[\p{L}\s.'-]+$/u;
-  if (!nameRegex.test(trimmedName)) {
+  if (!nameRegex.test(normalizedName)) {
     return { valid: false, message: "올바른 형식의 이름을 입력해 주세요." };
   }
   return { valid: true };
@@ -74,7 +76,7 @@ export const validateGender = (gender: string): { valid: boolean; message?: stri
   return { valid: true };
 };
 
-// 생년월일 검사: 모든 필수 필드, 형식 및 날짜 유효성 체크
+// 생년월일 검사: 공백 제거, 형식 및 날짜 유효성 체크
 export const validateBirthDate = (
   year: string,
   month: string,
@@ -83,12 +85,12 @@ export const validateBirthDate = (
   if (!year.trim() || !month.trim() || !day.trim()) {
     return { valid: false, message: "생년월일을 모두 입력해 주세요." };
   }
-  if (!/^\d{4}$/.test(year)) {
+  if (!/^\d{4}$/.test(year.trim())) {
     return { valid: false, message: "년도를 4자리 숫자로 입력해 주세요." };
   }
-  const y = parseInt(year, 10);
-  const m = parseInt(month, 10);
-  const d = parseInt(day, 10);
+  const y = parseInt(year.trim(), 10);
+  const m = parseInt(month.trim(), 10);
+  const d = parseInt(day.trim(), 10);
   if (m < 1 || m > 12) {
     return { valid: false, message: "월은 1부터 12 사이여야 합니다." };
   }
@@ -99,7 +101,7 @@ export const validateBirthDate = (
   return { valid: true };
 };
 
-// 설명 검사: 빈 문자열은 허용하며, 입력 시 최대 길이 체크
+// 설명 검사: 빈 문자열 허용, 입력 시 최대 길이 체크
 export const validateDescription = (description: string): { valid: boolean; message?: string } => {
   const trimmedDesc = description.trim();
   if (trimmedDesc.length === 0) return { valid: true };
@@ -109,7 +111,8 @@ export const validateDescription = (description: string): { valid: boolean; mess
   return { valid: true };
 };
 
-// 전체 프로필 검사: 이름, 생년월일, 성별, 그리고 나이/미래 날짜 체크 (인자 순서: name, gender, year, month, day, paradoxFlag)
+// 전체 프로필 검사: 이름, 생년월일, 성별, 그리고 나이/미래 날짜 체크
+// 인자 순서: name, gender, year, month, day, paradoxFlag
 export const validateFullProfile = (
   name: string,
   gender: string,
@@ -142,6 +145,22 @@ export const validateFullProfile = (
         ? "미래에서 온 당신, 타임머신은 아직 불법입니다!"
         : "너무 오래 살 수는 없습니다. 당신은 영원히 젊어야 해요!";
     return { valid: false, message, requiresOverride: true };
+  }
+  return { valid: true };
+};
+
+// 프로필 수정 업데이트 검사: 이름이나 프로필 사진의 변경이 있는지 확인
+export const validateUpdateProfile = (
+  originalName: string,
+  updatedName: string,
+  newProfilePicture?: File | null,
+): { valid: boolean; message?: string } => {
+  if (normalizeName(originalName) === normalizeName(updatedName) && !newProfilePicture) {
+    return { valid: false, message: "변경된 내용이 없습니다." };
+  }
+  const nameValidation = validateName(updatedName);
+  if (!nameValidation.valid) {
+    return nameValidation;
   }
   return { valid: true };
 };

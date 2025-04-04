@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, ChangeEvent } from "react";
 import { logout, changePassword, withdrawAccount } from "../services/authService";
 import { updateUserProfile } from "../services/userService";
-import { validateName, validatePassword } from "../utils/validators";
+import { validatePassword, validateUpdateProfile } from "../utils/validators";
 import { useUserProfile } from "../contexts/UserProfileContext";
 import Icons from "./Icons";
 
@@ -226,29 +226,35 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
         setFormError(error.message || "비밀번호 변경 중 오류가 발생하였습니다.");
       }
       return;
-    }
-    const nameResult = validateName(editedName);
-    if (!nameResult.valid) {
-      setFormError(nameResult.message || "올바른 이름을 입력해 주십시오.");
-      return;
-    }
-    const formData = new FormData();
-    formData.append("name", editedName);
-    if (profilePicture) formData.append("profilePicture", profilePicture);
-    try {
-      const resp = await updateUserProfile(formData);
-      if (resp.success) {
-        alert("프로필이 업데이트되었습니다.");
-        captureHeight();
-        setIsEditing(false);
-        setProfilePicture(null);
-        setFormError("");
-        await reloadProfile();
-      } else {
-        setFormError("프로필 업데이트에 실패하였습니다.");
+    } else {
+      // 변경된 내용이 없으면 validateUpdateProfile에서 에러 메시지를 반환
+      const updateValidation = validateUpdateProfile(
+        profile?.name || "",
+        editedName,
+        profilePicture,
+      );
+      if (!updateValidation.valid) {
+        setFormError(updateValidation.message || "변경된 내용이 없습니다.");
+        return;
       }
-    } catch (error: any) {
-      setFormError(error.message || "업데이트 중 오류가 발생하였습니다.");
+      const formData = new FormData();
+      formData.append("name", editedName);
+      if (profilePicture) formData.append("profilePicture", profilePicture);
+      try {
+        const resp = await updateUserProfile(formData);
+        if (resp.success) {
+          alert("프로필이 업데이트되었습니다.");
+          captureHeight();
+          setIsEditing(false);
+          setProfilePicture(null);
+          setFormError("");
+          await reloadProfile();
+        } else {
+          setFormError("프로필 업데이트에 실패하였습니다.");
+        }
+      } catch (error: any) {
+        setFormError(error.message || "업데이트 중 오류가 발생하였습니다.");
+      }
     }
   };
 

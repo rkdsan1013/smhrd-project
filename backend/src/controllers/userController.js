@@ -3,6 +3,7 @@ const userModel = require("../models/userModel");
 const { saveProfilePicture } = require("../utils/imageHelper");
 const { validateName } = require("../utils/validators");
 const { formatImageUrl } = require("../utils/imageUrlHelper");
+const { normalizeName } = require("../utils/normalize");
 
 // 프로필 정보 내에 profilePicture가 있을 경우, 이미지 URL 포매팅 적용
 const formatProfile = (profile) => {
@@ -61,11 +62,16 @@ exports.updateProfile = async (req, res) => {
         .status(400)
         .json({ success: false, message: nameValidation.message || "유효하지 않은 이름입니다." });
 
-    // 프로필 사진 첨부시 처리
-    let profilePicturePath = null;
-    if (req.file) profilePicturePath = await saveProfilePicture(uuid, req.file);
+    // 이름을 정규화하여 DB에 저장 (불필요한 공백 제거 및 단일화)
+    const normalizedName = normalizeName(name);
 
-    const updateData = { name };
+    // 프로필 사진 첨부 시 처리
+    let profilePicturePath = null;
+    if (req.file) {
+      profilePicturePath = await saveProfilePicture(uuid, req.file);
+    }
+
+    const updateData = { name: normalizedName };
     if (profilePicturePath) updateData.profilePicture = profilePicturePath;
 
     const updatedProfile = await userModel.updateUserProfile(uuid, updateData);
