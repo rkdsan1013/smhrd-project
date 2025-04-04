@@ -7,7 +7,9 @@ const MIN_PASSWORD_LENGTH = 8;
 const MAX_PASSWORD_LENGTH = 60;
 const MIN_NAME_LENGTH = 2;
 const MAX_NAME_LENGTH = 50;
+const MAX_DESCRIPTION_LENGTH = 1000;
 
+// 이메일 검사: 공백 제거, 형식과 길이 체크
 const validateEmail = (email) => {
   const trimmedEmail = typeof email === "string" ? email.trim() : "";
   if (validator.isEmpty(trimmedEmail, { ignore_whitespace: true })) {
@@ -23,6 +25,7 @@ const validateEmail = (email) => {
   return { valid: true };
 };
 
+// 비밀번호 검사: 공백 제거, 길이 및 ASCII 검사
 const validatePassword = (password) => {
   const trimmedPassword = typeof password === "string" ? password.trim() : "";
   if (validator.isEmpty(trimmedPassword, { ignore_whitespace: true })) {
@@ -43,6 +46,7 @@ const validatePassword = (password) => {
   return { valid: true };
 };
 
+// 이름 검사: 공백 제거, 길이 및 형식 체크
 const validateName = (name) => {
   const trimmedName = typeof name === "string" ? name.trim() : "";
   if (validator.isEmpty(trimmedName, { ignore_whitespace: true })) {
@@ -61,8 +65,8 @@ const validateName = (name) => {
   return { valid: true };
 };
 
+// 성별 검사: "male"과 "female"만 허용
 const validateGender = (gender) => {
-  // "male"과 "female"만 허용
   const validGenders = ["male", "female"];
   if (typeof gender !== "string" || !validGenders.includes(gender)) {
     return { valid: false, message: "성별을 올바르게 선택해 주세요." };
@@ -70,6 +74,7 @@ const validateGender = (gender) => {
   return { valid: true };
 };
 
+// 생년월일 검사: 필수 입력, 형식 및 날짜 유효성 체크
 const validateBirthDate = (year, month, day) => {
   if (typeof year !== "string" || typeof month !== "string" || typeof day !== "string") {
     return { valid: false, message: "생년월일은 문자열로 입력되어야 합니다." };
@@ -96,44 +101,43 @@ const validateBirthDate = (year, month, day) => {
   return { valid: true };
 };
 
-// 인자 순서를 (name, gender, year, month, day, paradoxFlag)로 변경 (DB 순서: 이름, 성별, 생일)
+// 설명 검사: 빈 문자열 허용, 입력 시 최대 길이 체크
+const validateDescription = (description) => {
+  const trimmedDesc = typeof description === "string" ? description.trim() : "";
+  if (trimmedDesc.length === 0) return { valid: true };
+  if (trimmedDesc.length > MAX_DESCRIPTION_LENGTH) {
+    return { valid: false, message: `설명은 최대 ${MAX_DESCRIPTION_LENGTH}자 이하여야 합니다.` };
+  }
+  return { valid: true };
+};
+
+// 전체 프로필 검사: 이름, 생년월일, 성별 및 나이/미래 날짜 체크
+// 순서: (name, gender, year, month, day, paradoxFlag)
 const validateFullProfile = (name, gender, year, month, day, paradoxFlag) => {
   const nameResult = validateName(name);
   if (!nameResult.valid) return nameResult;
-
   const birthResult = validateBirthDate(year, month, day);
   if (!birthResult.valid) return birthResult;
-
   const genderResult = validateGender(gender);
   if (!genderResult.valid) return genderResult;
-
   const y = parseInt(year.trim(), 10);
   const m = parseInt(month.trim(), 10);
   const d = parseInt(day.trim(), 10);
   if (isNaN(y) || isNaN(m) || isNaN(d)) {
     return { valid: false, message: "생년월일이 올바르지 않습니다." };
   }
-
-  // paradoxFlag가 false인 경우에만 나이 및 미래 날짜 검증 수행
-  if (!paradoxFlag) {
-    const birthDate = new Date(y, m - 1, d);
-    const today = new Date();
-    const birthTimestamp = birthDate.getTime();
-    const todayTimestamp = today.getTime();
-
-    let age = today.getFullYear() - y;
-    if (today.getMonth() < m - 1 || (today.getMonth() === m - 1 && today.getDate() < d)) {
-      age--;
-    }
-    if (age > 130 || birthTimestamp > todayTimestamp) {
-      let message = "";
-      if (birthTimestamp > todayTimestamp) {
-        message = "미래에서 온 당신, 타임머신은 아직 불법입니다!";
-      } else if (age > 130) {
-        message = "너무 오래 살 수는 없습니다. 당신은 영원히 젊어야 해요!";
-      }
-      return { valid: false, message, requiresOverride: true };
-    }
+  const birthDate = new Date(y, m - 1, d);
+  const today = new Date();
+  let age = today.getFullYear() - y;
+  if (today.getMonth() < m - 1 || (today.getMonth() === m - 1 && today.getDate() < d)) {
+    age--;
+  }
+  if (!paradoxFlag && (age > 130 || birthDate.getTime() > today.getTime())) {
+    const message =
+      birthDate.getTime() > today.getTime()
+        ? "미래에서 온 당신, 타임머신은 아직 불법입니다!"
+        : "너무 오래 살 수는 없습니다. 당신은 영원히 젊어야 해요!";
+    return { valid: false, message, requiresOverride: true };
   }
   return { valid: true };
 };
@@ -145,6 +149,7 @@ module.exports = {
   validateGender,
   validateBirthDate,
   validateFullProfile,
+  validateDescription,
   MIN_EMAIL_LENGTH,
   MAX_EMAIL_LENGTH,
   MIN_PASSWORD_LENGTH,

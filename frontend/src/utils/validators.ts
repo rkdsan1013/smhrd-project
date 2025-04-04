@@ -7,8 +7,9 @@ export const MIN_PASSWORD_LENGTH = 8;
 export const MAX_PASSWORD_LENGTH = 60;
 export const MIN_NAME_LENGTH = 2;
 export const MAX_NAME_LENGTH = 50;
+export const MAX_DESCRIPTION_LENGTH = 1000;
 
-// 이메일 유효성 검사: 공백 제거, 형식 및 길이 체크
+// 이메일 검사: 공백 제거, 형식과 길이 체크
 export const validateEmail = (email: string): { valid: boolean; message?: string } => {
   const trimmedEmail = email.trim();
   if (validator.isEmpty(trimmedEmail, { ignore_whitespace: true })) {
@@ -24,7 +25,7 @@ export const validateEmail = (email: string): { valid: boolean; message?: string
   return { valid: true };
 };
 
-// 비밀번호 유효성 검사: 공백, 길이, ASCII 문자 체크
+// 비밀번호 검사: 공백 제거, 길이 및 ASCII 문자 여부 확인
 export const validatePassword = (password: string): { valid: boolean; message?: string } => {
   const trimmedPassword = password.trim();
   if (validator.isEmpty(trimmedPassword, { ignore_whitespace: true })) {
@@ -45,7 +46,7 @@ export const validatePassword = (password: string): { valid: boolean; message?: 
   return { valid: true };
 };
 
-// 이름 유효성 검사: 공백 제거, 길이 및 허용 문자 체크
+// 이름 검사: 공백 제거, 길이 및 형식 체크
 export const validateName = (name: string): { valid: boolean; message?: string } => {
   const trimmedName = name.trim();
   if (validator.isEmpty(trimmedName, { ignore_whitespace: true })) {
@@ -64,6 +65,7 @@ export const validateName = (name: string): { valid: boolean; message?: string }
   return { valid: true };
 };
 
+// 성별 검사: "male"과 "female"만 허용
 export const validateGender = (gender: string): { valid: boolean; message?: string } => {
   const validGenders = ["male", "female"];
   if (!validGenders.includes(gender)) {
@@ -72,7 +74,7 @@ export const validateGender = (gender: string): { valid: boolean; message?: stri
   return { valid: true };
 };
 
-// 생년월일 유효성 검사: 모든 필드 입력, 형식 및 논리적 유효성 체크
+// 생년월일 검사: 모든 필수 필드, 형식 및 날짜 유효성 체크
 export const validateBirthDate = (
   year: string,
   month: string,
@@ -97,7 +99,17 @@ export const validateBirthDate = (
   return { valid: true };
 };
 
-// 전체 프로필 유효성 검사: 이름, 생년월일, 성별 종합 검사 및 나이/미래 날짜 체크
+// 설명 검사: 빈 문자열은 허용하며, 입력 시 최대 길이 체크
+export const validateDescription = (description: string): { valid: boolean; message?: string } => {
+  const trimmedDesc = description.trim();
+  if (trimmedDesc.length === 0) return { valid: true };
+  if (trimmedDesc.length > MAX_DESCRIPTION_LENGTH) {
+    return { valid: false, message: `설명은 최대 ${MAX_DESCRIPTION_LENGTH}자 이하여야 합니다.` };
+  }
+  return { valid: true };
+};
+
+// 전체 프로필 검사: 이름, 생년월일, 성별, 그리고 나이/미래 날짜 체크 (인자 순서: name, gender, year, month, day, paradoxFlag)
 export const validateFullProfile = (
   name: string,
   gender: string,
@@ -108,39 +120,28 @@ export const validateFullProfile = (
 ): { valid: boolean; message?: string; requiresOverride?: boolean } => {
   const nameValidation = validateName(name);
   if (!nameValidation.valid) return nameValidation;
-
   const birthValidation = validateBirthDate(year, month, day);
   if (!birthValidation.valid) return birthValidation;
-
   const genderValidation = validateGender(gender);
   if (!genderValidation.valid) return genderValidation;
-
-  const y = parseInt(year, 10);
-  const m = parseInt(month, 10);
-  const d = parseInt(day, 10);
+  const y = parseInt(year.trim(), 10);
+  const m = parseInt(month.trim(), 10);
+  const d = parseInt(day.trim(), 10);
   if (isNaN(y) || isNaN(m) || isNaN(d)) {
     return { valid: false, message: "생년월일이 올바르지 않습니다." };
   }
-
   const birthDate = new Date(y, m - 1, d);
   const today = new Date();
-  const birthTimestamp = birthDate.getTime();
-  const todayTimestamp = today.getTime();
-
   let age = today.getFullYear() - y;
   if (today.getMonth() < m - 1 || (today.getMonth() === m - 1 && today.getDate() < d)) {
     age--;
   }
-
-  if (!paradoxFlag && (age > 130 || birthTimestamp > todayTimestamp)) {
-    let message = "";
-    if (birthTimestamp > todayTimestamp) {
-      message = "미래에서 온 당신, 타임머신은 아직 불법입니다!";
-    } else if (age > 130) {
-      message = "너무 오래 살 수는 없습니다. 당신은 영원히 젊어야 해요!";
-    }
+  if (!paradoxFlag && (age > 130 || birthDate.getTime() > today.getTime())) {
+    const message =
+      birthDate.getTime() > today.getTime()
+        ? "미래에서 온 당신, 타임머신은 아직 불법입니다!"
+        : "너무 오래 살 수는 없습니다. 당신은 영원히 젊어야 해요!";
     return { valid: false, message, requiresOverride: true };
   }
-
   return { valid: true };
 };
