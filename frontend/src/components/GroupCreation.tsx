@@ -1,8 +1,7 @@
-// /frontend/src/components/GroupCreation.tsx
 import React, { useState, useEffect, useLayoutEffect, useRef, ChangeEvent } from "react";
 import { validateName, validateDescription } from "../utils/validators";
 import Icons from "./Icons";
-import { createGroup } from "../services/groupService"; // Group creation API call
+import { createGroup, GroupInfo } from "../services/groupService";
 
 const baseInputClass =
   "peer block w-full border-0 border-b-2 pb-2.5 pt-4 text-base bg-transparent focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600 transition-all duration-300 ease-in-out";
@@ -11,10 +10,11 @@ const labelClass =
 
 interface GroupCreationProps {
   onClose: () => void;
+  onCreate?: (newGroup: GroupInfo) => void;
 }
 
-const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
-  // 단계: "creation"(그룹 생성) / "settings"(그룹 설정)
+const GroupCreation: React.FC<GroupCreationProps> = ({ onClose, onCreate }) => {
+  // 단계: "creation" (그룹 생성) / "settings" (그룹 설정)
   const [step, setStep] = useState<"creation" | "settings">("creation");
   const [isVisible, setIsVisible] = useState(false);
   const [hasMounted, setHasMounted] = useState(false);
@@ -34,7 +34,7 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
   const innerRef = useRef<HTMLDivElement>(null);
   const oldHeightRef = useRef<number | null>(null);
 
-  // 모달은 조금 후 페이드인 처리
+  // 모달 페이드인 처리 (약간의 딜레이)
   useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 50);
     return () => clearTimeout(timer);
@@ -82,7 +82,7 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
     formError,
   ]);
 
-  // 파일 변경 핸들러 (공통)
+  // 파일 선택 변경 핸들러 (공통)
   const handleFileChange = (
     e: ChangeEvent<HTMLInputElement>,
     setFile: React.Dispatch<React.SetStateAction<File | null>>,
@@ -104,7 +104,7 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
   const onGroupPictureChangeSettings = (e: ChangeEvent<HTMLInputElement>) =>
     handleFileChange(e, setGroupPicture, setGroupPicturePreview);
 
-  // 그룹 생성 전 단계로 전환 시 이름과 설명 검증
+  // 그룹 생성 전 '설정' 단계로 전환 시 이름과 설명 검증
   const goToSettings = () => {
     const nameValidation = validateName(groupName);
     if (!nameValidation.valid) {
@@ -119,6 +119,12 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
     setFormError("");
     captureHeight();
     setStep("settings");
+  };
+
+  // 그룹 생성 '이전' 단계로 돌아가기
+  const goToCreation = () => {
+    captureHeight();
+    setStep("creation");
   };
 
   // 그룹 생성 제출 시 최종 검증 및 API 호출
@@ -143,6 +149,9 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
       };
       const createdGroup = await createGroup(payload);
       alert("그룹이 생성되었습니다. 그룹 ID: " + createdGroup.uuid);
+      if (onCreate) {
+        onCreate(createdGroup);
+      }
       onCloseModal();
     } catch (error: any) {
       setFormError(error.message || "그룹 생성 중 오류가 발생했습니다.");
@@ -161,11 +170,6 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
     }
   };
 
-  const goToCreation = () => {
-    captureHeight();
-    setStep("creation");
-  };
-
   return (
     <div className="fixed inset-0 flex items-center justify-center">
       {/* 배경 오버레이 */}
@@ -174,7 +178,7 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
           isVisible ? "opacity-100" : "opacity-0"
         }`}
       />
-      {/* 모달 */}
+      {/* 모달 컨테이너 */}
       <div
         className={`relative bg-white rounded-lg shadow-xl w-96 select-none transition-opacity duration-300 ${
           isVisible ? "opacity-100" : "opacity-0"
@@ -218,9 +222,7 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
                         <div className="w-full h-full bg-gray-200" />
                       )}
                     </div>
-                    {/* 이미지 선택 오버레이 */}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors duration-300"></div>
-                    {/* 중앙 아이콘 */}
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                       <Icons name="image" className="w-8 h-8 text-white" />
                     </div>

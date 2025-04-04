@@ -1,13 +1,12 @@
-// /frontend/src/components/Sidebar.tsx
 import React, { useState, useEffect, useRef, MouseEvent } from "react";
 import ReactDOM from "react-dom";
 import Icons from "./Icons";
 import GroupCreation from "./GroupCreation"; // 그룹 생성 모달
 import { getMyGroups, GroupInfo } from "../services/groupService"; // API 호출
 
-// 그룹 인터페이스 (백엔드에서 받아오는 데이터 구조와 맞추어 GroupInfo 사용)
+// 그룹 인터페이스 – 백엔드에서 받아온 GroupInfo에 이미지 URL 필드를 추가
 interface Group extends GroupInfo {
-  image: string; // 그룹 아이콘 URL로 사용할 속성
+  image: string; // 그룹 아이콘 URL (group_icon 필드에서 매핑)
 }
 
 interface TooltipState {
@@ -25,7 +24,6 @@ interface TooltipProps {
 }
 
 const Tooltip: React.FC<TooltipProps> = ({ text, style, placement, className }) => {
-  // placement에 따라 화살표 스타일 결정
   const arrowClasses =
     placement === "right"
       ? "after:content-[''] after:absolute after:top-1/2 after:left-[-6px] after:-translate-y-1/2 after:border-t-[6px] after:border-b-[6px] after:border-t-transparent after:border-b-transparent after:border-r-[6px] after:border-r-gray-700/75"
@@ -33,12 +31,9 @@ const Tooltip: React.FC<TooltipProps> = ({ text, style, placement, className }) 
   return ReactDOM.createPortal(
     <div
       style={style}
-      className={
-        `fixed z-50 transition-opacity duration-200 bg-gray-700/75 rounded-lg shadow-lg text-white text-sm flex items-center whitespace-nowrap ` +
-        (className || "px-3 py-2") +
-        " " +
-        arrowClasses
-      }
+      className={`fixed z-50 transition-opacity duration-200 bg-gray-700/75 rounded-lg shadow-lg text-white text-sm flex items-center whitespace-nowrap ${
+        className || "px-3 py-2"
+      } ${arrowClasses}`}
     >
       {text}
     </div>,
@@ -47,7 +42,7 @@ const Tooltip: React.FC<TooltipProps> = ({ text, style, placement, className }) 
 };
 
 const tooltipGap = 8; // 버튼과 툴팁 간격
-const hoverDelay = 100; // 딜레이 (ms)
+const hoverDelay = 100; // 마우스 호버 딜레이 (ms)
 
 const calcTooltipStyle = (rect: DOMRect, isDesktop: boolean): React.CSSProperties =>
   isDesktop
@@ -71,16 +66,14 @@ const Sidebar: React.FC = () => {
   const hoverTimeoutRef = useRef<number | null>(null);
   const [isGroupCreationModalOpen, setIsGroupCreationModalOpen] = useState(false);
 
-  // 그룹 데이터를 API 로부터 불러오기: 내가 가입한 그룹 리스트
+  // Fetch the group list (내가 가입한 그룹 목록) on component mount
   useEffect(() => {
-    // 그룹 목록 API 호출 후 세팅
     async function fetchGroups() {
       try {
         const fetchedGroups = await getMyGroups();
-        // 백엔드 데이터의 그룹 아이콘 필드를 image 속성으로 매핑
         const mappedGroups: Group[] = fetchedGroups.map((group) => ({
           ...group,
-          image: group.group_icon || "", // group_icon을 사용, 없으면 빈 문자열
+          image: group.group_icon || "",
         }));
         setGroups(mappedGroups);
       } catch (error) {
@@ -107,8 +100,6 @@ const Sidebar: React.FC = () => {
       placement,
     };
     setTooltips((prev) => [...prev, newTooltip]);
-
-    // 두 프레임 후 opacity를 1로 변경
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         setTooltips((prev) =>
@@ -151,6 +142,15 @@ const Sidebar: React.FC = () => {
       removeTooltip(Number(idStr));
       target.removeAttribute("data-tooltip-id");
     }
+  };
+
+  // Callback when a new group is created to immediately update the sidebar list
+  const handleGroupCreated = (newGroup: GroupInfo) => {
+    const mappedGroup: Group = {
+      ...newGroup,
+      image: newGroup.group_icon || "",
+    };
+    setGroups((prev) => [...prev, mappedGroup]);
   };
 
   return (
@@ -255,7 +255,10 @@ const Sidebar: React.FC = () => {
 
       {/* 그룹 생성 모달 */}
       {isGroupCreationModalOpen && (
-        <GroupCreation onClose={() => setIsGroupCreationModalOpen(false)} />
+        <GroupCreation
+          onClose={() => setIsGroupCreationModalOpen(false)}
+          onCreate={handleGroupCreated}
+        />
       )}
     </>
   );
