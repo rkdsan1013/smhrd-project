@@ -1,7 +1,7 @@
-// /backend/src/socket.js
 const { Server } = require("socket.io");
 const { jwtVerify, secretKey } = require("./utils/jwtUtils");
 const cookie = require("cookie");
+const chatModel = require("./models/chatModel"); // ✅ 추가
 
 const initSocketIO = (server) => {
   const io = new Server(server, {
@@ -12,18 +12,16 @@ const initSocketIO = (server) => {
     },
   });
 
-  // 인증 미들웨어: 클라이언트가 보내는 쿠키에서 accessToken을 읽어 jwtVerify로 검증
   io.use(async (socket, next) => {
     try {
       const cookieHeader = socket.handshake.headers.cookie || "";
       const cookies = cookie.parse(cookieHeader);
       const token = cookies.accessToken;
       if (!token) {
-        console.error("인증 실패: accessToken 쿠키 없음");
         return next(new Error("Authentication error: Token missing"));
       }
       const { payload } = await jwtVerify(token, secretKey);
-      socket.user = payload; // 이후 이벤트에서 사용자 정보 활용
+      socket.user = payload;
       next();
     } catch (error) {
       console.error("토큰 검증 실패:", error);
@@ -32,16 +30,26 @@ const initSocketIO = (server) => {
   });
 
   io.on("connection", (socket) => {
-    console.log("New client connected:", socket.id);
+    console.log("Socket 연결됨:", socket.id);
 
-    // 예시 이벤트: 클라이언트에서 "message" 이벤트 수신 시 모든 클라이언트에 브로드캐스트
-    socket.on("message", (data) => {
-      console.log("Message received:", data);
-      io.emit("message", data);
+    //  채팅방 입장
+    socket.on("joinRoom", (roomUuid) => {
+      socket.join(roomUuid);
+    });
+
+    //  메시지 수신 + DB 저장
+    socket.on("sendMessage", async ({ roomUuid, message }) => {
+      try {
+        const senderUuid = socket.user.uuid;
+        const savedMessage = await chatModel.saveMessage(roomUuid, senderUuid, message); // DB 저장
+        io.to(roomUuid).emit("receiveMessage", savedMessage); // 실시간 전송
+      } catch (err) {
+        console.error("메시지 저장 오류:", err);
+      }
     });
 
     socket.on("disconnect", () => {
-      console.log("Client disconnected:", socket.id);
+      console.log("Socket 연결 종료:", socket.id);
     });
   });
 };

@@ -23,3 +23,9 @@ exports.saveMessage = async (roomUuid, senderUuid, message) => {
   const [rows] = await db.query(chatQueries.getMessageById, [messageUuid]);
   return rows[0];
 };
+
+// 채팅 메시지 조회
+exports.getMessagesByRoom = async (roomUuid) => {
+  const [rows] = await db.query(chatQueries.getMessagesByRoom, [roomUuid]);
+  return rows;
+};

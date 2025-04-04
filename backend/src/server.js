@@ -11,6 +11,8 @@ dotenv.config();
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const groupRoutes = require("./routes/groupRoutes");
+const friendRoutes = require("./routes/friendRoutes");
+const chatRoutes = require("./routes/chatRoutes");
 
 const app = express();
 
@@ -31,6 +33,8 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/groups", groupRoutes);
+app.use("/api/friends", friendRoutes);
+app.use("/api/chats", chatRoutes);
 
 // 글로벌 에러 핸들러
 app.use((err, req, res, next) => {

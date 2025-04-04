@@ -27,9 +27,17 @@ const addUserToRoom = `
   VALUES (?, ?)
 `;
 
+const getMessagesByRoom = `
+  SELECT uuid, room_uuid, sender_uuid, message, sent_at
+  FROM chat_messages
+  WHERE room_uuid = ?
+  ORDER BY sent_at ASC
+`;
+
 module.exports = {
   findDMRoom,
   insertMessage,
   getMessageById,
   addUserToRoom,
+  getMessagesByRoom,
 };

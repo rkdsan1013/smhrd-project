@@ -13,7 +13,7 @@ import {
 import { openOrCreateDMRoom } from "../services/chatService";
 import FriendProfileCard from "./FriendProfileCard";
 import Icons from "./Icons";
-// import DirectMessage from "./DirectMessage";
+import DirectMessage from "./DirectMessage";
 
 interface FriendListProps {
   onClose: () => void;
@@ -149,7 +149,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
   };
 
   if (dmRoomUuid) {
-    // return <DirectMessage roomUuid={dmRoomUuid} onBack={() => setDmRoomUuid(null)} />;
+    return <DirectMessage roomUuid={dmRoomUuid} onBack={() => setDmRoomUuid(null)} />;
   }
 
   return (
@@ -339,7 +339,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                       title="채팅하기"
                     >
                       <Icons
-                        name="chaticon"
+                        name="chat"
                         className="w-6 h-6 text-gray-400 hover:text-blue-400 duration-300"
                       />
                     </button>

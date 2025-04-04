@@ -1,15 +1,16 @@
-// /frontend/src/components/Footer.tsx
 import React, { useState } from "react";
 import { useUserProfile } from "../contexts/UserProfileContext";
 import ProfileCard from "./ProfileCard";
 import Icons from "./Icons";
+import FriendList from "./FriendList";
 
 const Footer: React.FC = () => {
   const { profile, loading, error } = useUserProfile();
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showFriendList, setShowFriendList] = useState(false);
 
   const handleFriendListClick = () => {
-    alert("친구 목록으로 이동합니다.");
+    setShowFriendList(true);
   };
 
   const handleProfileClick = () => {
@@ -20,8 +21,19 @@ const Footer: React.FC = () => {
     setShowProfileModal(false);
   };
 
+  const closeFriendList = () => {
+    setShowFriendList(false);
+  };
+
   return (
-    <>
+    <div className="relative">
+      {/* 친구 목록 컴포넌트 - Footer 위에 간격 두고 위치 */}
+      {showFriendList && (
+        <div className="absolute bottom-30 right-0 z-50">
+          <FriendList onClose={closeFriendList} />
+        </div>
+      )}
+
       <footer className="bg-white rounded-lg shadow-lg p-3">
         <div className="flex items-center justify-between">
           {/* 왼쪽: 클릭 가능한 프로필 카드 */}
@@ -30,7 +42,6 @@ const Footer: React.FC = () => {
             className="flex items-center space-x-3 p-3 rounded-lg bg-gray-100 hover:shadow-md transition duration-200"
           >
             {loading ? (
-              // 로딩 중에는 텍스트 대신 스피너 아이콘을 표시함.
               <Icons name="spinner" className="animate-spin w-8 h-8 text-gray-200 fill-blue-600" />
             ) : error ? (
               <div className="text-red-500 text-sm">{error}</div>
@@ -68,9 +79,9 @@ const Footer: React.FC = () => {
         </div>
       </footer>
 
-      {/* ProfileCard 모달 렌더링 (프로필 정보가 있을 경우) */}
+      {/* ProfileCard 모달 렌더링 */}
       {showProfileModal && profile && <ProfileCard onClose={closeModal} />}
-    </>
+    </div>
   );
 };
 
