@@ -1,5 +1,23 @@
+/* 1. 구글 폰트 import (최상단에 위치) */
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100..900&display=swap");
+
+/* 2. Tailwind CSS의 기본 스타일 import */
 @import "tailwindcss";
 
+/* 3. CSS 변수로 폰트 정의 */
+:root {
+  --font-noto-sans-kr: "Noto Sans KR", sans-serif;
+}
+
+/* 4. 전역 기본 폰트 적용 */
+body {
+  font-family: "Noto Sans KR", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+}
+
+/* 5. 기타 스타일 (예: 스크롤바 숨김) */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
