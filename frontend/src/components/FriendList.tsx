@@ -87,6 +87,33 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
     };
   }, [activeTab, refreshRequestCount]);
 
+  useEffect(() => {
+    const handleFriendRequestResponded = ({
+      targetUuid,
+      status,
+    }: {
+      targetUuid: string;
+      status: "accepted" | "declined";
+    }) => {
+      setSearchResults((prev) =>
+        prev.map((user) =>
+          user.uuid === targetUuid
+            ? {
+                ...user,
+                friendStatus: status === "accepted" ? "accepted" : undefined,
+              }
+            : user,
+        ),
+      );
+    };
+
+    socket.on("friendRequestResponded", handleFriendRequestResponded);
+
+    return () => {
+      socket.off("friendRequestResponded", handleFriendRequestResponded);
+    };
+  }, []);
+
   const sortSearchResults = (list: SearchResultUser[]) => {
     return [...list].sort((a, b) => {
       const weight = (status: string | null | undefined) => {
@@ -301,7 +328,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                               }`}
                             >
                               {user.friendStatus === "accepted"
-                                ? "이미 친구"
+                                ? "친구"
                                 : user.friendStatus === "pending"
                                 ? "요청됨"
                                 : "친구 요청"}

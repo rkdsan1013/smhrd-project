@@ -92,12 +92,20 @@ exports.sendFriendRequest = async (req, res) => {
 
 exports.acceptFriendRequest = async (req, res) => {
   try {
-    const receiverUuid = req.user.uuid;
-    const requesterUuid = req.params.uuid;
+    const receiverUuid = req.user.uuid; // B
+    const requesterUuid = req.params.uuid; // A
 
     const success = await friendModel.acceptFriendRequest(receiverUuid, requesterUuid);
     if (!success) {
       return res.status(400).json({ success: false, message: "친구 요청 수락 실패" });
+    }
+
+    // ✅ A에게 수락 결과 실시간 전송
+    if (global.io) {
+      global.io.to(requesterUuid).emit("friendRequestResponded", {
+        targetUuid: receiverUuid,
+        status: "accepted",
+      });
     }
 
     res.json({ success: true, message: "친구 요청을 수락했습니다." });
@@ -109,12 +117,20 @@ exports.acceptFriendRequest = async (req, res) => {
 
 exports.declineFriendRequest = async (req, res) => {
   try {
-    const receiverUuid = req.user.uuid;
-    const requesterUuid = req.params.uuid;
+    const receiverUuid = req.user.uuid; // B
+    const requesterUuid = req.params.uuid; // A
 
     const success = await friendModel.declineFriendRequest(receiverUuid, requesterUuid);
     if (!success) {
       return res.status(400).json({ success: false, message: "거절할 친구 요청이 없습니다." });
+    }
+
+    // ✅ A에게 거절 결과 실시간 전송
+    if (global.io) {
+      global.io.to(requesterUuid).emit("friendRequestResponded", {
+        targetUuid: receiverUuid,
+        status: "declined",
+      });
     }
 
     res.json({ success: true, message: "친구 요청을 거절했습니다." });
