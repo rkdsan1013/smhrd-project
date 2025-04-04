@@ -69,7 +69,7 @@ const AuthForm: React.FC = () => {
     setHasMounted(true);
   }, []);
 
-  // 폼 상태 전환 시 (예, "profile" 전환) 해당 입력란으로 포커스 부여 (useLayoutEffect로 DOM 갱신 후 처리)
+  // 폼 상태 전환 시, 해당 입력란으로 포커스 부여
   useLayoutEffect(() => {
     if (formState === "start") {
       emailRef.current?.focus();
@@ -78,7 +78,7 @@ const AuthForm: React.FC = () => {
     }
   }, [formState]);
 
-  // 회원가입폼에서 정보입력폼("profile")으로 전환 시, 약간의 딜레이를 두고 이름 입력란에 포커스
+  // 회원가입폼에서 정보입력폼("profile") 전환 시, 약간의 딜레이 후 이름 입력란에 포커스 부여
   useEffect(() => {
     if (formState === "profile") {
       setTimeout(() => {
@@ -87,7 +87,7 @@ const AuthForm: React.FC = () => {
     }
   }, [formState]);
 
-  // 로딩 완료 후, errorMsg와 errorField가 있으면 해당 필드로 포커스
+  // 로딩 완료 후, errorMsg와 errorField가 있으면 해당 필드로 포커스 전환
   useEffect(() => {
     if (!isLoading && errorMsg && errorField) {
       switch (errorField) {
@@ -371,26 +371,6 @@ const AuthForm: React.FC = () => {
     }
   };
 
-  // 카드 높이 애니메이션: inner 높이를 기준으로 외부 컨테이너 높이 조정
-  useLayoutEffect(() => {
-    const outer = cardOuterRef.current;
-    const inner = cardInnerRef.current;
-    if (!outer || !inner) return;
-    const newHeight = inner.offsetHeight;
-    if (!hasMounted) {
-      outer.style.transition = "none";
-      outer.style.height = `${newHeight}px`;
-      return;
-    }
-    const currentHeight = parseFloat(window.getComputedStyle(outer).height || "0");
-    if (Math.round(currentHeight) === Math.round(newHeight)) return;
-    outer.style.transition = "none";
-    outer.style.height = `${currentHeight}px`;
-    outer.getBoundingClientRect();
-    outer.style.transition = "height 0.3s ease-in-out";
-    outer.style.height = `${newHeight}px`;
-  }, [hasMounted, formState, errorMsg, showOverride]);
-
   return (
     <div className="flex items-center justify-center min-h-screen">
       <div
@@ -398,55 +378,33 @@ const AuthForm: React.FC = () => {
         className="w-full max-w-md bg-white shadow-2xl rounded-2xl overflow-hidden"
       >
         <div ref={cardInnerRef} className="p-8">
-          <h2 className="mb-6 text-3xl font-bold text-gray-800">{formConfig[formState].title}</h2>
+          <h2 className="text-3xl font-bold text-gray-800">{formConfig[formState].title}</h2>
           <form onSubmit={handleSubmit} noValidate onKeyDown={handleKeyDown}>
-            {formState !== "profile" && (
-              <div className="relative z-0 w-full mb-6">
-                <input
-                  type="email"
-                  id="email"
-                  ref={emailRef}
-                  value={email}
-                  onChange={handleChange(setEmail)}
-                  disabled={isLoading || formState !== "start"}
-                  className={`
-                    ${baseInputClass}
-                    ${
+            {/* 폼 내부 요소들을 하나의 flex-col 컨테이너로 묶어 일관된 gap 유지 */}
+            <div className="flex flex-col space-y-6 mt-6">
+              {formState !== "profile" && (
+                <div className="relative z-0 w-full">
+                  <input
+                    type="email"
+                    id="email"
+                    ref={emailRef}
+                    value={email}
+                    onChange={handleChange(setEmail)}
+                    disabled={isLoading || formState !== "start"}
+                    className={`${baseInputClass} ${
                       isLoading || formState !== "start"
                         ? "opacity-50 text-gray-500"
                         : "text-gray-900"
-                    }
-                  `}
-                  placeholder=" "
-                />
-                <label htmlFor="email" className={labelClass}>
-                  이메일
-                </label>
-              </div>
-            )}
-            {formState === "signin" && (
-              <div className="relative z-0 w-full mb-6">
-                <input
-                  type="password"
-                  id="password"
-                  ref={passwordRef}
-                  value={password}
-                  onChange={handleChange(setPassword)}
-                  disabled={isLoading}
-                  className={`
-                    ${baseInputClass}
-                    ${isLoading ? "opacity-50 text-gray-500" : "text-gray-900"}
-                  `}
-                  placeholder=" "
-                />
-                <label htmlFor="password" className={labelClass}>
-                  비밀번호
-                </label>
-              </div>
-            )}
-            {formState === "signup" && (
-              <>
-                <div className="relative z-0 w-full mb-6">
+                    }`}
+                    placeholder=" "
+                  />
+                  <label htmlFor="email" className={labelClass}>
+                    이메일
+                  </label>
+                </div>
+              )}
+              {formState === "signin" && (
+                <div className="relative z-0 w-full">
                   <input
                     type="password"
                     id="password"
@@ -454,244 +412,255 @@ const AuthForm: React.FC = () => {
                     value={password}
                     onChange={handleChange(setPassword)}
                     disabled={isLoading}
-                    className={`
-                      ${baseInputClass}
-                      ${isLoading ? "opacity-50 text-gray-500" : "text-gray-900"}
-                    `}
+                    className={`${baseInputClass} ${
+                      isLoading ? "opacity-50 text-gray-500" : "text-gray-900"
+                    }`}
                     placeholder=" "
                   />
                   <label htmlFor="password" className={labelClass}>
                     비밀번호
                   </label>
                 </div>
-                <div className="relative z-0 w-full mb-6">
-                  <input
-                    type="password"
-                    id="confirmPassword"
-                    ref={confirmPasswordRef}
-                    value={confirmPassword}
-                    onChange={handleChange(setConfirmPassword)}
-                    disabled={isLoading}
-                    className={`
-                      ${baseInputClass}
-                      ${isLoading ? "opacity-50 text-gray-500" : "text-gray-900"}
-                    `}
-                    placeholder=" "
-                  />
-                  <label htmlFor="confirmPassword" className={labelClass}>
-                    비밀번호 확인
-                  </label>
-                </div>
-              </>
-            )}
-            {formState === "profile" && (
-              <>
-                <div className="mb-6 flex flex-col items-center">
-                  <label
-                    htmlFor="profilePicture"
-                    className="relative group w-32 h-32 mb-2 rounded-full overflow-hidden"
-                  >
-                    <div className="w-full h-full">
-                      {profilePreview ? (
-                        <img
-                          src={profilePreview}
-                          alt="프로필 미리보기"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm"></div>
-                      )}
-                    </div>
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  </label>
-                  <input
-                    type="file"
-                    id="profilePicture"
-                    accept="image/*"
-                    onChange={handleProfilePictureChange}
-                    disabled={isLoading}
-                    className="hidden"
-                  />
-                </div>
-                <div className="relative z-0 w-full mb-6">
-                  <input
-                    type="text"
-                    id="name"
-                    ref={nameRef}
-                    value={name}
-                    onChange={handleChange(setName)}
-                    disabled={isLoading}
-                    className={`
-                      ${baseInputClass}
-                      ${isLoading ? "opacity-50 text-gray-500" : "text-gray-900"}
-                    `}
-                    placeholder=" "
-                  />
-                  <label htmlFor="name" className={labelClass}>
-                    이름
-                  </label>
-                </div>
-                <div className="relative z-0 w-full mb-6">
-                  <label className="block text-sm text-gray-500 mb-1">생일</label>
-                  <div className="flex items-center space-x-2">
+              )}
+              {formState === "signup" && (
+                <>
+                  <div className="relative z-0 w-full">
                     <input
-                      type="text"
-                      id="birthYear"
-                      ref={birthYearRef}
-                      value={birthYear}
-                      onChange={handleBirthYearChange}
-                      onBlur={handleBirthYearBlur}
-                      onFocus={(e) => e.target.select()}
-                      placeholder="YYYY"
-                      maxLength={4}
-                      inputMode="numeric"
+                      type="password"
+                      id="password"
+                      ref={passwordRef}
+                      value={password}
+                      onChange={handleChange(setPassword)}
                       disabled={isLoading}
-                      className={`
-                        block w-1/3 border-b-2 pb-2 pt-2 text-base text-center
-                        ${isLoading ? "opacity-50 text-gray-500" : "text-gray-900"}
-                        bg-transparent focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600 transition-all duration-300 ease-in-out
-                      `}
+                      className={`${baseInputClass} ${
+                        isLoading ? "opacity-50 text-gray-500" : "text-gray-900"
+                      }`}
+                      placeholder=" "
                     />
-                    <span className="text-gray-500">|</span>
+                    <label htmlFor="password" className={labelClass}>
+                      비밀번호
+                    </label>
+                  </div>
+                  <div className="relative z-0 w-full">
                     <input
-                      type="text"
-                      id="birthMonth"
-                      ref={birthMonthRef}
-                      value={birthMonth}
-                      onChange={handleBirthMonthChange}
-                      onBlur={handleBirthMonthBlur}
-                      onFocus={(e) => e.target.select()}
-                      placeholder="MM"
-                      maxLength={2}
-                      inputMode="numeric"
+                      type="password"
+                      id="confirmPassword"
+                      ref={confirmPasswordRef}
+                      value={confirmPassword}
+                      onChange={handleChange(setConfirmPassword)}
                       disabled={isLoading}
-                      className={`
-                        block w-1/3 border-b-2 pb-2 pt-2 text-base text-center
-                        ${isLoading ? "opacity-50 text-gray-500" : "text-gray-900"}
-                        bg-transparent focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600 transition-all duration-300 ease-in-out
-                      `}
+                      className={`${baseInputClass} ${
+                        isLoading ? "opacity-50 text-gray-500" : "text-gray-900"
+                      }`}
+                      placeholder=" "
                     />
-                    <span className="text-gray-500">|</span>
+                    <label htmlFor="confirmPassword" className={labelClass}>
+                      비밀번호 확인
+                    </label>
+                  </div>
+                </>
+              )}
+              {formState === "profile" && (
+                <>
+                  <div className="flex flex-col items-center">
+                    <label
+                      htmlFor="profilePicture"
+                      className="relative group w-32 h-32 rounded-full overflow-hidden"
+                    >
+                      <div className="w-full h-full">
+                        {profilePreview ? (
+                          <img
+                            src={profilePreview}
+                            alt="프로필 미리보기"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm">
+                            이미지 선택
+                          </div>
+                        )}
+                      </div>
+                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    </label>
                     <input
-                      type="text"
-                      id="birthDay"
-                      ref={birthDayRef}
-                      value={birthDay}
-                      onChange={handleBirthDayChange}
-                      onBlur={handleBirthDayBlur}
-                      onFocus={(e) => e.target.select()}
-                      placeholder="DD"
-                      maxLength={2}
-                      inputMode="numeric"
+                      type="file"
+                      id="profilePicture"
+                      accept="image/*"
+                      onChange={handleProfilePictureChange}
                       disabled={isLoading}
-                      className={`
-                        block w-1/3 border-b-2 pb-2 pt-2 text-base text-center
-                        ${isLoading ? "opacity-50 text-gray-500" : "text-gray-900"}
-                        bg-transparent focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600 transition-all duration-300 ease-in-out
-                      `}
+                      className="hidden"
                     />
                   </div>
-                </div>
-                <div className="mb-6">
-                  <span className="block mb-2 text-sm font-medium text-gray-600">성별</span>
-                  <div className="flex items-center justify-between">
-                    <div className="flex space-x-4">
-                      <label
-                        className={`
-                          flex items-center justify-center w-24 py-2 border rounded-lg transition-colors duration-300 ease-in-out
-                          focus-within:ring-2 focus-within:ring-blue-300
-                          ${isLoading ? "opacity-50" : ""}
-                          ${
+                  <div className="relative z-0 w-full">
+                    <input
+                      type="text"
+                      id="name"
+                      ref={nameRef}
+                      value={name}
+                      onChange={handleChange(setName)}
+                      disabled={isLoading}
+                      className={`${baseInputClass} ${
+                        isLoading ? "opacity-50 text-gray-500" : "text-gray-900"
+                      }`}
+                      placeholder=" "
+                    />
+                    <label htmlFor="name" className={labelClass}>
+                      이름
+                    </label>
+                  </div>
+                  <div className="relative z-0 w-full">
+                    <label className="block text-sm text-gray-500">생일</label>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="text"
+                        id="birthYear"
+                        ref={birthYearRef}
+                        value={birthYear}
+                        onChange={handleBirthYearChange}
+                        onBlur={handleBirthYearBlur}
+                        onFocus={(e) => e.target.select()}
+                        placeholder="YYYY"
+                        maxLength={4}
+                        inputMode="numeric"
+                        disabled={isLoading}
+                        className={`block w-1/3 border-b-2 pb-2 pt-2 text-base text-center ${
+                          isLoading ? "opacity-50 text-gray-500" : "text-gray-900"
+                        } bg-transparent focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600 transition-all duration-300 ease-in-out`}
+                      />
+                      <span className="text-gray-500">|</span>
+                      <input
+                        type="text"
+                        id="birthMonth"
+                        ref={birthMonthRef}
+                        value={birthMonth}
+                        onChange={handleBirthMonthChange}
+                        onBlur={handleBirthMonthBlur}
+                        onFocus={(e) => e.target.select()}
+                        placeholder="MM"
+                        maxLength={2}
+                        inputMode="numeric"
+                        disabled={isLoading}
+                        className={`block w-1/3 border-b-2 pb-2 pt-2 text-base text-center ${
+                          isLoading ? "opacity-50 text-gray-500" : "text-gray-900"
+                        } bg-transparent focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600 transition-all duration-300 ease-in-out`}
+                      />
+                      <span className="text-gray-500">|</span>
+                      <input
+                        type="text"
+                        id="birthDay"
+                        ref={birthDayRef}
+                        value={birthDay}
+                        onChange={handleBirthDayChange}
+                        onBlur={handleBirthDayBlur}
+                        onFocus={(e) => e.target.select()}
+                        placeholder="DD"
+                        maxLength={2}
+                        inputMode="numeric"
+                        disabled={isLoading}
+                        className={`block w-1/3 border-b-2 pb-2 pt-2 text-base text-center ${
+                          isLoading ? "opacity-50 text-gray-500" : "text-gray-900"
+                        } bg-transparent focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600 transition-all duration-300 ease-in-out`}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <span className="block mb-2 text-sm font-medium text-gray-600">성별</span>
+                    <div className="flex items-center justify-between">
+                      <div className="flex space-x-4">
+                        <label
+                          className={`flex items-center justify-center w-24 py-2 border rounded-lg transition-colors duration-300 ease-in-out focus-within:ring-2 focus-within:ring-blue-300 ${
+                            isLoading ? "opacity-50" : ""
+                          } ${
                             gender === "male"
                               ? "bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
                               : "bg-white text-blue-500 border-blue-500 hover:bg-blue-100"
-                          }
-                        `}
-                      >
-                        <input
-                          type="radio"
-                          name="gender"
-                          value="male"
-                          checked={gender === "male"}
-                          onChange={handleChange(setGender)}
-                          disabled={isLoading}
-                          className="sr-only"
-                        />
-                        <span>남성</span>
-                      </label>
-                      <label
-                        className={`
-                          flex items-center justify-center w-24 py-2 border rounded-lg transition-colors duration-300 ease-in-out
-                          focus-within:ring-2 focus-within:ring-blue-300
-                          ${isLoading ? "opacity-50" : ""}
-                          ${
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="gender"
+                            value="male"
+                            checked={gender === "male"}
+                            onChange={handleChange(setGender)}
+                            disabled={isLoading}
+                            className="sr-only"
+                          />
+                          <span>남성</span>
+                        </label>
+                        <label
+                          className={`flex items-center justify-center w-24 py-2 border rounded-lg transition-colors duration-300 ease-in-out focus-within:ring-2 focus-within:ring-blue-300 ${
+                            isLoading ? "opacity-50" : ""
+                          } ${
                             gender === "female"
                               ? "bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
                               : "bg-white text-blue-500 border-blue-500 hover:bg-blue-100"
-                          }
-                        `}
-                      >
-                        <input
-                          type="radio"
-                          name="gender"
-                          value="female"
-                          checked={gender === "female"}
-                          onChange={handleChange(setGender)}
-                          disabled={isLoading}
-                          className="sr-only"
-                        />
-                        <span>여성</span>
-                      </label>
-                    </div>
-                    {showOverride && (
-                      <div>
-                        <button
-                          type="button"
-                          onClick={() => setParadoxFlag((prev) => !prev)}
-                          disabled={isLoading}
-                          className={`
-                            flex items-center justify-center w-32 py-2 border rounded-lg transition-colors duration-300 ease-in-out
-                            focus:outline-none focus:ring-2 focus:ring-blue-300
-                            ${isLoading ? "opacity-50" : ""}
-                            ${
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="gender"
+                            value="female"
+                            checked={gender === "female"}
+                            onChange={handleChange(setGender)}
+                            disabled={isLoading}
+                            className="sr-only"
+                          />
+                          <span>여성</span>
+                        </label>
+                      </div>
+                      {showOverride && (
+                        <div>
+                          <button
+                            type="button"
+                            onClick={() => setParadoxFlag((prev) => !prev)}
+                            disabled={isLoading}
+                            className={`flex items-center justify-center w-32 py-2 border rounded-lg transition-colors duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-300 ${
+                              isLoading ? "opacity-50" : ""
+                            } ${
                               paradoxFlag
                                 ? "bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
                                 : "bg-white text-blue-500 border-blue-500 hover:bg-blue-100"
-                            }
-                          `}
-                        >
-                          시간 여행자
-                        </button>
-                      </div>
-                    )}
+                            }`}
+                          >
+                            시간 여행자
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </>
-            )}
-            {errorMsg && <p className="mt-2 mb-4 text-sm text-red-500">{errorMsg}</p>}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full h-10 mb-4 text-white bg-blue-500 rounded-lg transition-colors duration-300 ease-in-out hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:opacity-60"
-            >
-              <div className="flex items-center justify-center">
-                {isLoading ? (
-                  <Icons name="spinner" className="animate-spin h-5 w-5 text-white/50 fill-white" />
-                ) : (
-                  <span>{formConfig[formState].buttonLabel}</span>
-                )}
-              </div>
-            </button>
-            {formState !== "start" && (
+                </>
+              )}
+              {errorMsg && <p className="text-sm text-red-500">{errorMsg}</p>}
+            </div>
+            {/* 버튼 영역 */}
+            <div className="flex flex-col space-y-4 mt-6">
               <button
-                type="button"
-                onClick={handleBack}
+                type="submit"
                 disabled={isLoading}
-                className="w-full h-10 py-2 text-blue-500 border border-blue-500 rounded-lg hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-300 transition-colors duration-300 ease-in-out"
+                className="w-full h-10 text-white bg-blue-500 rounded-lg transition-colors duration-300 ease-in-out hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:opacity-60"
               >
-                뒤로가기
+                <div className="flex items-center justify-center">
+                  {isLoading ? (
+                    <Icons
+                      name="spinner"
+                      className="animate-spin h-5 w-5 text-white/50 fill-white"
+                    />
+                  ) : (
+                    <span>{formConfig[formState].buttonLabel}</span>
+                  )}
+                </div>
               </button>
-            )}
+              {formState !== "start" && (
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  disabled={isLoading}
+                  className="w-full h-10 py-2 text-blue-500 border border-blue-500 rounded-lg hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-300 transition-colors duration-300 ease-in-out"
+                >
+                  뒤로가기
+                </button>
+              )}
+            </div>
           </form>
         </div>
       </div>
