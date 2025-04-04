@@ -1,3 +1,4 @@
+// src/controllers/friendController.js
 const friendModel = require("../models/friendModel");
 
 // 서버 주소 포함한 프로필 사진 URL 생성 함수
@@ -164,5 +165,30 @@ exports.getUserProfileByUuid = async (req, res) => {
   } catch (error) {
     console.error("[getUserProfileByUuid] Error:", error);
     res.status(500).json({ success: false, message: "서버 오류" });
+  }
+};
+
+// controller 내부 deleteFriend 함수 수정
+exports.deleteFriend = async (req, res) => {
+  try {
+    const userUuid = req.user.uuid;
+    const targetUuid = req.params.uuid;
+
+    const success = await friendModel.deleteFriend(userUuid, targetUuid);
+    if (!success) {
+      return res.status(400).json({ success: false, message: "친구 삭제 실패" });
+    }
+
+    // ✅ 상대방에게도 친구 삭제 알림 전송
+    if (global.io) {
+      global.io.to(targetUuid).emit("friendRemoved", {
+        removedUuid: userUuid,
+      });
+    }
+
+    res.json({ success: true, message: "친구가 삭제되었습니다." });
+  } catch (error) {
+    console.error("[deleteFriend] Error:", error);
+    res.status(500).json({ success: false, message: "서버 오류로 친구 삭제 실패" });
   }
 };

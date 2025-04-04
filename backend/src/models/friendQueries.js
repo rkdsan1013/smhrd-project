@@ -1,3 +1,4 @@
+// friendQueries.js
 const pool = require("../config/db");
 
 // 친구 uuid 목록 조회
@@ -147,6 +148,16 @@ const getUserProfileByUuid = async (uuid) => {
   return rows[0];
 };
 
+const deleteFriend = async (userUuid, targetUuid) => {
+  const sql = `
+    DELETE FROM friends 
+    WHERE (user_uuid = :userUuid AND friend_uuid = :targetUuid)
+       OR (user_uuid = :targetUuid AND friend_uuid = :userUuid)
+  `;
+  const [result] = await pool.query(sql, { userUuid, targetUuid });
+  return result.affectedRows > 0;
+};
+
 module.exports = {
   getAcceptedFriendUuids,
   getFriendProfileByUuid,
@@ -157,4 +168,5 @@ module.exports = {
   declineFriendRequest,
   getReceivedFriendRequests,
   getUserProfileByUuid,
+  deleteFriend,
 };

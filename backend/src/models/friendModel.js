@@ -1,3 +1,4 @@
+//src/models/friendModel.js
 const {
   getAcceptedFriendUuids,
   getFriendProfileByUuid,
@@ -8,6 +9,7 @@ const {
   declineFriendRequest,
   getReceivedFriendRequests,
   getUserProfileByUuid,
+  deleteFriend,
 } = require("./friendQueries");
 
 module.exports = {
@@ -20,4 +22,5 @@ module.exports = {
   declineFriendRequest,
   getReceivedFriendRequests,
   getUserProfileByUuid,
+  deleteFriend,
 };

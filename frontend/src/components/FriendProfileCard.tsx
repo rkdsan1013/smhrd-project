@@ -1,13 +1,15 @@
-// FriendProfileCard.tsx (수정본)
+// src/components/FriendProfileCard.tsx
 import React, { useEffect, useState, useRef } from "react";
-import { getUserProfileByUuid } from "../services/friendService";
+import { getUserProfileByUuid, deleteFriend } from "../services/friendService";
+import { ApiError } from "../services/apiClient";
 
 interface FriendProfileCardProps {
   uuid: string;
   onClose: () => void;
+  onDeleted?: () => void; // ✅ 삭제 후 부모에게 알림
 }
 
-const FriendProfileCard: React.FC<FriendProfileCardProps> = ({ uuid, onClose }) => {
+const FriendProfileCard: React.FC<FriendProfileCardProps> = ({ uuid, onClose, onDeleted }) => {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isVisible, setIsVisible] = useState(false);
@@ -39,6 +41,25 @@ const FriendProfileCard: React.FC<FriendProfileCardProps> = ({ uuid, onClose }) 
 
   const handleManageFriend = () => {
     alert("친구 관리 기능 준비 중");
+  };
+
+  // ✅ 친구 삭제 기능
+  const handleDeleteFriend = async () => {
+    const confirmed = confirm("정말로 이 친구를 삭제하시겠습니까?");
+    if (!confirmed) return;
+
+    try {
+      await deleteFriend(uuid);
+      alert("친구가 삭제되었습니다.");
+      onDeleted?.();
+      handleClose();
+    } catch (err) {
+      if (err instanceof ApiError) {
+        alert(err.message); // ✅ 사용자에게 구체적인 에러 메시지 제공
+      } else {
+        alert("예상치 못한 오류가 발생했습니다.");
+      }
+    }
   };
 
   if (loading) {
@@ -126,7 +147,15 @@ const FriendProfileCard: React.FC<FriendProfileCardProps> = ({ uuid, onClose }) 
         </div>
 
         {/* 푸터 */}
-        <div className="p-4 border-t border-gray-200 flex justify-end">
+        <div className="p-4 border-t border-gray-200 flex justify-between space-x-2">
+          {/* 친구 삭제 버튼 */}
+          <button
+            onClick={handleDeleteFriend}
+            className="px-4 py-2 text-sm rounded bg-red-500 hover:bg-red-600 text-white"
+          >
+            친구 삭제
+          </button>
+          {/* 친구 관리 버튼 */}
           <button
             onClick={handleManageFriend}
             className="px-4 py-2 text-sm rounded bg-gray-300 hover:bg-gray-400 text-gray-800"

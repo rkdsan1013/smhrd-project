@@ -66,3 +66,7 @@ export const getUserProfileByUuid = async (uuid: string) => {
   const res = await get<{ success: boolean; user: Friend }>(`/friends/${uuid}`);
   return res.user;
 };
+
+export const deleteFriend = async (targetUuid: string): Promise<void> => {
+  await remove(`/friends/${targetUuid}`);
+};

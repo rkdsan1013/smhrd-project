@@ -166,6 +166,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
       await acceptFriendRequest(uuid);
       setReceivedRequests((prev) => prev.filter((r) => r.uuid !== uuid));
       await refreshRequestCount();
+      await loadFriends();
     } catch (err: any) {
       alert(err.message || "수락 실패");
     }
@@ -198,6 +199,24 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
     }
   };
 
+  const loadFriends = async () => {
+    try {
+      setLoading(true);
+      const res = await fetchFriendList();
+      setFriends(res);
+    } catch (err: any) {
+      setError(err.message || "친구 목록 로드 실패");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "list" && !isAdding) {
+      loadFriends();
+    }
+  }, [isAdding, activeTab]);
+
   if (dmRoomUuid && userUuid) {
     return (
       <DirectMessage
@@ -207,6 +226,17 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
       />
     );
   }
+
+  useEffect(() => {
+    const handleFriendRemoved = ({ removedUuid }: { removedUuid: string }) => {
+      setFriends((prev) => prev.filter((f) => f.uuid !== removedUuid));
+    };
+
+    socket.on("friendRemoved", handleFriendRemoved);
+    return () => {
+      socket.off("friendRemoved", handleFriendRemoved);
+    };
+  }, []);
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-lg w-80">
@@ -481,7 +511,14 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
       )}
 
       {selectedFriendUuid && (
-        <FriendProfileCard uuid={selectedFriendUuid} onClose={closeFriendProfile} />
+        <FriendProfileCard
+          uuid={selectedFriendUuid}
+          onClose={closeFriendProfile}
+          onDeleted={() => {
+            loadFriends(); // ✅ 삭제 후 친구 목록 새로고침
+            closeFriendProfile(); // ✅ 모달 닫기
+          }}
+        />
       )}
     </div>
   );
