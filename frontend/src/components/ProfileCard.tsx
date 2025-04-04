@@ -12,7 +12,6 @@ const baseInputClass =
 const labelClass =
   "absolute left-0 top-4 z-10 text-sm text-gray-500 whitespace-nowrap origin-top-left duration-300 transform -translate-y-6 scale-75 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100 peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600";
 
-// 타입 및 유틸 함수
 interface ProfileCardProps {
   onClose: () => void;
 }
@@ -45,11 +44,56 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
   );
   const [formError, setFormError] = useState("");
 
-  // 모달 높이 조절용 ref
-  const outerRef = useRef<HTMLDivElement>(null);
-  const innerRef = useRef<HTMLDivElement>(null);
-  const oldHeightRef = useRef<number | null>(null);
+  // 애니메이션용 ref (제공된 코드와 동일한 구조)
+  const cardOuterRef = useRef<HTMLDivElement>(null);
+  const cardInnerRef = useRef<HTMLDivElement>(null);
   const [hasMounted, setHasMounted] = useState(false);
+
+  // 모달이 처음 렌더링될 때 나타나도록 설정
+  useEffect(() => {
+    const timer = setTimeout(() => setIsVisible(true), 50);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // profile 값 업데이트 시 기본값 설정
+  useEffect(() => {
+    if (profile && !isEditing) {
+      setEditedName(profile.name);
+      setProfilePreview(
+        profile.profilePicture ? `${profile.profilePicture}?v=${profile.version}` : null,
+      );
+    }
+  }, [profile, isEditing]);
+
+  // 최초 렌더 후 내부 컨텐츠 높이로 외부 컨테이너 높이를 설정
+  useEffect(() => {
+    if (cardOuterRef.current && cardInnerRef.current) {
+      cardOuterRef.current.style.height = `${cardInnerRef.current.offsetHeight}px`;
+      cardOuterRef.current.style.transition = "height 0.3s ease-in-out";
+    }
+    setHasMounted(true);
+  }, []);
+
+  // 카드 높이 애니메이션 (폼 크기 전환 효과)
+  useLayoutEffect(() => {
+    const outer = cardOuterRef.current;
+    const inner = cardInnerRef.current;
+    if (!outer || !inner) return;
+    const newHeight = inner.offsetHeight;
+    if (!hasMounted) {
+      outer.style.transition = "none";
+      outer.style.height = `${newHeight}px`;
+      return;
+    }
+    const currentHeight = parseFloat(window.getComputedStyle(outer).height || "0");
+    if (Math.round(currentHeight) === Math.round(newHeight)) return;
+    outer.style.transition = "none";
+    outer.style.height = `${currentHeight}px`;
+    // 강제 리플로우
+    outer.getBoundingClientRect();
+    outer.style.transition = "height 0.3s ease-in-out";
+    outer.style.height = `${newHeight}px`;
+  }, [hasMounted, isEditing, isChangingPassword, isManagingAccount, isWithdrawing, formError]);
 
   // 수정폼 초기화
   const resetEditForm = () => {
@@ -63,67 +107,17 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     }
   };
 
-  // --- 이펙트 ---
-  useEffect(() => {
-    const timer = setTimeout(() => setIsVisible(true), 50);
-    return () => clearTimeout(timer);
-  }, []);
-  useEffect(() => {
-    if (profile && !isEditing) {
-      setEditedName(profile.name);
-      setProfilePreview(
-        profile.profilePicture ? `${profile.profilePicture}?v=${profile.version}` : null,
-      );
-    }
-  }, [profile, isEditing]);
-  useEffect(() => {
-    if (outerRef.current && innerRef.current) {
-      outerRef.current.style.height = `${innerRef.current.offsetHeight}px`;
-      outerRef.current.style.transition = "height 0.3s ease-in-out";
-    }
-    setHasMounted(true);
-  }, []);
-  useLayoutEffect(() => {
-    if (outerRef.current && innerRef.current) {
-      const newHeight = innerRef.current.offsetHeight;
-      let currentHeight = parseFloat(getComputedStyle(outerRef.current).height || "0");
-      if (oldHeightRef.current !== null) {
-        currentHeight = oldHeightRef.current;
-        oldHeightRef.current = null;
-      }
-      if (Math.round(currentHeight) !== Math.round(newHeight)) {
-        outerRef.current.style.transition = "none";
-        outerRef.current.style.height = `${currentHeight}px`;
-        outerRef.current.getBoundingClientRect(); // reflow
-        outerRef.current.style.transition = "height 0.3s ease-in-out";
-        outerRef.current.style.height = `${newHeight}px`;
-      }
-    }
-  }, [hasMounted, isEditing, isChangingPassword, formError, isManagingAccount, isWithdrawing]);
-
-  // --- 키 입력 처리 ---
-  const handleFormKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      if (mode === "withdraw") {
-        handleConfirmWithdraw();
-      } else if (mode === "changePassword" || mode === "edit") {
-        onSaveEdit();
-      }
-    } else if (e.key === "Escape") {
-      e.preventDefault();
-      if (mode === "withdraw") {
-        handleCancelWithdraw();
-      } else if (mode === "changePassword") {
-        handleCancelPasswordChange();
-      } else if (mode === "edit") {
-        onCancelEdit();
-      }
+  // 상태 전환 시 외부 컨테이너의 높이를 미리 기록하는 헬퍼 (카드 높이 애니메이션을 위해)
+  const captureHeight = () => {
+    if (cardOuterRef.current) {
+      // 강제 높이 기록 : useLayoutEffect에서 기존 높이를 계산할 수 있도록 하기 위해
+      cardOuterRef.current.style.height = `${cardOuterRef.current.offsetHeight}px`;
     }
   };
 
-  // --- 핸들러 ---
+  // 핸들러들 — 상태 전환 전에 captureHeight() 호출
   const handleCancelPasswordChange = () => {
+    captureHeight();
     setIsChangingPassword(false);
     setIsManagingAccount(true);
     setCurrentPassword("");
@@ -133,6 +127,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
   };
 
   const handleCancelWithdraw = () => {
+    captureHeight();
     setIsWithdrawing(false);
     setIsManagingAccount(true);
     setWithdrawPassword("");
@@ -172,8 +167,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
 
   const onEditProfile = () => {
     formError && setFormError("");
-    if (outerRef.current) oldHeightRef.current = outerRef.current.offsetHeight;
-    // 프로필 수정 모드로 전환 (계정 관리와 별도)
+    captureHeight();
     setIsEditing(true);
     setIsManagingAccount(false);
     setIsChangingPassword(false);
@@ -186,8 +180,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     }
   };
 
-  // 필 수정 폼 취소 → 뷰 모드로 복귀
   const onCancelEdit = () => {
+    captureHeight();
     setIsEditing(false);
     setIsManagingAccount(false);
     setIsChangingPassword(false);
@@ -220,6 +214,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
         const response = await changePassword(currentPassword, newPassword);
         if (response.success) {
           alert("비밀번호가 변경되었습니다.");
+          captureHeight();
           setIsChangingPassword(false);
           setIsManagingAccount(true);
           setCurrentPassword("");
@@ -246,6 +241,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
       const resp = await updateUserProfile(formData);
       if (resp.success) {
         alert("프로필이 업데이트되었습니다.");
+        captureHeight();
         setIsEditing(false);
         setProfilePicture(null);
         setFormError("");
@@ -258,10 +254,10 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     }
   };
 
-  // 뷰 모드의 계정 관리 버튼: 계정 관리 화면으로 전환
   const onManageAccount = () => {
     formError && setFormError("");
     resetEditForm();
+    captureHeight();
     setIsEditing(true);
     setIsManagingAccount(true);
     setIsChangingPassword(false);
@@ -270,24 +266,25 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
 
   const onChangePasswordFromAccount = () => {
     formError && setFormError("");
+    captureHeight();
     setIsManagingAccount(false);
     setIsChangingPassword(true);
   };
 
   const onWithdraw = () => {
     formError && setFormError("");
+    captureHeight();
     setIsWithdrawing(true);
   };
 
-  // 계정 관리 화면 '돌아가기' → 뷰 모드 복귀
   const onBackFromAccountManage = () => {
     formError && setFormError("");
+    captureHeight();
     setIsManagingAccount(false);
     setIsWithdrawing(false);
     setIsEditing(false);
   };
 
-  // 모달 종료 시 모든 편집 상태 초기화
   const onCloseModal = () => {
     setIsVisible(false);
     setIsEditing(false);
@@ -334,9 +331,9 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     }
   };
 
-  // --- 렌더링 헬퍼 ---
-  const renderImage = (sizeClasses = "w-24 h-24") => {
-    return profilePreview ? (
+  // 렌더링 헬퍼 함수들
+  const renderImage = (sizeClasses = "w-24 h-24") =>
+    profilePreview ? (
       <img
         src={profilePreview}
         alt={profile?.name}
@@ -345,7 +342,6 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     ) : (
       <div className={`${sizeClasses} bg-gray-200 rounded-full`} />
     );
-  };
 
   const renderBody = () => {
     switch (mode) {
@@ -395,7 +391,6 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
               >
                 비밀번호 변경
               </button>
-              {/* 회원 탈퇴 텍스트: 좌측 정렬 */}
               <div className="w-full text-left">
                 <span
                   onClick={onWithdraw}
@@ -412,7 +407,10 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
           <div
             className="w-full flex flex-col space-y-4 items-center text-left"
             tabIndex={0}
-            onKeyDown={handleFormKeyDown}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === "Escape") e.preventDefault();
+              // 핸들러는 useLayoutEffect 의존 로직에 따라 처리
+            }}
           >
             <p className="text-lg font-semibold">정말로 회원 탈퇴를 진행하시겠습니까?</p>
             <div className="w-full relative">
@@ -435,7 +433,9 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
           <div
             className="w-full flex flex-col space-y-4"
             tabIndex={0}
-            onKeyDown={handleFormKeyDown}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === "Escape") e.preventDefault();
+            }}
           >
             <div className="relative">
               <input
@@ -492,7 +492,9 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
           <div
             className="w-full flex flex-col space-y-4 items-center"
             tabIndex={0}
-            onKeyDown={handleFormKeyDown}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === "Escape") e.preventDefault();
+            }}
           >
             <div className="flex flex-col items-center">
               <label
@@ -538,7 +540,6 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     }
   };
 
-  // --- 푸터 렌더링 ---
   const renderFooter = () => {
     switch (mode) {
       case "view":
@@ -632,7 +633,6 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     }
   };
 
-  // --- 로딩/에러 처리 ---
   if (loading) {
     return (
       <div className="fixed inset-0 flex items-center justify-center">
@@ -647,14 +647,12 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
   }
   if (!profile) return null;
 
-  // --- 최종 렌더링 ---
   return (
     <div className="fixed inset-0 flex items-center justify-center">
       <div
         className={`absolute inset-0 bg-black/60 transition-opacity duration-300 ${
           isVisible ? "opacity-100" : "opacity-0"
         }`}
-        onClick={onCloseModal}
       />
       <div
         className={`relative bg-white rounded-lg shadow-xl w-96 select-none transition-opacity duration-300 ${
@@ -676,8 +674,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
             <Icons name="close" className="w-6 h-6 text-gray-600" />
           </button>
         </div>
-        <div ref={outerRef} style={{ overflow: "hidden" }}>
-          <div ref={innerRef} className="p-6 flex flex-col items-center">
+        <div ref={cardOuterRef} style={{ overflow: "hidden" }}>
+          <div ref={cardInnerRef} className="p-6 flex flex-col items-center">
             {renderBody()}
             {formError && <div className="w-full mt-2 text-red-500 text-sm">{formError}</div>}
           </div>

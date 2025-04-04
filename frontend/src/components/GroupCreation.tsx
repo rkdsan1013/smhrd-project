@@ -12,7 +12,7 @@ interface GroupCreationProps {
 }
 
 const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
-  // 단계: "creation" (생성) / "settings" (설정)
+  // 단계: "creation"(생성) / "settings"(설정)
   const [step, setStep] = useState<"creation" | "settings">("creation");
   const [isVisible, setIsVisible] = useState(false);
   const [hasMounted, setHasMounted] = useState(false);
@@ -47,7 +47,7 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
     setHasMounted(true);
   }, []);
 
-  // 내용에 따라 모달 높이를 조절하는 함수
+  // 내용에 따라 모달 높이를 조절하는 함수 (애니메이션 효과)
   const adjustHeight = () => {
     if (outerRef.current && innerRef.current) {
       const newHeight = innerRef.current.offsetHeight;
@@ -59,7 +59,8 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
       if (Math.round(currentHeight) !== Math.round(newHeight)) {
         outerRef.current.style.transition = "none";
         outerRef.current.style.height = `${currentHeight}px`;
-        outerRef.current.getBoundingClientRect(); // 강제 reflow
+        // 강제 리플로우
+        outerRef.current.getBoundingClientRect();
         outerRef.current.style.transition = "height 0.3s ease-in-out";
         outerRef.current.style.height = `${newHeight}px`;
       }
@@ -116,16 +117,28 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
     setTimeout(onClose, 300);
   };
 
+  // 상태 전환 전 현재 높이 기록
+  const captureHeight = () => {
+    if (outerRef.current) {
+      oldHeightRef.current = outerRef.current.offsetHeight;
+    }
+  };
+
+  // 단계 전환 핸들러
   const goToSettings = () => {
     if (!groupName.trim()) {
       setFormError("그룹 이름을 입력해 주세요.");
       return;
     }
     setFormError("");
+    captureHeight();
     setStep("settings");
   };
 
-  const goToCreation = () => setStep("creation");
+  const goToCreation = () => {
+    captureHeight();
+    setStep("creation");
+  };
 
   return (
     <div className="fixed inset-0 flex items-center justify-center">
@@ -134,7 +147,6 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
         className={`absolute inset-0 bg-black/60 transition-opacity duration-300 ${
           isVisible ? "opacity-100" : "opacity-0"
         }`}
-        onClick={onCloseModal}
       />
       {/* 모달 */}
       <div
