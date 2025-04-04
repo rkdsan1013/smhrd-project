@@ -12,6 +12,8 @@ const initSocketIO = (server) => {
     },
   });
 
+  global.io = io; // ✅ 친구 요청 알림 전역 소켓 등록
+
   io.use(async (socket, next) => {
     try {
       const cookieHeader = socket.handshake.headers.cookie || "";
@@ -31,6 +33,12 @@ const initSocketIO = (server) => {
 
   io.on("connection", (socket) => {
     console.log("Socket 연결됨:", socket.id);
+
+    // ✅ 유저 uuid → 소켓 id 매핑 저장
+    const userUuid = socket.user?.uuid;
+    if (userUuid) {
+      socket.join(userUuid); // 방 이름을 유저 UUID로 설정해 DM/알림 가능
+    }
 
     //  채팅방 입장
     socket.on("joinRoom", (roomUuid) => {

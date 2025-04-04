@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import { useUserProfile } from "../contexts/UserProfileContext";
+import { useUser } from "../contexts/UserContext"; // ✅ 추가
 import ProfileCard from "./ProfileCard";
 import Icons from "./Icons";
 import FriendList from "./FriendList";
 
 const Footer: React.FC = () => {
   const { profile, loading, error } = useUserProfile();
+  const { requestCount } = useUser(); // ✅ 친구 요청 수 가져오기
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showFriendList, setShowFriendList] = useState(false);
 
@@ -66,8 +68,8 @@ const Footer: React.FC = () => {
             )}
           </div>
 
-          {/* 오른쪽: 친구 목록 버튼 */}
-          <div>
+          {/* 오른쪽: 친구 목록 버튼 + 배지 */}
+          <div className="relative inline-block">
             <button
               onClick={handleFriendListClick}
               title="친구 목록"
@@ -75,6 +77,13 @@ const Footer: React.FC = () => {
             >
               친구 목록
             </button>
+
+            {/* ✅ 친구 요청 수 배지 표시 (우측 상단 겹쳐서) */}
+            {requestCount > 0 && (
+              <span className="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-md">
+                {requestCount}
+              </span>
+            )}
           </div>
         </div>
       </footer>

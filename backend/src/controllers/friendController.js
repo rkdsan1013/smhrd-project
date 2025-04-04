@@ -75,6 +75,14 @@ exports.sendFriendRequest = async (req, res) => {
 
     await friendModel.createFriendRequest(requesterUuid, targetUuid);
 
+    // ✅ 소켓을 통해 상대방에게 친구 요청 알림 전송
+    if (global.io) {
+      global.io.to(targetUuid).emit("friendRequestReceived", {
+        from: requesterUuid,
+        message: "새로운 친구 요청이 도착했습니다.",
+      });
+    }
+
     res.json({ success: true, message: "친구 요청이 전송되었습니다." });
   } catch (error) {
     console.error("[sendFriendRequest] Error:", error);

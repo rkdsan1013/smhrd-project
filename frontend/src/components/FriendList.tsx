@@ -14,7 +14,7 @@ import { openOrCreateDMRoom } from "../services/chatService";
 import FriendProfileCard from "./FriendProfileCard";
 import Icons from "./Icons";
 import DirectMessage from "./DirectMessage";
-import { useUser } from "../contexts/UserContext";
+import { useUser } from "../contexts/UserContext"; // ✅ 친구 요청 수 상태 포함
 
 interface FriendListProps {
   onClose: () => void;
@@ -35,6 +35,8 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
   const [receivedRequests, setReceivedRequests] = useState<ReceivedFriendRequest[]>([]);
   const [selectedFriendUuid, setSelectedFriendUuid] = useState<string | null>(null);
   const [dmRoomUuid, setDmRoomUuid] = useState<string | null>(null);
+
+  const { userUuid, requestCount } = useUser(); // ✅ 요청 수 가져오기
 
   useEffect(() => {
     if (activeTab === "list" && !isAdding) {
@@ -148,14 +150,13 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
       alert("채팅방을 여는 데 실패했습니다.");
     }
   };
-  const { userUuid } = useUser(); // ✅ 현재 로그인한 사용자 UUID
 
   if (dmRoomUuid && userUuid) {
     return (
       <DirectMessage
         roomUuid={dmRoomUuid}
         onBack={() => setDmRoomUuid(null)}
-        currentUserUuid={userUuid} // ✅ 여기 반영
+        currentUserUuid={userUuid}
       />
     );
   }
@@ -189,7 +190,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                 : "border-transparent text-gray-500"
             }`}
           >
-            친구 요청
+            친구 요청{requestCount > 0 ? ` (${requestCount})` : ""}
           </button>
         </div>
         <button onClick={onClose} className="ml-2 text-gray-500 hover:text-gray-800 transition">
