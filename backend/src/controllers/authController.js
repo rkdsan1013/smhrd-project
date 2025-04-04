@@ -12,6 +12,7 @@ const {
 } = require("../utils/jwtUtils");
 const userModel = require("../models/userModel");
 const { saveProfilePicture, deleteProfilePicture } = require("../utils/imageHelper");
+const chatModel = require("../models/chatModel");
 
 // 이메일 중복 확인
 exports.checkEmail = async (req, res) => {
@@ -181,30 +182,43 @@ exports.changePassword = async (req, res) => {
 // 회원 탈퇴 처리
 exports.withdrawAccount = async (req, res) => {
   const { password } = req.body;
-  if (!password) return res.status(400).json({ message: "비밀번호를 입력해주세요." });
+  if (!password) {
+    return res.status(400).json({ message: "비밀번호를 입력해주세요." });
+  }
 
   const passValidation = validatePassword(password);
-  if (!passValidation.valid)
+  if (!passValidation.valid) {
     return res
       .status(400)
       .json({ message: passValidation.message || "비밀번호가 유효하지 않습니다." });
+  }
 
   try {
     const uuid = req.user.uuid;
     const credentialsResults = await userModel.getUserByUuid(uuid);
-    if (!credentialsResults || credentialsResults.length === 0)
+    if (!credentialsResults || credentialsResults.length === 0) {
       return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+    }
 
     const userCredentials = credentialsResults[0];
     const userProfile = await userModel.getProfileByUuid(uuid);
-    const isMatch = await bcrypt.compare(password, userCredentials.password);
-    if (!isMatch) return res.status(400).json({ message: "비밀번호가 일치하지 않습니다." });
 
-    if (userProfile && userProfile.profilePicture) await deleteProfilePicture(uuid);
+    const isMatch = await bcrypt.compare(password, userCredentials.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "비밀번호가 일치하지 않습니다." });
+    }
+
+    if (userProfile && userProfile.profilePicture) {
+      await deleteProfilePicture(uuid);
+    }
 
     const deleteResult = await userModel.deleteUserByUuid(uuid);
-    if (deleteResult.affectedRows === 0)
+    if (deleteResult.affectedRows === 0) {
       return res.status(500).json({ message: "회원 탈퇴 처리 중 오류가 발생했습니다." });
+    }
+
+    // ✅ DM 채팅방 정리 호출
+    await chatModel.cleanupLonelyDMRooms();
 
     res.clearCookie("accessToken").clearCookie("refreshToken");
     return res.json({ success: true, message: "회원 탈퇴가 완료되었습니다." });

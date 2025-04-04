@@ -18,7 +18,7 @@ exports.openOrCreateDMRoom = async (req, res) => {
   }
 };
 
-// 채팅 메시지 불러오기
+// 메시지 목록 조회 (프로필 포함)
 exports.getMessagesByRoom = async (req, res) => {
   try {
     const { roomUuid } = req.params;
@@ -31,5 +31,16 @@ exports.getMessagesByRoom = async (req, res) => {
   } catch (err) {
     console.error("채팅 메시지 불러오기 오류:", err);
     return res.status(500).json({ success: false, message: "메시지 불러오기 실패" });
+  }
+};
+
+// ✅ 사용자 탈퇴 시 DM 방 정리
+exports.cleanUpDMRooms = async (req, res) => {
+  try {
+    await chatModel.deleteDMRoomsWithOneMember();
+    return res.status(200).json({ success: true, message: "1인 남은 DM방 정리 완료" });
+  } catch (err) {
+    console.error("DM 방 정리 오류:", err);
+    return res.status(500).json({ success: false, message: "DM 방 정리 중 오류" });
   }
 };

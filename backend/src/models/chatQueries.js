@@ -1,3 +1,5 @@
+// backend/src/models/chatQueries.js
+
 const findDMRoom = `
   SELECT cr.uuid
   FROM chat_rooms cr
@@ -55,6 +57,20 @@ const addUserToRoom = `
   VALUES (?, ?)
 `;
 
+const findLonelyDMRooms = `
+  SELECT cr.uuid
+  FROM chat_rooms cr
+  JOIN chat_room_members crm ON cr.uuid = crm.room_uuid
+  WHERE cr.type = 'dm'
+  GROUP BY cr.uuid
+  HAVING COUNT(crm.user_uuid) = 1
+`;
+
+const deleteChatRoom = `
+  DELETE FROM chat_rooms
+  WHERE uuid IN (?)
+`;
+
 module.exports = {
   findDMRoom,
   insertMessage,
@@ -62,4 +78,6 @@ module.exports = {
   getMessageWithSender,
   getMessagesWithSenderByRoom,
   addUserToRoom,
+  findLonelyDMRooms,
+  deleteChatRoom,
 };
