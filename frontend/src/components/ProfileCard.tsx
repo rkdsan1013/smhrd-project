@@ -48,7 +48,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
   );
   const [formError, setFormError] = useState("");
 
-  // 높이 조절을 위한 ref
+  // 높이 조절 ref
   const outerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
   const oldHeightRef = useRef<number | null>(null);
@@ -107,7 +107,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     }
   }, [hasMounted, isEditing, isChangingPassword, formError, isManagingAccount, isWithdrawing]);
 
-  // 엔터키 처리 함수 (비밀번호 변경, 수정, 탈퇴 폼에서 사용)
+  // 엔터, ESC 키 처리 (Enter: 실행, Escape: 이전 폼으로 돌아가기)
   const handleFormKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -115,6 +115,15 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
         handleConfirmWithdraw();
       } else if (mode === "changePassword" || mode === "edit") {
         onSaveEdit();
+      }
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      if (mode === "withdraw") {
+        handleCancelWithdraw();
+      } else if (mode === "changePassword") {
+        handleCancelPasswordChange();
+      } else if (mode === "edit") {
+        onCancelEdit();
       }
     }
   };
@@ -182,7 +191,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     }
   };
 
-  // 취소 시 수정내용 초기화 후 view로 전환
+  // 수정 취소 시 내용 초기화 후 view로 전환
   const onCancelEdit = () => {
     setIsEditing(false);
     setIsManagingAccount(false);
@@ -256,7 +265,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     }
   };
 
-  // 프로필 수정폼에서 다른 폼(계정 관리)으로 이동 시 수정 내용 초기화
+  // 수정 폼에서 계정 관리로 이동 시 수정 내용 초기화
   const onManageAccount = () => {
     formError && setFormError("");
     if (!isManagingAccount) {
@@ -399,6 +408,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
         return (
           <div
             className="w-full flex flex-col space-y-4 items-center text-center"
+            tabIndex={0}
             onKeyDown={handleFormKeyDown}
           >
             <p className="text-lg font-semibold">정말로 회원 탈퇴를 진행하시겠습니까?</p>
@@ -419,7 +429,11 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
         );
       case "changePassword":
         return (
-          <div className="w-full flex flex-col space-y-4" onKeyDown={handleFormKeyDown}>
+          <div
+            className="w-full flex flex-col space-y-4"
+            tabIndex={0}
+            onKeyDown={handleFormKeyDown}
+          >
             <div className="relative">
               <input
                 type="password"
@@ -474,6 +488,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
         return (
           <div
             className="w-full flex flex-col space-y-4 items-center"
+            tabIndex={0}
             onKeyDown={handleFormKeyDown}
           >
             <div className="flex flex-col items-center">
