@@ -247,7 +247,7 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
               onClick={onCreateGroup}
               className="flex-1 ml-2 h-10 bg-green-500 rounded-lg hover:bg-green-600 transition-colors duration-300"
             >
-              <span className="text-white text-sm block">생성</span>
+              <span className="text-white text-sm block">다음</span>
             </button>
           </div>
         </div>

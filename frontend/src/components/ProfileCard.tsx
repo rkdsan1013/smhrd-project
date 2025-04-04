@@ -6,20 +6,17 @@ import { validateName, validatePassword } from "../utils/validators";
 import { useUserProfile } from "../contexts/UserProfileContext";
 import Icons from "./Icons";
 
-// 인터페이스 및 타입
+// 타입 및 유틸
 interface ProfileCardProps {
   onClose: () => void;
 }
 
 type Mode = "view" | "manage" | "withdraw" | "changePassword" | "edit";
 
-// 성별 표기 함수
 const getDisplayGender = (gender?: string): string => {
   if (!gender) return "";
   const lower = gender.toLowerCase();
-  if (lower === "male") return "남성";
-  if (lower === "female") return "여성";
-  return gender;
+  return lower === "male" ? "남성" : lower === "female" ? "여성" : gender;
 };
 
 const baseInputClass =
@@ -27,16 +24,16 @@ const baseInputClass =
 const labelClass =
   "absolute left-0 top-4 z-10 text-sm text-gray-500 whitespace-nowrap origin-top-left duration-300 transform -translate-y-6 scale-75 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100 peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600";
 
+// ProfileCard 컴포넌트
 const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
   const { profile, loading, error, reloadProfile } = useUserProfile();
 
-  // 상태
+  // 상태 변수
   const [isVisible, setIsVisible] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isManagingAccount, setIsManagingAccount] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
-
   const [editedName, setEditedName] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -48,13 +45,13 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
   );
   const [formError, setFormError] = useState("");
 
-  // 높이 조절 ref
+  // 모달 높이 조절 ref
   const outerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
   const oldHeightRef = useRef<number | null>(null);
   const [hasMounted, setHasMounted] = useState(false);
 
-  // 수정폼 초기화 (다른 폼으로 이동 시 수정 내용 초기화)
+  // 수정폼 초기화
   const resetEditForm = () => {
     if (profile) {
       setEditedName(profile.name);
@@ -66,12 +63,11 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     }
   };
 
-  // 이펙트
+  // --- 이펙트 ---
   useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 50);
     return () => clearTimeout(timer);
   }, []);
-
   useEffect(() => {
     if (profile && !isEditing) {
       setEditedName(profile.name);
@@ -80,7 +76,6 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
       );
     }
   }, [profile, isEditing]);
-
   useEffect(() => {
     if (outerRef.current && innerRef.current) {
       outerRef.current.style.height = `${innerRef.current.offsetHeight}px`;
@@ -88,7 +83,6 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     }
     setHasMounted(true);
   }, []);
-
   useLayoutEffect(() => {
     if (outerRef.current && innerRef.current) {
       const newHeight = innerRef.current.offsetHeight;
@@ -107,7 +101,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     }
   }, [hasMounted, isEditing, isChangingPassword, formError, isManagingAccount, isWithdrawing]);
 
-  // 엔터, ESC 키 처리 (Enter: 실행, Escape: 이전 폼으로 돌아가기)
+  // --- 키 입력 처리 ---
   const handleFormKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -128,7 +122,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     }
   };
 
-  // 핸들러
+  // --- 핸들러 ---
   const handleCancelPasswordChange = () => {
     setIsChangingPassword(false);
     setIsManagingAccount(true);
@@ -137,14 +131,12 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     setConfirmNewPassword("");
     setFormError("");
   };
-
   const handleCancelWithdraw = () => {
     setIsWithdrawing(false);
     setIsManagingAccount(true);
     setWithdrawPassword("");
     setFormError("");
   };
-
   const handleConfirmWithdraw = async () => {
     const passResult = validatePassword(withdrawPassword);
     if (!passResult.valid) {
@@ -164,20 +156,18 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
       setFormError(error.message || "회원 탈퇴 중 오류가 발생하였습니다.");
     }
   };
-
   const onProfilePictureChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      formError && setFormError("");
+      if (formError) setFormError("");
       setProfilePicture(file);
       const reader = new FileReader();
       reader.onloadend = () => setProfilePreview(reader.result as string);
       reader.readAsDataURL(file);
     }
   };
-
   const onEditProfile = () => {
-    formError && setFormError("");
+    if (formError) setFormError("");
     if (outerRef.current) oldHeightRef.current = outerRef.current.offsetHeight;
     setIsEditing(true);
     setIsManagingAccount(false);
@@ -190,8 +180,6 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
       );
     }
   };
-
-  // 수정 취소 시 내용 초기화 후 view로 전환
   const onCancelEdit = () => {
     setIsEditing(false);
     setIsManagingAccount(false);
@@ -204,10 +192,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
       profile?.profilePicture ? `${profile.profilePicture}?v=${profile.version}` : null,
     );
   };
-
   const onSaveEdit = async () => {
     if (!isEditing) return;
-
     if (isChangingPassword) {
       if (!currentPassword.trim()) {
         setFormError("현재 비밀번호를 입력해 주십시오.");
@@ -240,7 +226,6 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
       }
       return;
     }
-
     const nameResult = validateName(editedName);
     if (!nameResult.valid) {
       setFormError(nameResult.message || "올바른 이름을 입력해 주십시오.");
@@ -248,7 +233,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     }
     const formData = new FormData();
     formData.append("name", editedName);
-    profilePicture && formData.append("profilePicture", profilePicture);
+    if (profilePicture) formData.append("profilePicture", profilePicture);
     try {
       const resp = await updateUserProfile(formData);
       if (resp.success) {
@@ -264,41 +249,36 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
       setFormError(error.message || "업데이트 중 오류가 발생하였습니다.");
     }
   };
-
-  // 수정 폼에서 계정 관리로 이동 시 수정 내용 초기화
+  // 뷰 모드의 계정 관리 버튼: 계정 관리 화면 전환 (isEditing 및 isManagingAccount true)
   const onManageAccount = () => {
-    formError && setFormError("");
-    if (!isManagingAccount) {
-      resetEditForm();
-    }
+    if (formError) setFormError("");
+    resetEditForm();
+    setIsEditing(true);
     setIsManagingAccount(true);
     setIsChangingPassword(false);
     setIsWithdrawing(false);
   };
-
   const onChangePasswordFromAccount = () => {
-    formError && setFormError("");
+    if (formError) setFormError("");
     setIsManagingAccount(false);
     setIsChangingPassword(true);
   };
-
   const onWithdraw = () => {
-    formError && setFormError("");
+    if (formError) setFormError("");
     setIsWithdrawing(true);
   };
-
+  // 계정 관리 화면 '돌아가기': 뷰 모드 복귀
   const onBackFromAccountManage = () => {
-    formError && setFormError("");
+    if (formError) setFormError("");
     setIsManagingAccount(false);
     setIsWithdrawing(false);
+    setIsEditing(false);
   };
-
   const onCloseModal = () => {
     setIsVisible(false);
     setIsManagingAccount(false);
     setTimeout(onClose, 300);
   };
-
   const onLogout = async () => {
     try {
       await logout();
@@ -309,7 +289,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     }
   };
 
-  // 모드 및 제목 산출
+  // 모드 산출
   const mode: Mode = !isEditing
     ? "view"
     : isManagingAccount
@@ -319,7 +299,6 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     : isChangingPassword
     ? "changePassword"
     : "edit";
-
   const modalTitle = () => {
     switch (mode) {
       case "view":
@@ -336,7 +315,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     }
   };
 
-  // 렌더링 헬퍼
+  // --- 렌더링 헬퍼 ---
   const renderImage = (sizeClasses = "w-24 h-24") => {
     return profilePreview ? (
       <img
@@ -370,7 +349,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
               {profile?.gender && (
                 <p className="text-gray-600 truncate">성별: {getDisplayGender(profile.gender)}</p>
               )}
-              {Boolean(profile?.paradoxFlag) && (
+              {profile?.paradoxFlag && (
                 <p className="text-sm text-blue-500 truncate">
                   시간 여행은 오늘도 순조롭게 진행 중인가요?
                 </p>
@@ -528,14 +507,6 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
                 {profile?.email}
               </div>
             </div>
-            <div className="w-full">
-              <button
-                onClick={onManageAccount}
-                className="h-10 w-full bg-indigo-500 rounded-lg hover:bg-indigo-600 text-white text-sm"
-              >
-                계정 관리
-              </button>
-            </div>
           </div>
         );
       default:
@@ -543,11 +514,12 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     }
   };
 
+  // --- 푸터 ---
   const renderFooter = () => {
     switch (mode) {
       case "view":
         return (
-          <div className="grid grid-cols-2 gap-2">
+          <div className="flex justify-start items-center gap-2">
             <button
               onClick={onLogout}
               className="h-10 w-10 bg-red-500 rounded-lg hover:bg-red-600 flex items-center justify-center"
@@ -555,10 +527,16 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
               <Icons name="logout" className="w-6 h-6 text-white" />
             </button>
             <button
-              onClick={onEditProfile}
-              className="h-10 w-full bg-blue-500 rounded-lg hover:bg-blue-600 flex items-center justify-center"
+              onClick={onManageAccount}
+              className="h-10 w-10 bg-blue-500 rounded-lg hover:bg-blue-600 flex items-center justify-center"
             >
-              <span className="text-white text-sm">프로필 수정</span>
+              <Icons name="userSettings" className="w-6 h-6 text-white" />
+            </button>
+            <button
+              onClick={onEditProfile}
+              className="h-10 w-10 bg-green-500 rounded-lg hover:bg-green-600 flex items-center justify-center"
+            >
+              <Icons name="userEdit" className="w-6 h-6 text-white" />
             </button>
           </div>
         );
@@ -630,7 +608,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
     }
   };
 
-  // 로딩, 에러, 프로필 없을 시 처리
+  // --- 로딩 및 에러 처리 ---
   if (loading) {
     return (
       <div className="fixed inset-0 flex items-center justify-center">
@@ -638,15 +616,14 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
       </div>
     );
   }
-
   if (error) {
     return (
       <div className="fixed inset-0 flex items-center justify-center text-red-500">{error}</div>
     );
   }
-
   if (!profile) return null;
 
+  // --- 최종 렌더링 ---
   return (
     <div className="fixed inset-0 flex items-center justify-center">
       <div
