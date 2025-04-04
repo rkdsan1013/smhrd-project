@@ -14,7 +14,8 @@ import { openOrCreateDMRoom } from "../services/chatService";
 import FriendProfileCard from "./FriendProfileCard";
 import Icons from "./Icons";
 import DirectMessage from "./DirectMessage";
-import { useUser } from "../contexts/UserContext"; // ✅ 친구 요청 수 상태 포함
+import { useUser } from "../contexts/UserContext";
+import socket from "../services/socket"; // ✅ 소켓 import
 
 interface FriendListProps {
   onClose: () => void;
@@ -36,7 +37,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
   const [selectedFriendUuid, setSelectedFriendUuid] = useState<string | null>(null);
   const [dmRoomUuid, setDmRoomUuid] = useState<string | null>(null);
 
-  const { userUuid, requestCount } = useUser(); // ✅ 요청 수 가져오기
+  const { userUuid, requestCount, refreshRequestCount } = useUser();
 
   useEffect(() => {
     if (activeTab === "list" && !isAdding) {
@@ -55,19 +56,36 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
     }
   }, [isAdding, activeTab]);
 
+  // ✅ 친구 요청 탭에서 목록 불러오기
+  const loadReceivedRequests = async () => {
+    try {
+      const data = await fetchReceivedFriendRequests();
+      setReceivedRequests(data);
+    } catch (err) {
+      console.error("친구 요청 목록 불러오기 실패", err);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === "requests") {
-      const loadRequests = async () => {
-        try {
-          const data = await fetchReceivedFriendRequests();
-          setReceivedRequests(data);
-        } catch (err) {
-          console.error("친구 요청 목록 불러오기 실패", err);
-        }
-      };
-      loadRequests();
+      loadReceivedRequests();
     }
   }, [activeTab]);
+
+  // ✅ 소켓으로 친구 요청 수신 → 요청 수 + 목록 동기화
+  useEffect(() => {
+    const handleFriendRequestReceived = () => {
+      refreshRequestCount();
+      if (activeTab === "requests") {
+        loadReceivedRequests();
+      }
+    };
+
+    socket.on("friendRequestReceived", handleFriendRequestReceived);
+    return () => {
+      socket.off("friendRequestReceived", handleFriendRequestReceived);
+    };
+  }, [activeTab, refreshRequestCount]);
 
   const sortSearchResults = (list: SearchResultUser[]) => {
     return [...list].sort((a, b) => {
@@ -120,6 +138,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
     try {
       await acceptFriendRequest(uuid);
       setReceivedRequests((prev) => prev.filter((r) => r.uuid !== uuid));
+      await refreshRequestCount();
     } catch (err: any) {
       alert(err.message || "수락 실패");
     }
@@ -129,6 +148,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
     try {
       await declineFriendRequest(uuid);
       setReceivedRequests((prev) => prev.filter((r) => r.uuid !== uuid));
+      await refreshRequestCount();
     } catch (err: any) {
       alert(err.message || "거절 실패");
     }
@@ -177,7 +197,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                 : "border-transparent text-gray-500"
             }`}
           >
-            친구 목록
+            친구 목록{friends.length > 0 ? ` (${friends.length})` : ""}
           </button>
           <button
             onClick={() => {
