@@ -2,12 +2,12 @@
 const userModel = require("../models/userModel");
 const { saveProfilePicture } = require("../utils/imageHelper");
 const { validateName } = require("../utils/validators");
+const { formatImageUrl } = require("../utils/imageUrlHelper");
 
-// 서버 URL을 프로필 이미지 앞에 추가
+// 프로필 정보 내에 profilePicture가 있을 경우, 이미지 URL 포매팅 적용
 const formatProfile = (profile) => {
-  const serverUrl = process.env.SERVER_URL || "http://localhost:5000";
   if (profile.profilePicture) {
-    profile.profilePicture = serverUrl + profile.profilePicture;
+    profile.profilePicture = formatImageUrl(profile.profilePicture);
   }
   return profile;
 };

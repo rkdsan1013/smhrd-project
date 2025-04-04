@@ -12,6 +12,7 @@ const saveProfilePicture = async (uuid, file) => {
   const fileName = `${uuid}.${fileExtension}`;
   const destPath = path.join(uploadsDir, fileName);
   await fs.promises.writeFile(destPath, file.buffer);
+  // 실제 파일 경로 리턴 (ex: "/uploads/profile_pictures/uuid.webp")
   return `/uploads/profile_pictures/${fileName}`;
 };
 
