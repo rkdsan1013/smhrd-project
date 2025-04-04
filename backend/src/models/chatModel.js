@@ -1,12 +1,10 @@
-// backend/src/models/chatModel.js
 const db = require("../config/db");
 const chatQueries = require("./chatQueries");
 const chatTransactions = require("./chatTransactions");
 const { v4: uuidv4 } = require("uuid");
 
-// 두 사용자 간 DM 채팅방 조회 또는 생성
+// DM 채팅방 조회 또는 생성
 exports.getOrCreateDMRoom = async (userUuid, friendUuid) => {
-  // uuid 정렬하여 일관된 순서로 검색 (중복 생성을 방지)
   const [uuid1, uuid2] = [userUuid, friendUuid].sort();
   const [existingRoom] = await db.query(chatQueries.findDMRoom, [uuid1, uuid2, uuid1, uuid2]);
   if (existingRoom && existingRoom.length > 0) {
@@ -16,16 +14,31 @@ exports.getOrCreateDMRoom = async (userUuid, friendUuid) => {
   return roomUuid;
 };
 
-// 메시지 저장: 미리 생성한 messageUuid를 사용하여 INSERT 후 조회
+// ✅ 메시지 저장 후 사용자 프로필 포함된 메시지 반환
 exports.saveMessage = async (roomUuid, senderUuid, message) => {
   const messageUuid = uuidv4();
   await db.query(chatQueries.insertMessage, [messageUuid, roomUuid, senderUuid, message]);
-  const [rows] = await db.query(chatQueries.getMessageById, [messageUuid]);
+  const [rows] = await db.query(chatQueries.getMessageWithSender, [messageUuid]);
+
+  // ✅ 프로필 이미지 경로 처리
+  const serverUrl = process.env.SERVER_URL || "http://localhost:5000";
+  if (rows[0]?.sender_picture) {
+    rows[0].sender_picture = `${serverUrl}${rows[0].sender_picture}`;
+  }
+
   return rows[0];
 };
 
-// 채팅 메시지 조회
+// ✅ 메시지 목록 (프로필 포함) 조회
 exports.getMessagesByRoom = async (roomUuid) => {
-  const [rows] = await db.query(chatQueries.getMessagesByRoom, [roomUuid]);
-  return rows;
+  const [rows] = await db.query(chatQueries.getMessagesWithSenderByRoom, [roomUuid]);
+
+  // ✅ 프로필 이미지 경로 처리
+  const serverUrl = process.env.SERVER_URL || "http://localhost:5000";
+  return rows.map((msg) => {
+    if (msg.sender_picture) {
+      msg.sender_picture = `${serverUrl}${msg.sender_picture}`;
+    }
+    return msg;
+  });
 };

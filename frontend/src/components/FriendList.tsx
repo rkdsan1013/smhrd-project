@@ -14,6 +14,7 @@ import { openOrCreateDMRoom } from "../services/chatService";
 import FriendProfileCard from "./FriendProfileCard";
 import Icons from "./Icons";
 import DirectMessage from "./DirectMessage";
+import { useUser } from "../contexts/UserContext";
 
 interface FriendListProps {
   onClose: () => void;
@@ -147,9 +148,16 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
       alert("채팅방을 여는 데 실패했습니다.");
     }
   };
+  const { userUuid } = useUser(); // ✅ 현재 로그인한 사용자 UUID
 
-  if (dmRoomUuid) {
-    return <DirectMessage roomUuid={dmRoomUuid} onBack={() => setDmRoomUuid(null)} />;
+  if (dmRoomUuid && userUuid) {
+    return (
+      <DirectMessage
+        roomUuid={dmRoomUuid}
+        onBack={() => setDmRoomUuid(null)}
+        currentUserUuid={userUuid} // ✅ 여기 반영
+      />
+    );
   }
 
   return (

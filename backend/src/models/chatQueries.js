@@ -1,4 +1,3 @@
-// backend/src/models/chatQueries.js
 const findDMRoom = `
   SELECT cr.uuid
   FROM chat_rooms cr
@@ -22,22 +21,45 @@ const getMessageById = `
   WHERE uuid = ?
 `;
 
+const getMessageWithSender = `
+  SELECT 
+    m.uuid,
+    m.room_uuid,
+    m.sender_uuid,
+    m.message,
+    m.sent_at,
+    p.name AS sender_name,
+    p.profile_picture AS sender_picture
+  FROM chat_messages m
+  JOIN user_profiles p ON m.sender_uuid = p.uuid
+  WHERE m.uuid = ?
+`;
+
+const getMessagesWithSenderByRoom = `
+  SELECT 
+    m.uuid,
+    m.room_uuid,
+    m.sender_uuid,
+    m.message,
+    m.sent_at,
+    p.name AS sender_name,
+    p.profile_picture AS sender_picture
+  FROM chat_messages m
+  JOIN user_profiles p ON m.sender_uuid = p.uuid
+  WHERE m.room_uuid = ?
+  ORDER BY m.sent_at ASC
+`;
+
 const addUserToRoom = `
   INSERT INTO chat_room_members (room_uuid, user_uuid)
   VALUES (?, ?)
-`;
-
-const getMessagesByRoom = `
-  SELECT uuid, room_uuid, sender_uuid, message, sent_at
-  FROM chat_messages
-  WHERE room_uuid = ?
-  ORDER BY sent_at ASC
 `;
 
 module.exports = {
   findDMRoom,
   insertMessage,
   getMessageById,
+  getMessageWithSender,
+  getMessagesWithSenderByRoom,
   addUserToRoom,
-  getMessagesByRoom,
 };
