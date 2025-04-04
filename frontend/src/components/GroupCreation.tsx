@@ -1,5 +1,6 @@
 // /frontend/src/components/GroupCreation.tsx
 import React, { useState, useEffect, useLayoutEffect, useRef, ChangeEvent } from "react";
+import { validateName, validateDescription } from "../utils/validators";
 import Icons from "./Icons";
 
 const baseInputClass =
@@ -12,7 +13,7 @@ interface GroupCreationProps {
 }
 
 const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
-  // 단계: "creation"(생성) / "settings"(설정)
+  // 단계: "creation"(그룹 생성) / "settings"(그룹 설정)
   const [step, setStep] = useState<"creation" | "settings">("creation");
   const [isVisible, setIsVisible] = useState(false);
   const [hasMounted, setHasMounted] = useState(false);
@@ -32,7 +33,7 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
   const innerRef = useRef<HTMLDivElement>(null);
   const oldHeightRef = useRef<number | null>(null);
 
-  // 모달 fade in 효과
+  // 모달은 조금 후 페이드인 처리
   useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 50);
     return () => clearTimeout(timer);
@@ -47,7 +48,7 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
     setHasMounted(true);
   }, []);
 
-  // 내용에 따라 모달 높이를 조절하는 함수 (애니메이션 효과)
+  // 내용 변화에 따라 모달 높이 조절
   const adjustHeight = () => {
     if (outerRef.current && innerRef.current) {
       const newHeight = innerRef.current.offsetHeight;
@@ -80,7 +81,7 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
     formError,
   ]);
 
-  // 공통 파일 변경 이벤트 핸들러 함수
+  // 파일 변경 핸들러 (공통)
   const handleFileChange = (
     e: ChangeEvent<HTMLInputElement>,
     setFile: React.Dispatch<React.SetStateAction<File | null>>,
@@ -102,7 +103,35 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
   const onGroupPictureChangeSettings = (e: ChangeEvent<HTMLInputElement>) =>
     handleFileChange(e, setGroupPicture, setGroupPicturePreview);
 
+  // 그룹 생성 전 단계로 전환 시 이름과 설명 검증
+  const goToSettings = () => {
+    const nameValidation = validateName(groupName);
+    if (!nameValidation.valid) {
+      setFormError(nameValidation.message ?? "유효하지 않은 입력입니다.");
+      return;
+    }
+    const descValidation = validateDescription(groupDescription);
+    if (!descValidation.valid) {
+      setFormError(descValidation.message ?? "유효하지 않은 입력입니다.");
+      return;
+    }
+    setFormError("");
+    captureHeight();
+    setStep("settings");
+  };
+
+  // 그룹 생성 제출 시 최종 검증
   const onSubmitGroup = async () => {
+    const nameValidation = validateName(groupName);
+    if (!nameValidation.valid) {
+      setFormError(nameValidation.message ?? "유효하지 않은 입력입니다.");
+      return;
+    }
+    const descValidation = validateDescription(groupDescription);
+    if (!descValidation.valid) {
+      setFormError(descValidation.message ?? "유효하지 않은 입력입니다.");
+      return;
+    }
     try {
       // API 호출: { groupName, groupDescription, groupIcon, groupPicture, groupVisibility }
       alert("그룹이 생성되었습니다.");
@@ -117,22 +146,11 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
     setTimeout(onClose, 300);
   };
 
-  // 상태 전환 전 현재 높이 기록
+  // 애니메이션 효과용 현재 높이 기록
   const captureHeight = () => {
     if (outerRef.current) {
       oldHeightRef.current = outerRef.current.offsetHeight;
     }
-  };
-
-  // 단계 전환 핸들러
-  const goToSettings = () => {
-    if (!groupName.trim()) {
-      setFormError("그룹 이름을 입력해 주세요.");
-      return;
-    }
-    setFormError("");
-    captureHeight();
-    setStep("settings");
   };
 
   const goToCreation = () => {
@@ -160,7 +178,7 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
           position: "absolute",
         }}
       >
-        {/* 헤더 영역 */}
+        {/* 헤더 */}
         <div className="flex justify-between items-center p-4 border-b border-gray-200">
           <h2 className="text-xl font-bold">{step === "creation" ? "그룹 생성" : "그룹 설정"}</h2>
           <button
@@ -170,12 +188,12 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
             <Icons name="close" className="w-6 h-6 text-gray-600" />
           </button>
         </div>
-        {/* 내용 영역 */}
+        {/* 콘텐츠 영역 */}
         <div ref={outerRef} style={{ overflow: "hidden" }}>
           <div ref={innerRef} className="p-6 space-y-6">
             {step === "creation" ? (
               <div className="flex flex-col items-center space-y-4">
-                {/* 그룹 아이콘 영역 */}
+                {/* 그룹 아이콘 */}
                 <div className="flex flex-col items-center">
                   <label
                     htmlFor="groupIcon"
@@ -192,7 +210,7 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
                         <div className="w-full h-full bg-gray-200" />
                       )}
                     </div>
-                    {/* 배경 오버레이 */}
+                    {/* 이미지 선택 오버레이 */}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors duration-300"></div>
                     {/* 중앙 아이콘 */}
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
@@ -226,7 +244,7 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
                     </label>
                   </div>
                 </div>
-                {/* 그룹 설명 입력 영역 */}
+                {/* 그룹 설명 입력 */}
                 <div className="w-full relative">
                   <textarea
                     id="groupDescription"
@@ -237,7 +255,7 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
                     }}
                     className={`${baseInputClass} resize-none`}
                     placeholder=" "
-                    rows={3}
+                    rows={5}
                   />
                   <div
                     className="absolute left-0 w-full pointer-events-none"
@@ -322,9 +340,7 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
                         />
                       )}
                     </div>
-                    {/* 배경 오버레이 */}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors duration-300"></div>
-                    {/* 중앙 아이콘 */}
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                       <Icons name="image" className="w-8 h-8 text-white" />
                     </div>
@@ -349,10 +365,10 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
             )}
           </div>
         </div>
-        {/* 푸터 (버튼 영역) */}
+        {/* 푸터 */}
         <div className="p-4 border-t border-gray-200">
           {step === "creation" ? (
-            <div className="grid grid-cols-2 gap-2" key="form-footer">
+            <div className="grid grid-cols-2 gap-2">
               <div className="h-10 w-full" />
               <button
                 onClick={goToSettings}
@@ -362,7 +378,7 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose }) => {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-2" key="form-footer">
+            <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={goToCreation}
                 className="h-10 w-full bg-gray-300 rounded-lg hover:bg-gray-400 transition-colors duration-300"
