@@ -1,4 +1,5 @@
 // /backend/src/controllers/groupController.js
+
 const groupModel = require("../models/groupModel");
 const { v4: uuidv4 } = require("uuid");
 const { saveGroupIcon, saveGroupPicture } = require("../utils/imageHelper");

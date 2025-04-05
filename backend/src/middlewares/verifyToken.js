@@ -1,4 +1,5 @@
 // /backend/src/middlewares/verifyToken.js
+
 const { jwtVerify, secretKey } = require("../utils/jwtUtils");
 
 // 인증 토큰 확인 미들웨어

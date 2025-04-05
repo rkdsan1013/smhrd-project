@@ -1,52 +1,30 @@
 // /backend/src/models/userTransactions.js
-const pool = require("../config/db");
 
-// 사용자 생성 (users 테이블)
-const createUser = async (email, hashedPassword, connection) => {
-  const sql = "INSERT INTO users (email, password) VALUES (:email, :hashedPassword)";
-  const [result] = await connection.query(sql, { email, hashedPassword });
-  return result;
-};
-
-// 사용자 프로필 생성 (user_profiles 테이블)
-const createUserProfile = async (
-  uuid,
-  name,
-  gender,
-  birthdate,
-  paradoxFlag,
-  profilePicture,
-  connection,
-) => {
-  const sql = `
-    INSERT INTO user_profiles (uuid, name, gender, birthdate, paradox_flag, profile_picture)
-    VALUES (:uuid, :name, :gender, :birthdate, :paradoxFlag, :profilePicture)
-  `;
-  const [result] = await connection.query(sql, {
-    uuid,
-    name,
-    gender,
-    birthdate,
-    paradoxFlag,
-    profilePicture,
-  });
-  return result;
-};
+const userQueries = require("./userQueries");
 
 // 회원가입 트랜잭션 (사용자 및 프로필 생성)
-const signUpUser = async (email, hashedPassword, name, gender, birthdate, paradoxFlag) => {
-  const connection = await pool.getConnection();
+const signUpUser = async (dbPool, email, hashedPassword, name, gender, birthdate, paradoxFlag) => {
+  const connection = await dbPool.getConnection();
   try {
     await connection.beginTransaction();
-    await createUser(email, hashedPassword, connection);
 
-    const [rows] = await connection.query("SELECT uuid, email FROM users WHERE email = :email", {
-      email,
-    });
+    // USERS 테이블에 사용자 삽입
+    await connection.query(userQueries.INSERT_USER, [email, hashedPassword]);
+
+    // 삽입 후, 유일한 이메일 기준으로 유저 정보를 조회 (uuid 포함)
+    const [rows] = await connection.query(userQueries.SELECT_USER_BY_EMAIL, [email]);
     if (!rows || rows.length === 0) throw new Error("회원가입 후 사용자 조회에 실패했습니다.");
-
     const user = rows[0];
-    await createUserProfile(user.uuid, name, gender, birthdate, paradoxFlag, null, connection);
+
+    // USER_PROFILES 테이블에 프로필 생성 (프로필 사진은 초기에는 null)
+    await connection.query(userQueries.INSERT_USER_PROFILE, [
+      user.uuid,
+      name,
+      gender,
+      birthdate,
+      paradoxFlag,
+      null,
+    ]);
     await connection.commit();
     return user;
   } catch (err) {

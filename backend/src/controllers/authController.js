@@ -1,4 +1,5 @@
 // /backend/src/controllers/authController.js
+
 const bcrypt = require("bcrypt");
 const { validateEmail, validatePassword, validateFullProfile } = require("../utils/validators");
 const {
