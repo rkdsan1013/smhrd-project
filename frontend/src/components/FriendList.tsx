@@ -1,3 +1,5 @@
+// /frontend/src/components/FriendList.tsx
+
 import React, { useEffect, useState, useLayoutEffect, useRef, MouseEvent } from "react";
 import ReactDOM from "react-dom";
 import {
