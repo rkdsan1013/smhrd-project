@@ -28,8 +28,9 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
   const [searchResults, setSearchResults] = useState<SearchResultUser[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState("");
-
+  const [onlineStatusMap, setOnlineStatusMap] = useState<Record<string, boolean>>({});
   const [friends, setFriends] = useState<Friend[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -228,6 +229,36 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
     }
   };
 
+  useEffect(() => {
+    const handleUserOnlineStatus = ({ uuid, online }: { uuid: string; online: boolean }) => {
+      setOnlineStatusMap((prev) => ({ ...prev, [uuid]: online }));
+    };
+
+    socket.on("userOnlineStatus", handleUserOnlineStatus);
+    return () => {
+      socket.off("userOnlineStatus", handleUserOnlineStatus);
+    };
+  }, []);
+
+  useEffect(() => {
+    // 소켓 연결 시 친구들의 온라인 상태 요청
+    socket.emit("getFriendsOnlineStatus");
+
+    const handleFriendsOnlineStatus = (statusList: { uuid: string; online: boolean }[]) => {
+      const updatedStatusMap: Record<string, boolean> = {};
+      statusList.forEach(({ uuid, online }) => {
+        updatedStatusMap[uuid] = online;
+      });
+      setOnlineStatusMap(updatedStatusMap);
+    };
+
+    socket.on("friendsOnlineStatus", handleFriendsOnlineStatus);
+
+    return () => {
+      socket.off("friendsOnlineStatus", handleFriendsOnlineStatus);
+    };
+  }, []);
+
   if (dmRoomUuid && userUuid) {
     return (
       <DirectMessage
@@ -388,30 +419,36 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                       className="flex items-center space-x-3 overflow-hidden cursor-pointer flex-1"
                       onClick={() => handleFriendClick(friend.uuid)}
                     >
-                      {friend.profilePicture ? (
-                        <img
-                          src={friend.profilePicture}
-                          alt={friend.name}
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                          <svg
-                            className="h-5 w-5 text-white"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M5.121 17.804A10 10 0 1119 12.001M15 11h.01M9 11h.01M7 15s1.5 2 5 2 5-2 5-2"
-                            />
-                          </svg>
-                        </div>
-                      )}
+                      <div className="relative">
+                        {friend.profilePicture ? (
+                          <img
+                            src={friend.profilePicture}
+                            alt={friend.name}
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
+                            <svg
+                              className="h-5 w-5 text-white"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M5.121 17.804A10 10 0 1119 12.001M15 11h.01M9 11h.01M7 15s1.5 2 5 2 5-2 5-2"
+                              />
+                            </svg>
+                          </div>
+                        )}
+                        {/* ✅ 아이콘 위치 조정 (프로필 이미지 오른쪽 하단) */}
+                        {onlineStatusMap[friend.uuid] && (
+                          <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
+                        )}
+                      </div>
                       <div className="overflow-hidden">
                         <p className="font-semibold truncate">{friend.name}</p>
                         <p className="text-sm text-gray-500 truncate">{friend.email}</p>
