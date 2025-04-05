@@ -25,8 +25,9 @@ exports.checkEmail = async (req, res) => {
       .json({ message: emailValidation.message || "유효한 이메일 주소를 입력하세요." });
   }
   try {
-    const results = await userModel.getUserByEmail(email);
-    return res.json({ exists: results.length > 0 });
+    const result = await userModel.getUserByEmail(email);
+    const exists = !!result; // result가 있으면 true, 없으면 false
+    return res.json({ exists });
   } catch (err) {
     console.error("[checkEmail] DB error:", err);
     return res.status(500).json({ message: "서버 오류가 발생했습니다." });
@@ -92,11 +93,11 @@ exports.signUp = async (req, res) => {
 exports.signIn = async (req, res) => {
   const { email, password } = req.body;
   try {
-    const results = await userModel.getUserByEmail(email);
-    if (!results || results.length === 0)
+    // getUserByEmail는 단일 객체를 반환하므로 바로 사용
+    const user = await userModel.getUserByEmail(email);
+    if (!user)
       return res.status(400).json({ message: "아이디 또는 비밀번호가 일치하지 않습니다." });
 
-    const user = results[0];
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch)
       return res.status(400).json({ message: "아이디 또는 비밀번호가 일치하지 않습니다." });
@@ -166,11 +167,10 @@ exports.changePassword = async (req, res) => {
 
   try {
     const uuid = req.user.uuid;
-    const results = await userModel.getUserByUuid(uuid);
-    if (!results || results.length === 0)
-      return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+    // 단일 객체를 반환하므로 results[0] 대신 바로 사용
+    const user = await userModel.getUserByUuid(uuid);
+    if (!user) return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
 
-    const user = results[0];
     const isMatch = await bcrypt.compare(currentPassword, user.password);
     if (!isMatch) return res.status(400).json({ message: "현재 비밀번호가 일치하지 않습니다." });
 
@@ -196,16 +196,17 @@ exports.withdrawAccount = async (req, res) => {
 
   try {
     const uuid = req.user.uuid;
-    const credentialsResults = await userModel.getUserByUuid(uuid);
-    if (!credentialsResults || credentialsResults.length === 0)
-      return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+    // userModel.getUserByUuid는 단일 객체를 반환함
+    const userCredentials = await userModel.getUserByUuid(uuid);
+    if (!userCredentials) return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
 
-    const userCredentials = credentialsResults[0];
     const userProfile = await userModel.getProfileByUuid(uuid);
     const isMatch = await bcrypt.compare(password, userCredentials.password);
     if (!isMatch) return res.status(400).json({ message: "비밀번호가 일치하지 않습니다." });
 
-    if (userProfile && userProfile.profilePicture) await deleteProfilePicture(uuid);
+    if (userProfile && userProfile.profilePicture) {
+      await deleteProfilePicture(uuid);
+    }
 
     const deleteResult = await userModel.deleteUserByUuid(uuid);
     if (deleteResult.affectedRows === 0)
