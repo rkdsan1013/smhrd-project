@@ -1,5 +1,3 @@
-// /frontend/src/components/FriendList.tsx
-
 import React, { useEffect, useState, useLayoutEffect, useRef, MouseEvent } from "react";
 import ReactDOM from "react-dom";
 import {
@@ -28,6 +26,9 @@ interface FriendListProps {
 }
 
 const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
+  // 모달 표시 여부: 초기 false로 설정하여 fade-in 효과를 발생시킴.
+  const [isVisible, setIsVisible] = useState(false);
+
   // 로컬 상태
   const [activeTab, setActiveTab] = useState<"list" | "requests">("list");
   const [isAdding, setIsAdding] = useState(false);
@@ -51,6 +52,11 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
   const liClass =
     "flex items-center justify-between h-14 px-3 py-2 rounded hover:bg-gray-100 transition-colors duration-300";
 
+  // 컴포넌트 마운트 시 fade-in 효과를 위해 isVisible를 true로 설정
+  useEffect(() => {
+    setIsVisible(true);
+  }, []);
+
   // 온라인 상태 로컬 동기화
   useEffect(() => {
     setLocalOnlineStatus(onlineStatus);
@@ -65,7 +71,6 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
 
   useEffect(() => {
     if (!socket) return;
-
     const handleFriendRequestReceived = () => {
       loadFriendRequests();
     };
@@ -87,12 +92,12 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
       loadFriends();
     };
 
+    // 친구 요청 취소 시, 친구 요청 목록만 갱신 (accepted 상태 친구 목록은 영향 없음)
     const handleFriendRequestCancelled = ({ targetUuid }: { targetUuid: string }) => {
       setSearchResults((prev) =>
         prev.map((user) => (user.uuid === targetUuid ? { ...user, friendStatus: null } : user)),
       );
       loadFriendRequests();
-      // 친구 목록은 accepted 상태만 포함하므로 loadFriends()는 호출하지 않음.
     };
 
     const handleFriendRemovedForSearch = ({ removedUuid }: { removedUuid: string }) => {
@@ -240,14 +245,26 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
     }
   };
 
+  // 모달 닫기: fade-out 효과를 먼저 적용한 후 300ms 후 onClose 호출
+  const handleModalClose = () => {
+    setIsVisible(false);
+    setTimeout(() => {
+      onClose();
+    }, 300);
+  };
+
   return ReactDOM.createPortal(
     <div className="fixed bottom-4 right-4 z-50">
-      <div className="relative bg-white rounded-lg shadow-xl w-96 select-none">
+      <div
+        className={`relative bg-white rounded-lg shadow-xl w-96 select-none transition-opacity duration-300 ${
+          isVisible ? "opacity-100" : "opacity-0"
+        }`}
+      >
         {/* 헤더 영역 */}
         <div className="flex justify-between items-center p-4 border-b border-gray-200">
           <h2 className="text-xl font-bold">{isAdding ? "친구 추가" : "친구 목록"}</h2>
           <button
-            onClick={onClose}
+            onClick={handleModalClose}
             className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-300 transition-colors duration-300"
           >
             <Icons name="close" className="w-6 h-6 text-gray-600" />
@@ -295,7 +312,6 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
               <>
                 {isAdding ? (
                   <>
-                    {/* 친구 추가 폼 (검색 결과) → 뱃지 미표시 */}
                     <div className="space-y-3 mb-3">
                       <div className="flex items-center gap-2">
                         <div className="relative flex-1">
