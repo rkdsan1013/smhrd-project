@@ -1,3 +1,5 @@
+// 파일명: FriendList.tsx
+
 import React, { useEffect, useState } from "react";
 import {
   fetchFriendList,
@@ -15,7 +17,7 @@ import FriendProfileCard from "./FriendProfileCard";
 import Icons from "./Icons";
 import DirectMessage from "./DirectMessage";
 import { useUser } from "../contexts/UserContext";
-import socket from "../services/socket"; // ✅ 소켓 import
+import { useSocket } from "../contexts/SocketContext";
 
 interface FriendListProps {
   onClose: () => void;
@@ -30,34 +32,30 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
   const [searchError, setSearchError] = useState("");
   const [onlineStatusMap, setOnlineStatusMap] = useState<Record<string, boolean>>({});
   const [friends, setFriends] = useState<Friend[]>([]);
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
   const [receivedRequests, setReceivedRequests] = useState<ReceivedFriendRequest[]>([]);
   const [selectedFriendUuid, setSelectedFriendUuid] = useState<string | null>(null);
   const [dmRoomUuid, setDmRoomUuid] = useState<string | null>(null);
 
   const { userUuid, requestCount, refreshRequestCount } = useUser();
+  const { socket } = useSocket();
 
-  useEffect(() => {
-    if (activeTab === "list" && !isAdding) {
-      const loadFriends = async () => {
-        try {
-          setLoading(true);
-          const res = await fetchFriendList();
-          setFriends(res);
-        } catch (err: any) {
-          setError(err.message || "친구 목록 로드 실패");
-        } finally {
-          setLoading(false);
-        }
-      };
-      loadFriends();
+  // 공통 리스트 아이템 클래스 (고정 높이, 여백)
+  const liClass = "flex items-center justify-between h-12 px-3 py-2 rounded hover:bg-gray-100";
+
+  const loadFriends = async () => {
+    try {
+      setLoading(true);
+      const res = await fetchFriendList();
+      setFriends(res);
+    } catch (err: any) {
+      setError(err.message || "친구 목록 로드 실패");
+    } finally {
+      setLoading(false);
     }
-  }, [isAdding, activeTab]);
+  };
 
-  // ✅ 친구 요청 탭에서 목록 불러오기
   const loadReceivedRequests = async () => {
     try {
       const data = await fetchReceivedFriendRequests();
@@ -68,27 +66,33 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
   };
 
   useEffect(() => {
+    if (activeTab === "list" && !isAdding) {
+      loadFriends();
+    }
+  }, [isAdding, activeTab]);
+
+  useEffect(() => {
     if (activeTab === "requests") {
       loadReceivedRequests();
     }
   }, [activeTab]);
 
-  // ✅ 소켓으로 친구 요청 수신 → 요청 수 + 목록 동기화
   useEffect(() => {
+    if (!socket) return;
     const handleFriendRequestReceived = () => {
       refreshRequestCount();
       if (activeTab === "requests") {
         loadReceivedRequests();
       }
     };
-
     socket.on("friendRequestReceived", handleFriendRequestReceived);
     return () => {
       socket.off("friendRequestReceived", handleFriendRequestReceived);
     };
-  }, [activeTab, refreshRequestCount]);
+  }, [socket, activeTab, refreshRequestCount]);
 
   useEffect(() => {
+    if (!socket) return;
     const handleFriendRequestResponded = ({
       targetUuid,
       status,
@@ -99,38 +103,54 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
       setSearchResults((prev) =>
         prev.map((user) =>
           user.uuid === targetUuid
-            ? {
-                ...user,
-                friendStatus: status === "accepted" ? "accepted" : undefined,
-              }
+            ? { ...user, friendStatus: status === "accepted" ? "accepted" : undefined }
             : user,
         ),
       );
     };
-
     socket.on("friendRequestResponded", handleFriendRequestResponded);
-
     return () => {
       socket.off("friendRequestResponded", handleFriendRequestResponded);
     };
-  }, []);
+  }, [socket]);
 
   useEffect(() => {
-    if (activeTab === "list" && !isAdding) {
-      loadFriends();
-    }
-  }, [isAdding, activeTab]);
-
-  useEffect(() => {
+    if (!socket) return;
     const handleFriendRemoved = ({ removedUuid }: { removedUuid: string }) => {
       setFriends((prev) => prev.filter((f) => f.uuid !== removedUuid));
     };
-
     socket.on("friendRemoved", handleFriendRemoved);
     return () => {
       socket.off("friendRemoved", handleFriendRemoved);
     };
-  }, []);
+  }, [socket]);
+
+  useEffect(() => {
+    if (!socket) return;
+    const handleUserOnlineStatus = ({ uuid, online }: { uuid: string; online: boolean }) => {
+      setOnlineStatusMap((prev) => ({ ...prev, [uuid]: online }));
+    };
+    socket.on("userOnlineStatus", handleUserOnlineStatus);
+    return () => {
+      socket.off("userOnlineStatus", handleUserOnlineStatus);
+    };
+  }, [socket]);
+
+  useEffect(() => {
+    if (!socket) return;
+    socket.emit("getFriendsOnlineStatus");
+    const handleFriendsOnlineStatus = (statusList: { uuid: string; online: boolean }[]) => {
+      const updatedStatusMap: Record<string, boolean> = {};
+      statusList.forEach(({ uuid, online }) => {
+        updatedStatusMap[uuid] = online;
+      });
+      setOnlineStatusMap(updatedStatusMap);
+    };
+    socket.on("friendsOnlineStatus", handleFriendsOnlineStatus);
+    return () => {
+      socket.off("friendsOnlineStatus", handleFriendsOnlineStatus);
+    };
+  }, [socket]);
 
   const sortSearchResults = (list: SearchResultUser[]) => {
     return [...list].sort((a, b) => {
@@ -217,48 +237,6 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
     }
   };
 
-  const loadFriends = async () => {
-    try {
-      setLoading(true);
-      const res = await fetchFriendList();
-      setFriends(res);
-    } catch (err: any) {
-      setError(err.message || "친구 목록 로드 실패");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    const handleUserOnlineStatus = ({ uuid, online }: { uuid: string; online: boolean }) => {
-      setOnlineStatusMap((prev) => ({ ...prev, [uuid]: online }));
-    };
-
-    socket.on("userOnlineStatus", handleUserOnlineStatus);
-    return () => {
-      socket.off("userOnlineStatus", handleUserOnlineStatus);
-    };
-  }, []);
-
-  useEffect(() => {
-    // 소켓 연결 시 친구들의 온라인 상태 요청
-    socket.emit("getFriendsOnlineStatus");
-
-    const handleFriendsOnlineStatus = (statusList: { uuid: string; online: boolean }[]) => {
-      const updatedStatusMap: Record<string, boolean> = {};
-      statusList.forEach(({ uuid, online }) => {
-        updatedStatusMap[uuid] = online;
-      });
-      setOnlineStatusMap(updatedStatusMap);
-    };
-
-    socket.on("friendsOnlineStatus", handleFriendsOnlineStatus);
-
-    return () => {
-      socket.off("friendsOnlineStatus", handleFriendsOnlineStatus);
-    };
-  }, []);
-
   if (dmRoomUuid && userUuid) {
     return (
       <DirectMessage
@@ -270,7 +248,8 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-lg w-80">
+    // 외부 컨테이너에 overflow-x-hidden 추가하여 좌우 스크롤이 생기지 않도록 설정
+    <div className="bg-white border border-gray-200 rounded-lg shadow-lg w-80 overflow-x-hidden">
       {/* 헤더 */}
       <div className="flex items-center justify-between p-3">
         <div className="flex w-full">
@@ -318,6 +297,11 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                       type="text"
                       value={searchKeyword}
                       onChange={(e) => setSearchKeyword(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          handleSearch();
+                        }
+                      }}
                       placeholder="이메일 또는 이름으로 검색"
                       className="flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
                     />
@@ -329,7 +313,6 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                     </button>
                   </div>
                 </div>
-
                 <div className="h-60 overflow-y-auto pr-1">
                   {searchLoading ? (
                     <p className="text-center text-gray-500">검색 중...</p>
@@ -338,43 +321,51 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                   ) : searchResults.length === 0 ? (
                     <p className="text-center text-gray-500 text-sm">검색 결과 없음</p>
                   ) : (
-                    <ul className="space-y-4">
+                    <ul className="space-y-2">
                       {searchResults.map((user) => (
-                        <li
-                          key={user.uuid}
-                          className="flex items-center justify-between space-x-3 hover:bg-gray-100 p-2 rounded"
-                        >
-                          <div className="flex items-center space-x-3 overflow-hidden">
-                            {user.profilePicture ? (
-                              <img
-                                src={user.profilePicture}
-                                alt={user.name}
-                                className="w-10 h-10 rounded-full object-cover"
+                        <li key={user.uuid} className={liClass}>
+                          <div className="flex items-center space-x-3 flex-1">
+                            <div className="relative flex-shrink-0 w-10 h-10">
+                              {user.profilePicture ? (
+                                <img
+                                  src={user.profilePicture}
+                                  alt={user.name}
+                                  className="w-10 h-10 rounded-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
+                                  <svg
+                                    className="h-5 w-5 text-white"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth="2"
+                                      d="M5.121 17.804A10 10 0 1119 12.001M15 11h.01M9 11h.01M7 15s1.5 2 5 2 5-2 5-2"
+                                    />
+                                  </svg>
+                                </div>
+                              )}
+                              <span
+                                className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
+                                  onlineStatusMap[user.uuid] ? "bg-green-500" : "bg-gray-500"
+                                }`}
                               />
-                            ) : (
-                              <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                                <svg
-                                  className="h-5 w-5 text-white"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="2"
-                                    d="M5.121 17.804A10 10 0 1119 12.001M15 11h.01M9 11h.01M7 15s1.5 2 5 2 5-2 5-2"
-                                  />
-                                </svg>
-                              </div>
-                            )}
-                            <div className="w-32 overflow-hidden">
-                              <p className="font-semibold truncate">{user.name}</p>
-                              <p className="text-sm text-gray-500 truncate">{user.email}</p>
+                            </div>
+                            <div className="flex flex-col justify-center">
+                              <p className="font-semibold truncate whitespace-nowrap w-32">
+                                {user.name}
+                              </p>
+                              <p className="text-sm text-gray-500 truncate whitespace-nowrap w-32">
+                                {user.email}
+                              </p>
                             </div>
                           </div>
-                          <div className="flex-shrink-0">
+                          <div className="flex-shrink-0 w-28 text-right">
                             <button
                               disabled={
                                 user.friendStatus === "pending" || user.friendStatus === "accepted"
@@ -408,18 +399,14 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
             ) : friends.length === 0 ? (
               <p className="text-center text-gray-500 text-sm">친구가 없습니다.</p>
             ) : (
-              <ul className="space-y-4 max-h-60 overflow-y-auto pr-1">
+              <ul className="space-y-2 max-h-60 overflow-y-auto pr-1">
                 {friends.map((friend) => (
-                  <li
-                    key={friend.uuid}
-                    className="flex items-center justify-between space-x-3 hover:bg-gray-100 p-2 rounded"
-                  >
-                    {/* 왼쪽 영역 (프로필 클릭 → 친구 상세) */}
+                  <li key={friend.uuid} className={liClass}>
                     <div
-                      className="flex items-center space-x-3 overflow-hidden cursor-pointer flex-1"
+                      className="flex items-center space-x-3 flex-1 cursor-pointer"
                       onClick={() => handleFriendClick(friend.uuid)}
                     >
-                      <div className="relative">
+                      <div className="relative flex-shrink-0 w-10 h-10">
                         {friend.profilePicture ? (
                           <img
                             src={friend.profilePicture}
@@ -444,28 +431,33 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                             </svg>
                           </div>
                         )}
-                        {/* ✅ 아이콘 위치 조정 (프로필 이미지 오른쪽 하단) */}
-                        {onlineStatusMap[friend.uuid] && (
-                          <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
-                        )}
+                        <span
+                          className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
+                            onlineStatusMap[friend.uuid] ? "bg-green-500" : "bg-gray-500"
+                          }`}
+                        />
                       </div>
-                      <div className="overflow-hidden">
-                        <p className="font-semibold truncate">{friend.name}</p>
-                        <p className="text-sm text-gray-500 truncate">{friend.email}</p>
+                      <div className="flex flex-col justify-center">
+                        <p className="font-semibold truncate whitespace-nowrap w-32">
+                          {friend.name}
+                        </p>
+                        <p className="text-sm text-gray-500 truncate whitespace-nowrap w-32">
+                          {friend.email}
+                        </p>
                       </div>
                     </div>
-
-                    {/* 오른쪽 영역 (채팅 아이콘 버튼) */}
-                    <button
-                      className="text-blue-500 hover:text-blue-600"
-                      onClick={() => handleMessageClick(friend.uuid)}
-                      title="채팅하기"
-                    >
-                      <Icons
-                        name="chat"
-                        className="w-6 h-6 text-gray-400 hover:text-blue-400 duration-300"
-                      />
-                    </button>
+                    <div className="flex-shrink-0 w-28 text-right">
+                      <button
+                        className="text-blue-500 hover:text-blue-600"
+                        onClick={() => handleMessageClick(friend.uuid)}
+                        title="채팅하기"
+                      >
+                        <Icons
+                          name="chat"
+                          className="w-6 h-6 text-gray-400 hover:text-blue-400 duration-300"
+                        />
+                      </button>
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -474,47 +466,53 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
         )}
 
         {activeTab === "requests" && (
-          <div className="space-y-4 max-h-72 overflow-y-auto pr-1">
+          <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
             {receivedRequests.length === 0 ? (
               <p className="text-center text-gray-500 text-sm">받은 친구 요청이 없습니다.</p>
             ) : (
-              <ul className="space-y-4">
+              <ul className="space-y-2">
                 {receivedRequests.map((req) => (
-                  <li
-                    key={req.uuid}
-                    className="flex items-center justify-between hover:bg-gray-100 p-2 rounded"
-                  >
-                    <div className="flex items-center space-x-3 overflow-hidden">
-                      {req.profilePicture ? (
-                        <img
-                          src={req.profilePicture}
-                          alt={req.name}
-                          className="w-10 h-10 rounded-full object-cover"
+                  <li key={req.uuid} className={liClass}>
+                    <div className="flex items-center space-x-3 flex-1">
+                      <div className="relative flex-shrink-0 w-10 h-10">
+                        {req.profilePicture ? (
+                          <img
+                            src={req.profilePicture}
+                            alt={req.name}
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
+                            <svg
+                              className="h-5 w-5 text-white"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M5.121 17.804A10 10 0 1119 12.001M15 11h.01M9 11h.01M7 15s1.5 2 5 2 5-2 5-2"
+                              />
+                            </svg>
+                          </div>
+                        )}
+                        <span
+                          className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
+                            onlineStatusMap[req.uuid] ? "bg-green-500" : "bg-gray-500"
+                          }`}
                         />
-                      ) : (
-                        <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                          <svg
-                            className="h-5 w-5 text-white"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M5.121 17.804A10 10 0 1119 12.001M15 11h.01M9 11h.01M7 15s1.5 2 5 2 5-2 5-2"
-                            />
-                          </svg>
-                        </div>
-                      )}
-                      <div className="w-28 overflow-hidden">
-                        <p className="font-semibold truncate">{req.name}</p>
-                        <p className="text-sm text-gray-500 truncate">{req.email}</p>
+                      </div>
+                      <div className="flex flex-col justify-center">
+                        <p className="font-semibold truncate whitespace-nowrap w-32">{req.name}</p>
+                        <p className="text-sm text-gray-500 truncate whitespace-nowrap w-32">
+                          {req.email}
+                        </p>
                       </div>
                     </div>
-                    <div className="space-x-2">
+                    <div className="flex-shrink-0 w-28 text-right flex space-x-2">
                       <button
                         onClick={() => handleAccept(req.uuid)}
                         className="px-2 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
@@ -552,8 +550,8 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
           uuid={selectedFriendUuid}
           onClose={closeFriendProfile}
           onDeleted={() => {
-            loadFriends(); // ✅ 삭제 후 친구 목록 새로고침
-            closeFriendProfile(); // ✅ 모달 닫기
+            loadFriends();
+            closeFriendProfile();
           }}
         />
       )}

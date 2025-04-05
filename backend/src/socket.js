@@ -1,9 +1,12 @@
+// 파일명: socket.js
+
 const { Server } = require("socket.io");
 const { jwtVerify, secretKey } = require("./utils/jwtUtils");
 const cookie = require("cookie");
 const chatModel = require("./models/chatModel");
 const friendModel = require("./models/friendModel"); // ✅ 친구 목록 불러오기용
 
+// onlineUsers: 각 사용자 uuid에 대해 연결된 socket id들을 배열로 저장합니다.
 const onlineUsers = new Map(); // ✅ 전역 접속자 목록
 
 const initSocketIO = (server) => {
@@ -42,9 +45,14 @@ const initSocketIO = (server) => {
     const userUuid = socket.user?.uuid;
     if (userUuid) {
       socket.join(userUuid);
-      onlineUsers.set(userUuid, socket.id);
+      // 사용자의 소켓 연결을 배열에 추가 (여러 연결을 지원)
+      if (onlineUsers.has(userUuid)) {
+        onlineUsers.get(userUuid).push(socket.id);
+      } else {
+        onlineUsers.set(userUuid, [socket.id]);
+      }
 
-      // ✅ 친구들에게 이 유저의 온라인 상태 전송
+      // ✅ 친구들에게 이 유저의 온라인 상태 전파
       try {
         const friends = await friendModel.getAcceptedFriendUuidsForSocket(userUuid);
         friends.forEach(({ uuid }) => {
@@ -75,49 +83,50 @@ const initSocketIO = (server) => {
     });
 
     // ✅ 연결 종료 처리
-    // ✅ 연결 종료 처리
     socket.on("disconnect", () => {
       console.log("❌ Socket 연결 종료:", socket.id);
-
       const userUuid = socket.user?.uuid;
-
       if (!userUuid) {
         console.warn("disconnect 시점에 userUuid가 없습니다.");
         return;
       }
-
-      // 접속자 목록에서 제거
-      onlineUsers.delete(userUuid);
-
-      // 친구들에게 오프라인 상태 알림
-      friendModel
-        .getAcceptedFriendUuidsForSocket(userUuid)
-        .then((friends) => {
-          friends.forEach(({ uuid }) => {
-            io.to(uuid).emit("userOnlineStatus", {
-              uuid: userUuid,
-              online: false,
+      // 현재 socket id만 배열에서 제거
+      if (onlineUsers.has(userUuid)) {
+        const userSockets = onlineUsers.get(userUuid);
+        const index = userSockets.indexOf(socket.id);
+        if (index !== -1) {
+          userSockets.splice(index, 1);
+        }
+        // 연결된 소켓이 없으면 완전히 제거하고 오프라인 상태 전파
+        if (userSockets.length === 0) {
+          onlineUsers.delete(userUuid);
+          friendModel
+            .getAcceptedFriendUuidsForSocket(userUuid)
+            .then((friends) => {
+              friends.forEach(({ uuid }) => {
+                io.to(uuid).emit("userOnlineStatus", {
+                  uuid: userUuid,
+                  online: false,
+                });
+              });
+            })
+            .catch((err) => {
+              console.error("오프라인 상태 알림 실패:", err);
             });
-          });
-        })
-        .catch((err) => {
-          console.error("오프라인 상태 알림 실패:", err);
-        });
+        }
+      }
     });
 
     // ✅ 프론트에서 친구들의 온라인 상태 요청 시
     socket.on("getFriendsOnlineStatus", async () => {
       const userUuid = socket.user?.uuid;
       if (!userUuid) return;
-
       try {
         const friends = await friendModel.getAcceptedFriendUuidsForSocket(userUuid);
-
         const statusList = friends.map((f) => ({
           uuid: f.uuid,
-          online: onlineUsers.has(f.uuid),
+          online: onlineUsers.has(f.uuid) && onlineUsers.get(f.uuid).length > 0,
         }));
-
         io.to(socket.id).emit("friendsOnlineStatus", statusList);
       } catch (err) {
         console.error("친구 온라인 상태 조회 실패:", err);

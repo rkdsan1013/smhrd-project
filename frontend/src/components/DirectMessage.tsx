@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
-import socket from "../services/socket";
 import {
   sendMessageSocket,
   joinChatRoom,
   fetchMessagesByRoom,
   ChatMessage,
 } from "../services/chatService";
+import { useSocket } from "../contexts/SocketContext";
 
 interface DirectMessageProps {
   roomUuid: string;
@@ -17,6 +17,7 @@ const DirectMessage: React.FC<DirectMessageProps> = ({ roomUuid, currentUserUuid
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const { socket } = useSocket(); // ✅ 소켓 컨텍스트에서 가져옴
 
   useEffect(() => {
     const loadMessages = async () => {
@@ -29,17 +30,21 @@ const DirectMessage: React.FC<DirectMessageProps> = ({ roomUuid, currentUserUuid
     };
 
     loadMessages();
-    joinChatRoom(roomUuid);
 
-    const handleReceive = (msg: ChatMessage) => {
-      setMessages((prev) => [...prev, msg]);
-    };
+    if (socket) {
+      joinChatRoom(socket, roomUuid);
 
-    socket.on("receiveMessage", handleReceive);
-    return () => {
-      socket.off("receiveMessage", handleReceive);
-    };
-  }, [roomUuid]);
+      const handleReceive = (msg: ChatMessage) => {
+        setMessages((prev) => [...prev, msg]);
+      };
+
+      socket.on("receiveMessage", handleReceive);
+
+      return () => {
+        socket.off("receiveMessage", handleReceive);
+      };
+    }
+  }, [roomUuid, socket]);
 
   // ✅ 메시지 변경 시 가장 하단으로 스크롤
   useEffect(() => {
@@ -49,8 +54,8 @@ const DirectMessage: React.FC<DirectMessageProps> = ({ roomUuid, currentUserUuid
   }, [messages]);
 
   const handleSendMessage = () => {
-    if (!input.trim()) return;
-    sendMessageSocket(roomUuid, input);
+    if (!input.trim() || !socket) return;
+    sendMessageSocket(socket, roomUuid, input); // ✅ 소켓 전달
     setInput("");
   };
 
@@ -76,14 +81,12 @@ const DirectMessage: React.FC<DirectMessageProps> = ({ roomUuid, currentUserUuid
       <div className="flex-1 min-h-0 overflow-y-auto text-sm text-gray-700 space-y-2 mb-2">
         {messages.map((msg, idx) =>
           msg.sender_uuid === currentUserUuid ? (
-            // 내가 보낸 메시지
             <div key={msg.uuid ?? idx} className="flex justify-end pr-1">
               <div className="bg-blue-500 text-white px-3 py-2 rounded-lg max-w-[70%] break-words">
                 {msg.message}
               </div>
             </div>
           ) : (
-            // 상대방 메시지
             <div key={msg.uuid ?? idx} className="flex items-start space-x-2">
               {msg.sender_picture ? (
                 <img
@@ -125,7 +128,7 @@ const DirectMessage: React.FC<DirectMessageProps> = ({ roomUuid, currentUserUuid
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown} // ✅ 엔터 키 입력 처리
+          onKeyDown={handleKeyDown}
           placeholder="메시지를 입력하세요"
           className="flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
         />

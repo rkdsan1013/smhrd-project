@@ -1,5 +1,5 @@
 import { get, post } from "./apiClient";
-import socket from "./socket";
+import { Socket } from "socket.io-client";
 
 export interface ChatMessage {
   uuid: string;
@@ -17,17 +17,17 @@ export const openOrCreateDMRoom = async (friendUuid: string) => {
   return res.roomUuid;
 };
 
-// 메시지 전송 (웹소켓)
-export const sendMessageSocket = (roomUuid: string, message: string) => {
+// 메시지 전송 (웹소켓 사용) - socket을 인자로 받음
+export const sendMessageSocket = (socket: Socket, roomUuid: string, message: string) => {
   socket.emit("sendMessage", { roomUuid, message });
 };
 
-// 채팅방 참여
-export const joinChatRoom = (roomUuid: string) => {
+// 채팅방 참여 (웹소켓 사용) - socket을 인자로 받음
+export const joinChatRoom = (socket: Socket, roomUuid: string) => {
   socket.emit("joinRoom", roomUuid);
 };
 
-// 메시지 가져오기
+// 채팅 메시지 조회
 export const fetchMessagesByRoom = async (roomUuid: string): Promise<ChatMessage[]> => {
   const res = await get<{ success: boolean; messages: ChatMessage[] }>(
     `/chats/${roomUuid}/messages`,

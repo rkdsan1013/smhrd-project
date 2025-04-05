@@ -1,14 +1,29 @@
 // /frontend/src/services/socket.ts
 import { io, Socket } from "socket.io-client";
 
-const SOCKET_SERVER_URL = import.meta.env.VITE_SOCKET_URL as string;
+let socket: Socket | null = null;
 
-const socket: Socket = io(SOCKET_SERVER_URL, {
-  withCredentials: true,
-});
+export const initializeSocket = (): Socket => {
+  if (socket) return socket; // 이미 생성된 소켓이 있다면 그대로 반환
 
-socket.on("connect", () => {
-  console.log("WebSocket 서버에 연결되었습니다. Socket ID:", socket.id);
-});
+  const SOCKET_SERVER_URL = import.meta.env.VITE_SOCKET_URL as string;
+  socket = io(SOCKET_SERVER_URL, {
+    withCredentials: true,
+  });
 
-export default socket;
+  socket.on("connect", () => {
+    console.log("WebSocket 서버에 연결되었습니다. Socket ID:", socket!.id);
+  });
+
+  // 필요한 경우 추가 이벤트 핸들러 등록
+  // 예) socket.on("error", (error) => { console.error("Socket error", error); });
+
+  return socket;
+};
+
+export const disconnectSocket = (): void => {
+  if (socket) {
+    socket.disconnect();
+    socket = null;
+  }
+};

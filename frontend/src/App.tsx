@@ -7,6 +7,7 @@ import MainPage from "./pages/MainPage";
 import { UserProvider, useUser } from "./contexts/UserContext";
 import startTokenRefreshPolling from "./utils/tokenManager";
 import Icons from "./components/Icons";
+import { SocketProvider } from "./contexts/SocketContext"; // SocketContext import
 
 const AppContent: React.FC = () => {
   const { setUserUuid } = useUser();
@@ -95,20 +96,23 @@ const AppContent: React.FC = () => {
     );
   }
 
-  // 페이지 전환 애니메이션
+  // 페이지 전환 애니메이션 : 로그인 상태면 MainPage, 아니면 LandingPage 렌더링
   return (
     <div className="h-screen bg-gray-100 overflow-hidden">
       <AnimatePresence mode="wait">
         {isLoggedIn ? (
           <motion.div
-            key="test"
+            key="main"
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -50 }}
             transition={{ duration: 0.5, ease: "easeInOut" }}
             className="h-full"
           >
-            <MainPage />
+            {/* 로그인 상태에서만 SocketProvider를 렌더링하여 소켓 연결 유지 */}
+            <SocketProvider>
+              <MainPage />
+            </SocketProvider>
           </motion.div>
         ) : (
           <motion.div
