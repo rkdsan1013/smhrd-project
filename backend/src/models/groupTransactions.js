@@ -2,34 +2,43 @@
 
 const groupQueries = require("./groupQueries");
 
-const createGroupTransaction = async (
+const createGroup = async (
   dbPool,
-  { groupUuid, name, description, visibility, groupIconUrl, groupPictureUrl, groupLeaderUuid },
+  name,
+  description,
+  visibility,
+  groupLeaderUuid,
+  groupIconUrl,
+  groupPictureUrl,
 ) => {
-  // 풀에서 연결(Connection)을 가져와 트랜잭션 실행
   const connection = await dbPool.getConnection();
   try {
     await connection.beginTransaction();
 
-    // 그룹 정보 삽입
+    // INSERT_GROUP_INFO를 사용하여 그룹 정보 삽입
     await connection.query(groupQueries.INSERT_GROUP_INFO, [
-      groupUuid,
       name,
       description,
-      groupIconUrl,
-      groupPictureUrl,
+      groupIconUrl, // 파일 업로드가 없으면 null
+      groupPictureUrl, // 파일 업로드가 없으면 null
       visibility,
       groupLeaderUuid,
     ]);
 
+    // 그룹 리더에 대해 가장 최근 생성된 그룹을 조회합니다.
+    const [rows] = await connection.query(groupQueries.SELECT_LATEST_GROUP_BY_LEADER, [
+      groupLeaderUuid,
+    ]);
+    if (!rows || rows.length === 0) {
+      throw new Error("그룹 생성 후 그룹 조회에 실패했습니다.");
+    }
+    const group = rows[0];
+
     // 그룹 멤버 테이블에 그룹 리더 등록
-    await connection.query(groupQueries.INSERT_GROUP_MEMBER, [groupUuid, groupLeaderUuid]);
+    await connection.query(groupQueries.INSERT_GROUP_MEMBER, [group.uuid, groupLeaderUuid]);
 
     await connection.commit();
-
-    // 생성된 그룹 정보 조회 및 반환
-    const [rows] = await connection.query(groupQueries.SELECT_GROUP_BY_UUID, [groupUuid]);
-    return rows[0];
+    return group;
   } catch (error) {
     await connection.rollback();
     throw error;
@@ -38,4 +47,4 @@ const createGroupTransaction = async (
   }
 };
 
-module.exports = { createGroupTransaction };
+module.exports = { createGroup };

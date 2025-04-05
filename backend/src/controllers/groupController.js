@@ -1,7 +1,6 @@
 // /backend/src/controllers/groupController.js
 
 const groupModel = require("../models/groupModel");
-const { v4: uuidv4 } = require("uuid");
 const { saveGroupIcon, saveGroupPicture } = require("../utils/imageHelper");
 // 이미지 URL을 절대 URL로 변환하는 헬퍼
 const { formatImageUrl } = require("../utils/imageUrlHelper");
@@ -31,6 +30,20 @@ const createGroup = async (req, res, next) => {
       return res.status(400).json({ message: "유효한 공개 상태를 선택해 주세요." });
     }
 
+    // 1단계: 이미지 정보 없이 그룹 생성 – DB에서 자동 생성한 UUID를 사용하도록 함
+    // 여기서 그룹 생성 시 group_icon, group_picture는 null로 전달합니다.
+    let createdGroup = await groupModel.createGroup(
+      name,
+      description,
+      visibility,
+      groupLeaderUuid,
+      null, // 초기 groupIconUrl: null
+      null, // 초기 groupPictureUrl: null
+    );
+
+    // DB에서 자동 생성된 그룹 uuid 획득
+    const groupUuid = createdGroup.uuid;
+
     // req.files에서 각 이미지 파일 추출
     let groupIconFile = null;
     let groupPictureFile = null;
@@ -43,12 +56,9 @@ const createGroup = async (req, res, next) => {
       }
     }
 
-    // 컨트롤러에서 미리 UUID 생성
-    const groupUuid = uuidv4();
-
-    // 이미지 파일이 있으면 저장 후 URL 획득
-    let groupIconUrl = null;
-    let groupPictureUrl = null;
+    // 2단계: 이미지 있으면 저장 후 URL 획득
+    let groupIconUrl = createdGroup.group_icon; // 처음에는 null
+    let groupPictureUrl = createdGroup.group_picture; // 처음에는 null
     if (groupIconFile) {
       groupIconUrl = await saveGroupIcon(groupUuid, groupIconFile);
     }
@@ -56,16 +66,14 @@ const createGroup = async (req, res, next) => {
       groupPictureUrl = await saveGroupPicture(groupUuid, groupPictureFile);
     }
 
-    // 모델 트랜잭션을 통해 그룹 생성 (group_info, group_members 삽입)
-    const createdGroup = await groupModel.createGroupTransaction({
-      groupUuid,
-      name,
-      description,
-      visibility,
-      groupIconUrl,
-      groupPictureUrl,
-      groupLeaderUuid,
-    });
+    // 이미지 URL이 업데이트되었으면 DB 업데이트 후, 다시 조회
+    if (
+      groupIconUrl !== createdGroup.group_icon ||
+      groupPictureUrl !== createdGroup.group_picture
+    ) {
+      await groupModel.updateGroupImages(groupUuid, groupIconUrl, groupPictureUrl);
+      createdGroup = await groupModel.getGroupByUuid(groupUuid);
+    }
 
     // 이미지 파일 경로에 서버 URL 붙이기 (절대 URL로 변환)
     createdGroup.group_icon = formatImageUrl(createdGroup.group_icon);
@@ -77,13 +85,12 @@ const createGroup = async (req, res, next) => {
   }
 };
 
-// 내가 가입한 그룹 리스트 조회
 const getMyGroups = async (req, res, next) => {
   try {
     const userUuid = req.user.uuid;
     let groups = await groupModel.getMyGroups(userUuid);
 
-    // 각 그룹의 이미지 경로에 서버 URL을 접두어로 붙임
+    // 각 그룹의 이미지 경로에 서버 URL 접두어 붙이기
     groups = groups.map((group) => ({
       ...group,
       group_icon: formatImageUrl(group.group_icon),
