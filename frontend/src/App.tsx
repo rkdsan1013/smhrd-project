@@ -9,6 +9,7 @@ import { UserProvider, useUser } from "./contexts/UserContext";
 import startTokenRefreshPolling from "./utils/tokenManager";
 import Icons from "./components/Icons";
 import { SocketProvider } from "./contexts/SocketContext";
+import { FriendProvider } from "./contexts/FriendContext";
 
 const AppContent: React.FC = () => {
   const { setUserUuid } = useUser();
@@ -110,9 +111,11 @@ const AppContent: React.FC = () => {
             transition={{ duration: 0.5, ease: "easeInOut" }}
             className="h-full"
           >
-            {/* 로그인 상태에서만 SocketProvider를 렌더링하여 소켓 연결 유지 */}
+            {/* 로그인 상태일 때 SocketProvider와 FriendProvider를 중첩하여 사용 */}
             <SocketProvider>
-              <MainPage />
+              <FriendProvider>
+                <MainPage />
+              </FriendProvider>
             </SocketProvider>
           </motion.div>
         ) : (

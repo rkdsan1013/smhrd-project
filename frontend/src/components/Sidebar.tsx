@@ -6,9 +6,8 @@ import Icons from "./Icons";
 import GroupCreation from "./GroupCreation";
 import { getMyGroups, GroupInfo } from "../services/groupService";
 
-// 백엔드에서 받아온 GroupInfo에 이미지 URL 필드를 추가한 그룹 인터페이스
 interface Group extends GroupInfo {
-  image: string; // 그룹 아이콘 URL (group_icon 필드에서 매핑)
+  image: string;
 }
 
 interface TooltipState {
@@ -43,8 +42,8 @@ const Tooltip: React.FC<TooltipProps> = ({ text, style, placement, className }) 
   );
 };
 
-const tooltipGap = 8; // 버튼과 툴팁 간 간격
-const hoverDelay = 100; // 마우스 호버 딜레이 (ms)
+const tooltipGap = 8;
+const hoverDelay = 100;
 
 const calcTooltipStyle = (rect: DOMRect, isDesktop: boolean): React.CSSProperties =>
   isDesktop
@@ -68,7 +67,6 @@ const Sidebar: React.FC = () => {
   const hoverTimeoutRef = useRef<number | null>(null);
   const [isGroupCreationModalOpen, setIsGroupCreationModalOpen] = useState(false);
 
-  // 컴포넌트 마운트 시 그룹 목록을 가져옴
   useEffect(() => {
     async function fetchGroups() {
       try {
@@ -79,14 +77,14 @@ const Sidebar: React.FC = () => {
         }));
         setGroups(mappedGroups);
       } catch (error) {
-        console.error("그룹 데이터 불러오기 실패:", error);
+        console.error("그룹 불러오기 실패:", error);
       }
     }
     fetchGroups();
   }, []);
 
   const navigateTo = (groupUuid: string) => {
-    alert(`그룹 UUID: ${groupUuid}로 이동합니다.`);
+    alert(`그룹 UUID: ${groupUuid}로 이동`);
   };
 
   const addTooltip = (target: HTMLElement, text: string): number => {
@@ -146,12 +144,8 @@ const Sidebar: React.FC = () => {
     }
   };
 
-  // 그룹 생성 후 바로 그룹 목록 업데이트
   const handleGroupCreated = (newGroup: GroupInfo) => {
-    const mappedGroup: Group = {
-      ...newGroup,
-      image: newGroup.group_icon || "",
-    };
+    const mappedGroup: Group = { ...newGroup, image: newGroup.group_icon || "" };
     setGroups((prev) => [...prev, mappedGroup]);
   };
 
@@ -218,7 +212,7 @@ const Sidebar: React.FC = () => {
             <div className="hidden md:block w-full border-t border-gray-300 my-2" />
           </div>
 
-          {/* 추가 기능 버튼 */}
+          {/* 추가 버튼 */}
           <div className="flex flex-row md:flex-col flex-shrink-0 p-1 gap-2">
             <div className="relative flex items-center justify-center">
               <button
@@ -250,12 +244,10 @@ const Sidebar: React.FC = () => {
         </div>
       </aside>
 
-      {/* Tooltip 렌더링 */}
       {tooltips.map((tt) => (
         <Tooltip key={tt.id} text={tt.text} style={tt.style} placement={tt.placement} />
       ))}
 
-      {/* 그룹 생성 모달 → GroupCreation 컴포넌트 내부에서 Portal로 렌더링 */}
       {isGroupCreationModalOpen && (
         <GroupCreation
           onClose={() => setIsGroupCreationModalOpen(false)}
