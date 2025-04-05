@@ -168,6 +168,16 @@ const deleteFriend = async (userUuid, targetUuid) => {
   return result.affectedRows > 0;
 };
 
+// 친구 요청 취소 기능 추가 (내가 보낸 요청 취소)
+const cancelFriendRequest = async (userUuid, targetUuid) => {
+  const sql = `
+    DELETE FROM friends
+    WHERE user_uuid = :userUuid AND friend_uuid = :targetUuid AND status = 'pending'
+  `;
+  const [result] = await pool.query(sql, { userUuid, targetUuid });
+  return result.affectedRows > 0;
+};
+
 module.exports = {
   getAcceptedFriendUuids,
   getAcceptedFriendUuidsForSocket, // ✅ socket.js에서 사용
@@ -180,4 +190,5 @@ module.exports = {
   getReceivedFriendRequests,
   getUserProfileByUuid,
   deleteFriend,
+  cancelFriendRequest, // 추가됨
 };

@@ -10,6 +10,7 @@ const {
   getReceivedFriendRequests,
   getUserProfileByUuid,
   deleteFriend,
+  cancelFriendRequest, // 추가됨
 } = require("./friendQueries");
 
 module.exports = {
@@ -24,4 +25,5 @@ module.exports = {
   getReceivedFriendRequests,
   getUserProfileByUuid,
   deleteFriend,
+  cancelFriendRequest, // 친구 요청 취소 함수 추가
 };

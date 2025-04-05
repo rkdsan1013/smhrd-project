@@ -1,4 +1,5 @@
-// src/controllers/friendController.js
+// /backend/src/controllers/friendController.js
+
 const friendModel = require("../models/friendModel");
 
 // 서버 주소 포함한 프로필 사진 URL 생성 함수
@@ -76,7 +77,7 @@ exports.sendFriendRequest = async (req, res) => {
 
     await friendModel.createFriendRequest(requesterUuid, targetUuid);
 
-    // ✅ 소켓을 통해 상대방에게 친구 요청 알림 전송
+    // 소켓을 통해 상대방에게 친구 요청 알림 전송
     if (global.io) {
       global.io.to(targetUuid).emit("friendRequestReceived", {
         from: requesterUuid,
@@ -91,17 +92,43 @@ exports.sendFriendRequest = async (req, res) => {
   }
 };
 
+// 친구 요청 취소 기능 수정 – 요청 보낸 사람과 받는 사람 모두 업데이트
+exports.cancelFriendRequest = async (req, res) => {
+  try {
+    const requesterUuid = req.user.uuid;
+    const targetUuid = req.params.uuid;
+
+    const success = await friendModel.cancelFriendRequest(requesterUuid, targetUuid);
+    if (!success) {
+      return res.status(400).json({ success: false, message: "친구 요청 취소 실패" });
+    }
+
+    // 소켓을 통해 두 사용자 모두에게 취소 결과 전파
+    if (global.io) {
+      // 요청 보낸 사용자(내 자신)에게 전파
+      global.io.to(requesterUuid).emit("friendRequestCancelled", { targetUuid });
+      // 요청 받는 사용자에게도 전파. 여기서는 targetUuid가 취소된 요청의 상대방이므로
+      global.io.to(targetUuid).emit("friendRequestCancelled", { targetUuid: requesterUuid });
+    }
+
+    res.json({ success: true, message: "친구 요청이 취소되었습니다." });
+  } catch (error) {
+    console.error("[cancelFriendRequest] Error:", error);
+    res.status(500).json({ success: false, message: "서버 오류로 요청 취소 실패" });
+  }
+};
+
 exports.acceptFriendRequest = async (req, res) => {
   try {
-    const receiverUuid = req.user.uuid; // B
-    const requesterUuid = req.params.uuid; // A
+    const receiverUuid = req.user.uuid; // 수신자 (B)
+    const requesterUuid = req.params.uuid; // 요청자 (A)
 
     const success = await friendModel.acceptFriendRequest(receiverUuid, requesterUuid);
     if (!success) {
       return res.status(400).json({ success: false, message: "친구 요청 수락 실패" });
     }
 
-    // ✅ A에게 수락 결과 실시간 전송
+    // 요청자에게 수락 결과 실시간 전파
     if (global.io) {
       global.io.to(requesterUuid).emit("friendRequestResponded", {
         targetUuid: receiverUuid,
@@ -118,15 +145,15 @@ exports.acceptFriendRequest = async (req, res) => {
 
 exports.declineFriendRequest = async (req, res) => {
   try {
-    const receiverUuid = req.user.uuid; // B
-    const requesterUuid = req.params.uuid; // A
+    const receiverUuid = req.user.uuid; // 수신자 (B)
+    const requesterUuid = req.params.uuid; // 요청자 (A)
 
     const success = await friendModel.declineFriendRequest(receiverUuid, requesterUuid);
     if (!success) {
       return res.status(400).json({ success: false, message: "거절할 친구 요청이 없습니다." });
     }
 
-    // ✅ A에게 거절 결과 실시간 전송
+    // 요청자에게 거절 결과 실시간 전파
     if (global.io) {
       global.io.to(requesterUuid).emit("friendRequestResponded", {
         targetUuid: receiverUuid,
@@ -168,7 +195,6 @@ exports.getUserProfileByUuid = async (req, res) => {
   }
 };
 
-// controller 내부 deleteFriend 함수 수정
 exports.deleteFriend = async (req, res) => {
   try {
     const userUuid = req.user.uuid;
@@ -179,7 +205,7 @@ exports.deleteFriend = async (req, res) => {
       return res.status(400).json({ success: false, message: "친구 삭제 실패" });
     }
 
-    // ✅ 상대방에게도 친구 삭제 알림 전송
+    // 상대방에게도 삭제 알림 전송
     if (global.io) {
       global.io.to(targetUuid).emit("friendRemoved", {
         removedUuid: userUuid,

@@ -1,5 +1,3 @@
-// /frontend/src/contexts/FriendContext.tsx
-
 import React, { createContext, useContext, useEffect, useState } from "react";
 import {
   fetchFriendList,
@@ -38,7 +36,7 @@ export const FriendProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const { socket } = useSocket();
 
-  // 친구 목록 불러오기
+  // 친구 목록 불러오기: accepted 상태의 친구만 반환됨
   const loadFriends = async () => {
     setLoading(true);
     try {
@@ -62,7 +60,7 @@ export const FriendProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
-  // 초기 데이터 로드
+  // 초기 데이터 로드 (Provider는 전역에 마운트되어 있으므로 FriendList 컴포넌트에 상관없이 최신 상태 유지)
   useEffect(() => {
     loadFriends();
     loadFriendRequests();
@@ -72,7 +70,6 @@ export const FriendProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   useEffect(() => {
     if (!socket) return;
 
-    // 친구 삭제 이벤트: 친구 목록 및 온라인 상태 갱신
     const handleFriendRemoved = ({ removedUuid }: { removedUuid: string }) => {
       setFriends((prev) => prev.filter((f) => f.uuid !== removedUuid));
       setOnlineStatus((prev) => {
@@ -82,12 +79,10 @@ export const FriendProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       });
     };
 
-    // 친구 요청 수신 시 요청 목록 업데이트
     const handleFriendRequestReceived = () => {
       loadFriendRequests();
     };
 
-    // 친구 요청 응답 시 무조건 친구 목록 갱신 (요청자, 수락자 모두 대상)
     const handleFriendRequestResponded = (_: {
       targetUuid: string;
       status: "accepted" | "declined";
@@ -95,12 +90,16 @@ export const FriendProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       loadFriends();
     };
 
-    // 개별 온라인/오프라인 상태 업데이트
+    // ★ 친구 요청 취소 시, 오직 친구 요청 목록만 갱신하도록 수정
+    const handleFriendRequestCancelled = (_: { targetUuid: string }) => {
+      loadFriendRequests();
+      // loadFriends() 삭제: 친구 목록은 accepted만 포함하므로 변경할 필요 없음.
+    };
+
     const handleUserOnlineStatus = ({ uuid, online }: { uuid: string; online: boolean }) => {
       setOnlineStatus((prev) => ({ ...prev, [uuid]: online }));
     };
 
-    // 전체 온라인 상태 업데이트
     const handleFriendsOnlineStatus = (statusList: { uuid: string; online: boolean }[]) => {
       const updated: Record<string, boolean> = {};
       statusList.forEach(({ uuid, online }) => {
@@ -112,6 +111,7 @@ export const FriendProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     socket.on("friendRemoved", handleFriendRemoved);
     socket.on("friendRequestReceived", handleFriendRequestReceived);
     socket.on("friendRequestResponded", handleFriendRequestResponded);
+    socket.on("friendRequestCancelled", handleFriendRequestCancelled);
     socket.on("userOnlineStatus", handleUserOnlineStatus);
     socket.on("friendsOnlineStatus", handleFriendsOnlineStatus);
 
@@ -119,12 +119,13 @@ export const FriendProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       socket.off("friendRemoved", handleFriendRemoved);
       socket.off("friendRequestReceived", handleFriendRequestReceived);
       socket.off("friendRequestResponded", handleFriendRequestResponded);
+      socket.off("friendRequestCancelled", handleFriendRequestCancelled);
       socket.off("userOnlineStatus", handleUserOnlineStatus);
       socket.off("friendsOnlineStatus", handleFriendsOnlineStatus);
     };
   }, [socket]);
 
-  // 친구 목록 변경 시 온라인 상태 업데이트 요청
+  // 친구 목록이 변경되면 온라인 상태 다시 요청
   useEffect(() => {
     if (socket) {
       socket.emit("getFriendsOnlineStatus");
