@@ -42,11 +42,11 @@ export const FriendProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const loadFriends = async () => {
     setLoading(true);
     try {
-      const fetchedFriends = await fetchFriendList();
-      setFriends(fetchedFriends);
+      const fetched = await fetchFriendList();
+      setFriends(fetched);
       setError(null);
     } catch (err) {
-      setError("친구 목록을 불러오는 데 실패했습니다.");
+      setError("친구 목록 로드 실패");
     } finally {
       setLoading(false);
     }
@@ -58,7 +58,7 @@ export const FriendProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const requests = await fetchReceivedFriendRequests();
       setFriendRequests(requests);
     } catch (err) {
-      console.error("친구 요청을 불러오는 데 실패했습니다.", err);
+      console.error("친구 요청 로드 실패", err);
     }
   };
 
@@ -68,24 +68,26 @@ export const FriendProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     loadFriendRequests();
   }, []);
 
-  // 소켓 이벤트 핸들링
+  // 소켓 이벤트 처리
   useEffect(() => {
     if (!socket) return;
 
+    // 친구 삭제 이벤트: 친구 목록 및 온라인 상태 갱신
     const handleFriendRemoved = ({ removedUuid }: { removedUuid: string }) => {
-      setFriends((prev) => prev.filter((friend) => friend.uuid !== removedUuid));
+      setFriends((prev) => prev.filter((f) => f.uuid !== removedUuid));
       setOnlineStatus((prev) => {
-        const newStatus = { ...prev };
-        delete newStatus[removedUuid];
-        return newStatus;
+        const copy = { ...prev };
+        delete copy[removedUuid];
+        return copy;
       });
     };
 
+    // 친구 요청 수신 시 요청 목록 업데이트
     const handleFriendRequestReceived = () => {
       loadFriendRequests();
     };
 
-    // 수정된 부분: 요청 응답 이벤트 수신 시, 조건 없이 친구 목록을 업데이트
+    // 친구 요청 응답 시 무조건 친구 목록 갱신 (요청자, 수락자 모두 대상)
     const handleFriendRequestResponded = (_: {
       targetUuid: string;
       status: "accepted" | "declined";
@@ -93,10 +95,12 @@ export const FriendProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       loadFriends();
     };
 
+    // 개별 온라인/오프라인 상태 업데이트
     const handleUserOnlineStatus = ({ uuid, online }: { uuid: string; online: boolean }) => {
       setOnlineStatus((prev) => ({ ...prev, [uuid]: online }));
     };
 
+    // 전체 온라인 상태 업데이트
     const handleFriendsOnlineStatus = (statusList: { uuid: string; online: boolean }[]) => {
       const updated: Record<string, boolean> = {};
       statusList.forEach(({ uuid, online }) => {
