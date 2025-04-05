@@ -1,4 +1,5 @@
 // /frontend/src/App.tsx
+
 import React, { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { get, post } from "./services/apiClient";
@@ -7,7 +8,7 @@ import MainPage from "./pages/MainPage";
 import { UserProvider, useUser } from "./contexts/UserContext";
 import startTokenRefreshPolling from "./utils/tokenManager";
 import Icons from "./components/Icons";
-import { SocketProvider } from "./contexts/SocketContext"; // SocketContext import
+import { SocketProvider } from "./contexts/SocketContext";
 
 const AppContent: React.FC = () => {
   const { setUserUuid } = useUser();

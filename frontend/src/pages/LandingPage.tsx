@@ -1,4 +1,5 @@
 // /frontend/src/pages/LandingPage.tsx
+
 import React from "react";
 import AuthForm from "../components/AuthForm";
 

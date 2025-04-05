@@ -1,4 +1,5 @@
 // /frontend/src/contexts/UserProfileContext.tsx
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { fetchUserProfile } from "../services/userService";
 

@@ -1,4 +1,5 @@
 // /frontend/src/hooks/useUserProfile.ts
+
 import { useState, useEffect } from "react";
 import { fetchUserProfile } from "../services/userService";
 import { useUser } from "../contexts/UserContext";

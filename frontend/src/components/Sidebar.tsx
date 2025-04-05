@@ -1,3 +1,5 @@
+// /frontend/src/components/Sidebar.tsx
+
 import React, { useState, useEffect, useRef, MouseEvent } from "react";
 import ReactDOM from "react-dom";
 import Icons from "./Icons";

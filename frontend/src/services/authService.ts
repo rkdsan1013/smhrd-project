@@ -1,4 +1,5 @@
 // /frontend/src/services/authService.ts
+
 import { post, patch } from "./apiClient";
 
 // 인증 응답 인터페이스

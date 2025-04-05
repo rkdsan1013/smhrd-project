@@ -1,3 +1,5 @@
+// /frontend/src/components/GroupCreation.tsx
+
 import React, { useState, useEffect, useLayoutEffect, useRef, ChangeEvent } from "react";
 import { validateName, validateDescription } from "../utils/validators";
 import Icons from "./Icons";

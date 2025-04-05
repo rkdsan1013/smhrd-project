@@ -1,4 +1,5 @@
 // /frontend/src/services/userService.ts
+
 import { get, patch } from "./apiClient";
 import { UserProfile } from "../hooks/useUserProfile";
 

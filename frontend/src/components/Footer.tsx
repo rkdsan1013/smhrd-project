@@ -1,4 +1,5 @@
 // /frontend/src/components/Footer.tsx
+
 import React, { useState } from "react";
 import { useUserProfile } from "../contexts/UserProfileContext";
 import ProfileCard from "./ProfileCard";

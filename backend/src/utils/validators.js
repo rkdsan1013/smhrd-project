@@ -1,4 +1,5 @@
 // /backend/src/utils/validators.js
+
 const validator = require("validator");
 const { normalizeName } = require("./normalize");
 

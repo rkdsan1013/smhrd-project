@@ -1,4 +1,5 @@
 // /frontend/src/components/AuthForm.tsx
+
 import React, {
   useEffect,
   useLayoutEffect,

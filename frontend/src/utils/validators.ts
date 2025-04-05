@@ -1,4 +1,5 @@
 // /frontend/src/utils/validators.ts
+
 import validator from "validator";
 import { normalizeName } from "./normalize";
 

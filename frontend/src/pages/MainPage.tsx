@@ -1,4 +1,5 @@
 // /frontend/src/pages/MainPage.tsx
+
 import React from "react";
 import Sidebar from "../components/Sidebar";
 import MainContent from "../components/MainContent";

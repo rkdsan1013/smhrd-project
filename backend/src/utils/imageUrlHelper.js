@@ -1,4 +1,5 @@
 // /backend/src/utils/imageUrlHelper.js
+
 const serverUrl = process.env.SERVER_URL || "http://localhost:5000";
 
 // 이미지 URL이 이미 절대 URL인지 확인하는 헬퍼 함수

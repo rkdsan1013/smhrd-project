@@ -1,10 +1,8 @@
 // /backend/src/socket.js
+
 const { Server } = require("socket.io");
 const cookie = require("cookie");
 const { jwtVerify, secretKey } = require("./utils/jwtUtils");
-
-// 핸들러 모듈 가져오기
-const messageHandler = require("./handlers/message");
 
 const initSocketIO = (server) => {
   const io = new Server(server, {
@@ -37,8 +35,8 @@ const initSocketIO = (server) => {
   io.on("connection", (socket) => {
     console.log("New client connected:", socket.id);
 
-    // 기능별 핸들러 호출 (여기서는 메시지 핸들러를 등록)
-    messageHandler(socket, io);
+    // 기능별 핸들러 호출
+    // ...
 
     socket.on("disconnect", () => {
       console.log("Client disconnected:", socket.id);

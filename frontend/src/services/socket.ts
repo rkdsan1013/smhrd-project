@@ -1,4 +1,5 @@
 // /frontend/src/services/socket.ts
+
 import { io, Socket } from "socket.io-client";
 
 let socket: Socket | null = null;
@@ -16,7 +17,7 @@ export const initializeSocket = (): Socket => {
   });
 
   // 필요한 경우 추가 이벤트 핸들러 등록
-  // 예) socket.on("error", (error) => { console.error("Socket error", error); });
+  // ...
 
   return socket;
 };

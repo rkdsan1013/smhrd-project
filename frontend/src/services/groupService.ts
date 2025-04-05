@@ -1,4 +1,5 @@
 // /frontend/src/services/groupService.ts
+
 import { get, post } from "./apiClient";
 
 // 그룹 생성에 필요한 페이로드 타입

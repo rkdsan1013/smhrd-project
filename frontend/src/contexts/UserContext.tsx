@@ -1,4 +1,5 @@
 // /frontend/src/contexts/UserContext.tsx
+
 import { createContext, useContext, useState, ReactNode } from "react";
 
 // 사용자 컨텍스트 인터페이스

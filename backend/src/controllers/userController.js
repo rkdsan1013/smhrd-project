@@ -2,7 +2,7 @@
 
 const userModel = require("../models/userModel");
 const { saveProfilePicture } = require("../utils/imageHelper");
-const { validateName } = require("../utils/validators");
+const { validateUpdateProfile } = require("../utils/validators");
 const { formatImageUrl } = require("../utils/imageUrlHelper");
 const { normalizeName } = require("../utils/normalize");
 
@@ -19,8 +19,9 @@ exports.getProfile = async (req, res) => {
   try {
     const { uuid } = req.user;
     const profile = await userModel.getProfileByUuid(uuid);
-    if (!profile)
+    if (!profile) {
       return res.status(404).json({ success: false, message: "프로필 정보를 찾을 수 없습니다." });
+    }
     return res.json({ success: true, profile: formatProfile(profile) });
   } catch (error) {
     console.error("[getProfile] Error:", error);
@@ -32,11 +33,13 @@ exports.getProfile = async (req, res) => {
 exports.getProfileByUuid = async (req, res) => {
   try {
     const { uuid } = req.params;
-    if (!uuid)
+    if (!uuid) {
       return res.status(400).json({ success: false, message: "유효한 uuid를 제공해주세요." });
+    }
     const profile = await userModel.getProfileByUuid(uuid);
-    if (!profile)
+    if (!profile) {
       return res.status(404).json({ success: false, message: "프로필 정보를 찾을 수 없습니다." });
+    }
     const formattedProfile = formatProfile(profile);
     const limitedProfile = {
       name: formattedProfile.name,
@@ -54,30 +57,45 @@ exports.getProfileByUuid = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     const { uuid } = req.user;
-    const { name } = req.body;
+    const { name: updatedName } = req.body;
 
-    // 이름 유효성 검사
-    const nameValidation = validateName(name);
-    if (!nameValidation.valid)
+    // DB에서 현재 사용자 프로필 정보를 조회하여 기존 이름을 획득합니다.
+    const currentProfile = await userModel.getProfileByUuid(uuid);
+    if (!currentProfile) {
       return res
-        .status(400)
-        .json({ success: false, message: nameValidation.message || "유효하지 않은 이름입니다." });
+        .status(404)
+        .json({ success: false, message: "사용자 프로필 정보를 찾을 수 없습니다." });
+    }
+    const originalName = currentProfile.name;
 
-    // 이름을 정규화하여 DB에 저장 (불필요한 공백 제거 및 단일화)
-    const normalizedName = normalizeName(name);
+    // 프로필 업데이트 검증: 새 이름과 프로필 사진의 변경 여부를 확인
+    const updateValidation = validateUpdateProfile(originalName, updatedName, req.file);
+    if (!updateValidation.valid) {
+      return res.status(400).json({
+        success: false,
+        message: updateValidation.message || "변경된 내용이 없습니다.",
+      });
+    }
 
-    // 프로필 사진 첨부 시 처리
+    // 새 이름 정규화 (불필요한 공백 제거 등)
+    const normalizedName = normalizeName(updatedName);
+
+    // 프로필 사진 첨부 시 처리 (첨부된 이미지가 있다면 서버에 저장 후 경로 반환)
     let profilePicturePath = null;
     if (req.file) {
       profilePicturePath = await saveProfilePicture(uuid, req.file);
     }
 
     const updateData = { name: normalizedName };
-    if (profilePicturePath) updateData.profilePicture = profilePicturePath;
+    if (profilePicturePath) {
+      updateData.profilePicture = profilePicturePath;
+    }
 
+    // DB에서 프로필 업데이트 수행 (동적 필드 업데이트)
     const updatedProfile = await userModel.updateUserProfile(uuid, updateData);
-    if (!updatedProfile)
+    if (!updatedProfile) {
       return res.status(400).json({ success: false, message: "프로필 업데이트에 실패했습니다." });
+    }
 
     return res.json({ success: true, profile: formatProfile(updatedProfile) });
   } catch (error) {
