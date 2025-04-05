@@ -13,7 +13,7 @@ const {
 } = require("../utils/jwtUtils");
 const userModel = require("../models/userModel");
 const { saveProfilePicture, deleteProfilePicture } = require("../utils/imageHelper");
-const { normalizeName } = require("../utils/normalize");
+const chatModel = require("../models/chatModel");
 
 // 이메일 중복 확인
 exports.checkEmail = async (req, res) => {
@@ -56,13 +56,10 @@ exports.signUp = async (req, res) => {
 
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
-    // 이름도 정규화하여 저장 (불필요한 공백 제거 및 단일화)
-    const normalizedName = normalizeName(name);
-
     const user = await userModel.signUpUser(
       email.trim().toLowerCase(),
       hashedPassword,
-      normalizedName,
+      name,
       gender,
       birthdate,
       paradoxFlag,
@@ -186,13 +183,16 @@ exports.changePassword = async (req, res) => {
 // 회원 탈퇴 처리
 exports.withdrawAccount = async (req, res) => {
   const { password } = req.body;
-  if (!password) return res.status(400).json({ message: "비밀번호를 입력해주세요." });
+  if (!password) {
+    return res.status(400).json({ message: "비밀번호를 입력해주세요." });
+  }
 
   const passValidation = validatePassword(password);
-  if (!passValidation.valid)
+  if (!passValidation.valid) {
     return res
       .status(400)
       .json({ message: passValidation.message || "비밀번호가 유효하지 않습니다." });
+  }
 
   try {
     const uuid = req.user.uuid;
@@ -207,10 +207,17 @@ exports.withdrawAccount = async (req, res) => {
     if (userProfile && userProfile.profilePicture) {
       await deleteProfilePicture(uuid);
     }
+    if (userProfile && userProfile.profilePicture) {
+      await deleteProfilePicture(uuid);
+    }
 
     const deleteResult = await userModel.deleteUserByUuid(uuid);
-    if (deleteResult.affectedRows === 0)
+    if (deleteResult.affectedRows === 0) {
       return res.status(500).json({ message: "회원 탈퇴 처리 중 오류가 발생했습니다." });
+    }
+
+    // ✅ DM 채팅방 정리 호출
+    await chatModel.cleanupLonelyDMRooms();
 
     res.clearCookie("accessToken").clearCookie("refreshToken");
     return res.json({ success: true, message: "회원 탈퇴가 완료되었습니다." });

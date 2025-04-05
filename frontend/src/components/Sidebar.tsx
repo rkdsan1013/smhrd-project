@@ -3,10 +3,10 @@
 import React, { useState, useEffect, useRef, MouseEvent } from "react";
 import ReactDOM from "react-dom";
 import Icons from "./Icons";
-import GroupCreation from "./GroupCreation"; // 그룹 생성 모달
-import { getMyGroups, GroupInfo } from "../services/groupService"; // API 호출
+import GroupCreation from "./GroupCreation";
+import { getMyGroups, GroupInfo } from "../services/groupService";
 
-// 그룹 인터페이스 – 백엔드에서 받아온 GroupInfo에 이미지 URL 필드를 추가
+// 백엔드에서 받아온 GroupInfo에 이미지 URL 필드를 추가한 그룹 인터페이스
 interface Group extends GroupInfo {
   image: string; // 그룹 아이콘 URL (group_icon 필드에서 매핑)
 }
@@ -43,7 +43,7 @@ const Tooltip: React.FC<TooltipProps> = ({ text, style, placement, className }) 
   );
 };
 
-const tooltipGap = 8; // 버튼과 툴팁 간격
+const tooltipGap = 8; // 버튼과 툴팁 간 간격
 const hoverDelay = 100; // 마우스 호버 딜레이 (ms)
 
 const calcTooltipStyle = (rect: DOMRect, isDesktop: boolean): React.CSSProperties =>
@@ -68,7 +68,7 @@ const Sidebar: React.FC = () => {
   const hoverTimeoutRef = useRef<number | null>(null);
   const [isGroupCreationModalOpen, setIsGroupCreationModalOpen] = useState(false);
 
-  // Fetch the group list (내가 가입한 그룹 목록) on component mount
+  // 컴포넌트 마운트 시 그룹 목록을 가져옴
   useEffect(() => {
     async function fetchGroups() {
       try {
@@ -146,7 +146,7 @@ const Sidebar: React.FC = () => {
     }
   };
 
-  // Callback when a new group is created to immediately update the sidebar list
+  // 그룹 생성 후 바로 그룹 목록 업데이트
   const handleGroupCreated = (newGroup: GroupInfo) => {
     const mappedGroup: Group = {
       ...newGroup,
@@ -255,7 +255,7 @@ const Sidebar: React.FC = () => {
         <Tooltip key={tt.id} text={tt.text} style={tt.style} placement={tt.placement} />
       ))}
 
-      {/* 그룹 생성 모달 */}
+      {/* 그룹 생성 모달 → GroupCreation 컴포넌트 내부에서 Portal로 렌더링 */}
       {isGroupCreationModalOpen && (
         <GroupCreation
           onClose={() => setIsGroupCreationModalOpen(false)}

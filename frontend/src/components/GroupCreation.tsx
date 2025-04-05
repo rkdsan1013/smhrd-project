@@ -1,6 +1,7 @@
 // /frontend/src/components/GroupCreation.tsx
 
 import React, { useState, useEffect, useLayoutEffect, useRef, ChangeEvent } from "react";
+import ReactDOM from "react-dom";
 import { validateName, validateDescription } from "../utils/validators";
 import Icons from "./Icons";
 import { createGroup, GroupInfo } from "../services/groupService";
@@ -172,8 +173,8 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose, onCreate }) => {
     }
   };
 
-  return (
-    <div className="fixed inset-0 flex items-center justify-center">
+  return ReactDOM.createPortal(
+    <div className="fixed inset-0 flex items-center justify-center z-50">
       {/* 배경 오버레이 */}
       <div
         className={`absolute inset-0 bg-black/60 transition-opacity duration-300 ${
@@ -407,7 +408,8 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose, onCreate }) => {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
 
