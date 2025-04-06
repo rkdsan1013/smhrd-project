@@ -101,12 +101,6 @@ const getReceivedFriendRequests = async (receiverUuid) => {
   });
 };
 
-// UUID를 통해 사용자 프로필 조회 (친구 프로필 조회와 동일한 쿼리 사용)
-const getUserProfileByUuid = async (uuid) => {
-  const [rows] = await pool.query(friendQueries.GET_FRIEND_PROFILE_BY_UUID, [uuid]);
-  return rows[0];
-};
-
 // 친구 삭제 (두 사용자 간의 친구 관계 삭제)
 const deleteFriend = async (userUuid, targetUuid) => {
   const [result] = await pool.query(friendQueries.DELETE_FRIEND, [
@@ -140,7 +134,6 @@ module.exports = {
   acceptFriendRequest,
   declineFriendRequest,
   getReceivedFriendRequests,
-  getUserProfileByUuid,
   deleteFriend,
   cancelFriendRequest,
 };

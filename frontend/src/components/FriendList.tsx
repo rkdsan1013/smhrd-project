@@ -1,3 +1,5 @@
+// frontend/src/components/FriendList.tsx
+
 import React, { useEffect, useState, useLayoutEffect, useRef, MouseEvent } from "react";
 import ReactDOM from "react-dom";
 import {
@@ -9,11 +11,9 @@ import {
   cancelFriendRequest,
 } from "../services/friendService";
 import { openOrCreateDMRoom } from "../services/chatService";
-// FriendProfileCard 컴포넌트 관련 임포트 제거됨
 import Icons from "./Icons";
 import DirectMessage from "./DirectMessage";
 import { useUser } from "../contexts/UserContext";
-import { useSocket } from "../contexts/SocketContext";
 import { useFriend } from "../contexts/FriendContext";
 
 const baseInputClass =
@@ -26,156 +26,36 @@ interface FriendListProps {
 }
 
 const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
-  // 모달 표시 여부
-  const [isVisible, setIsVisible] = useState(false);
-
-  // 로컬 상태
+  // 모달 노출 여부
+  const [isVisible, setIsVisible] = useState<boolean>(false);
+  // 탭 상태: "list" (친구 목록 및 DM) / "requests" (친구 요청)
   const [activeTab, setActiveTab] = useState<"list" | "requests">("list");
-  const [isAdding, setIsAdding] = useState(false);
-  const [searchKeyword, setSearchKeyword] = useState("");
+  // 친구 추가 모드 여부 (검색창 노출)
+  const [isAdding, setIsAdding] = useState<boolean>(false);
+  const [searchKeyword, setSearchKeyword] = useState<string>("");
   const [searchResults, setSearchResults] = useState<SearchResultUser[]>([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [searchError, setSearchError] = useState("");
+  const [searchLoading, setSearchLoading] = useState<boolean>(false);
+  const [searchError, setSearchError] = useState<string>("");
   const [dmRoomUuid, setDmRoomUuid] = useState<string | null>(null);
-  const [localOnlineStatus, setLocalOnlineStatus] = useState<Record<string, boolean>>({});
 
-  // FriendContext의 데이터 및 함수
+  // FriendContext의 글로벌 상태 구독
   const { friends, loading, error, loadFriends, friendRequests, loadFriendRequests, onlineStatus } =
     useFriend();
   const { userUuid } = useUser();
-  const { socket } = useSocket();
 
+  // 본문 높이 조절을 위한 ref
   const bodyContainerRef = useRef<HTMLDivElement>(null);
   const bodyContentRef = useRef<HTMLDivElement>(null);
 
   const liClass =
     "flex items-center justify-between h-14 px-3 py-2 rounded hover:bg-gray-100 transition-colors duration-300";
 
-  // 마운트 시 fade-in 효과
+  // 모달 오픈 시 페이드인 효과 적용
   useEffect(() => {
     setIsVisible(true);
   }, []);
 
-  // 온라인 상태 동기화
-  useEffect(() => {
-    setLocalOnlineStatus(onlineStatus);
-  }, [onlineStatus]);
-
-  // "친구 요청" 탭 선택 시 요청 목록 갱신
-  useEffect(() => {
-    if (activeTab === "requests") {
-      loadFriendRequests();
-    }
-  }, [activeTab, loadFriendRequests]);
-
-  // 소켓 이벤트 처리
-  useEffect(() => {
-    if (!socket) return;
-
-    /*
-      - 친구 요청 수신: 동일한 사용자의 요청일 경우, friendStatus를 "pending"으로 업데이트하고 friendRequester를 data.from으로 설정.
-      - 친구 요청 취소: 취소 시 friendStatus와 friendRequester를 모두 초기화.
-    */
-    const handleFriendRequestReceived = (data: { from: string; message: string }) => {
-      setSearchResults((prev) =>
-        prev.map((user) =>
-          user.uuid === data.from
-            ? { ...user, friendStatus: "pending", friendRequester: data.from }
-            : user,
-        ),
-      );
-      loadFriendRequests();
-    };
-
-    const handleFriendRequestResponded = ({
-      targetUuid,
-      status,
-    }: {
-      targetUuid: string;
-      status: "accepted" | "declined";
-    }) => {
-      setSearchResults((prev) =>
-        prev.map((user) =>
-          user.uuid === targetUuid
-            ? {
-                ...user,
-                friendStatus: status === "accepted" ? "accepted" : null,
-                friendRequester: undefined,
-              }
-            : user,
-        ),
-      );
-      loadFriends();
-    };
-
-    const handleFriendRequestCancelled = ({ targetUuid }: { targetUuid: string }) => {
-      setSearchResults((prev) =>
-        prev.map((user) =>
-          user.uuid === targetUuid
-            ? { ...user, friendStatus: null, friendRequester: undefined }
-            : user,
-        ),
-      );
-      loadFriendRequests();
-    };
-
-    const handleFriendRemovedForSearch = ({ removedUuid }: { removedUuid: string }) => {
-      setSearchResults((prev) =>
-        prev.map((user) =>
-          user.uuid === removedUuid
-            ? { ...user, friendStatus: null, friendRequester: undefined }
-            : user,
-        ),
-      );
-    };
-
-    const handleUserOnlineStatus = ({ uuid, online }: { uuid: string; online: boolean }) => {
-      setLocalOnlineStatus((prev) => ({ ...prev, [uuid]: online }));
-    };
-
-    const handleFriendsOnlineStatus = (statusList: { uuid: string; online: boolean }[]) => {
-      const updated: Record<string, boolean> = {};
-      statusList.forEach(({ uuid, online }) => {
-        updated[uuid] = online;
-      });
-      setLocalOnlineStatus(updated);
-    };
-
-    socket.on("friendRequestReceived", handleFriendRequestReceived);
-    socket.on("friendRequestResponded", handleFriendRequestResponded);
-    socket.on("friendRequestCancelled", handleFriendRequestCancelled);
-    socket.on("friendRemoved", handleFriendRemovedForSearch);
-    socket.on("userOnlineStatus", handleUserOnlineStatus);
-    socket.on("friendsOnlineStatus", handleFriendsOnlineStatus);
-
-    return () => {
-      socket.off("friendRequestReceived", handleFriendRequestReceived);
-      socket.off("friendRequestResponded", handleFriendRequestResponded);
-      socket.off("friendRequestCancelled", handleFriendRequestCancelled);
-      socket.off("friendRemoved", handleFriendRemovedForSearch);
-      socket.off("userOnlineStatus", handleUserOnlineStatus);
-      socket.off("friendsOnlineStatus", handleFriendsOnlineStatus);
-    };
-  }, [socket, loadFriendRequests, loadFriends]);
-
-  // 친구 목록 변경 시 온라인 상태 다시 요청
-  useEffect(() => {
-    if (socket) {
-      socket.emit("getFriendsOnlineStatus");
-    }
-  }, [socket, friends]);
-
-  // DM 방 열기
-  if (dmRoomUuid && userUuid) {
-    return (
-      <DirectMessage
-        roomUuid={dmRoomUuid}
-        onBack={() => setDmRoomUuid(null)}
-        currentUserUuid={userUuid}
-      />
-    );
-  }
-
+  // 본문 영역 높이 동적으로 조절
   useLayoutEffect(() => {
     if (bodyContainerRef.current && bodyContentRef.current) {
       const newHeight = bodyContentRef.current.offsetHeight;
@@ -184,19 +64,20 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
     }
   }, [activeTab, isAdding, searchResults, friends, friendRequests]);
 
-  // 검색 실행 및 정렬:
-  // friendRequester가 현재 사용자의 uuid이면 "요청 취소", 아니라면 "요청 받음" 처리
+  // 검색 실행 – 검색창 입력 후 검색 버튼이나 Enter 입력 시 서버에서 최신 데이터를 가져옴
   const handleSearch = async () => {
     if (!searchKeyword.trim()) return;
     try {
       setSearchLoading(true);
       setSearchError("");
       const results = await searchUsers(searchKeyword);
+      // 정렬: pending 상태인 경우 내가 보낸 요청이면 가중치 1, 그렇지 않으면 0, 그 외 null은 2, accepted는 3
       const sortedResults = [...results].sort((a, b) => {
-        const weight = (status: string | null | undefined, friendRequester: string | undefined) => {
+        const weight = (
+          status: "pending" | "accepted" | null | undefined,
+          friendRequester: string | undefined,
+        ) => {
           if (status === "pending") {
-            // 받은 요청: friendRequester가 현재 사용자와 다르면 상단 정렬 (가중치 0)
-            // 보낸 요청: friendRequester가 현재 사용자이면 하단 정렬 (가중치 1)
             return friendRequester !== userUuid ? 0 : 1;
           }
           if (!status) return 2;
@@ -215,6 +96,15 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
     }
   };
 
+  // 만약 글로벌 상태(friendRequests 또는 friends)가 변경되면,
+  // 추가 모드가 활성화되어있고 검색어가 있는 경우 새로 검색하여 항상 서버 데이터를 반영하도록 함
+  useEffect(() => {
+    if (isAdding && searchKeyword.trim() !== "") {
+      handleSearch();
+    }
+  }, [friendRequests, friends]);
+
+  // 탭 전환 및 친구 추가 모드 토글
   const handleToggleMode = () => {
     setActiveTab("list");
     setIsAdding((prev) => !prev);
@@ -223,33 +113,21 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
     setSearchError("");
   };
 
+  // 친구 요청 보내기 – 성공 시 handleSearch() 호출로 서버에서 최신 상태를 받아옴
   const handleSendFriendRequest = async (targetUuid: string) => {
     try {
       await sendFriendRequest(targetUuid);
-      // 내가 요청 보낸 경우 friendRequester는 현재 userUuid로 지정
-      setSearchResults((prev) =>
-        prev.map((user) =>
-          user.uuid === targetUuid
-            ? { ...user, friendStatus: "pending", friendRequester: userUuid }
-            : user,
-        ),
-      );
+      await handleSearch();
     } catch (err: any) {
       alert(err.message || "친구 요청 실패");
     }
   };
 
+  // 친구 요청 취소 – 성공 시 handleSearch() 호출로 서버에서 최신 상태를 받아옴
   const handleCancelFriendRequest = async (targetUuid: string) => {
     try {
       await cancelFriendRequest(targetUuid);
-      // 취소 시 friendStatus와 friendRequester 모두 초기화
-      setSearchResults((prev) =>
-        prev.map((user) =>
-          user.uuid === targetUuid
-            ? { ...user, friendStatus: null, friendRequester: undefined }
-            : user,
-        ),
-      );
+      await handleSearch();
       await loadFriendRequests();
     } catch (err: any) {
       alert(err.message || "요청 취소 실패");
@@ -261,7 +139,6 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
       await acceptFriendRequest(uuid);
       await loadFriendRequests();
       await loadFriends();
-      socket?.emit("getFriendsOnlineStatus");
     } catch (err: any) {
       alert(err.message || "수락 실패");
     }
@@ -271,16 +148,13 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
     try {
       await declineFriendRequest(uuid);
       await loadFriendRequests();
-      setSearchResults((prev) =>
-        prev.map((user) =>
-          user.uuid === uuid ? { ...user, friendStatus: null, friendRequester: undefined } : user,
-        ),
-      );
+      await handleSearch();
     } catch (err: any) {
       alert(err.message || "거절 실패");
     }
   };
 
+  // DM 채팅방 열기
   const handleMessageClick = async (friendUuid: string, e: MouseEvent) => {
     e.stopPropagation();
     try {
@@ -291,13 +165,22 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
     }
   };
 
-  // 모달 닫기 처리
   const handleModalClose = () => {
     setIsVisible(false);
     setTimeout(() => {
       onClose();
     }, 300);
   };
+
+  if (dmRoomUuid && userUuid) {
+    return (
+      <DirectMessage
+        roomUuid={dmRoomUuid}
+        onBack={() => setDmRoomUuid(null)}
+        currentUserUuid={userUuid}
+      />
+    );
+  }
 
   return ReactDOM.createPortal(
     <div className="fixed bottom-4 right-4 z-50">
@@ -306,7 +189,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
           isVisible ? "opacity-100" : "opacity-0"
         }`}
       >
-        {/* 헤더 영역 */}
+        {/* 헤더 */}
         <div className="flex justify-between items-center p-4 border-b border-gray-200">
           <h2 className="text-xl font-bold">{isAdding ? "친구 추가" : "친구 목록"}</h2>
           <button
@@ -484,9 +367,9 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                             )}
                             <span
                               className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
-                                localOnlineStatus[friend.uuid] ? "bg-green-500" : "bg-gray-500"
+                                onlineStatus[friend.uuid] ? "bg-green-500" : "bg-gray-500"
                               }`}
-                            />
+                            ></span>
                           </div>
                           <div className="flex flex-col flex-1 min-w-0">
                             <p className="font-semibold truncate">{friend.name}</p>
@@ -512,6 +395,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                 )}
               </>
             ) : (
+              // 친구 요청 탭
               <>
                 {friendRequests.length === 0 ? (
                   <p className="text-center text-gray-500 text-sm">받은 친구 요청이 없습니다.</p>

@@ -38,7 +38,7 @@ export const FriendProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const { socket } = useSocket();
 
-  // loadFriends와 loadFriendRequests 함수를 useCallback으로 메모이제이션
+  // loadFriends와 loadFriendRequests를 useCallback으로 메모이제이션
   const loadFriends = useCallback(async () => {
     setLoading(true);
     try {
@@ -67,72 +67,54 @@ export const FriendProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     loadFriendRequests();
   }, [loadFriends, loadFriendRequests]);
 
-  // 소켓 이벤트 처리
+  // 소켓 이벤트 핸들러들을 하나의 객체에 모아서 반복 등록/해제로 처리
   useEffect(() => {
     if (!socket) return;
 
-    const handleFriendRemoved = ({ removedUuid }: { removedUuid: string }) => {
-      setFriends((prev) => prev.filter((f) => f.uuid !== removedUuid));
-      setOnlineStatus((prev) => {
-        const copy = { ...prev };
-        delete copy[removedUuid];
-        return copy;
-      });
+    const handlers: Record<string, (data: any) => void> = {
+      friendRemoved: ({ removedUuid }: { removedUuid: string }) => {
+        setFriends((prev) => prev.filter((f) => f.uuid !== removedUuid));
+        setOnlineStatus((prev) => {
+          const copy = { ...prev };
+          delete copy[removedUuid];
+          return copy;
+        });
+      },
+      friendRequestReceived: () => {
+        loadFriendRequests();
+      },
+      friendRequestResponded: () => {
+        loadFriends();
+      },
+      friendRequestCancelled: () => {
+        loadFriendRequests();
+      },
+      userOnlineStatus: ({ uuid, online }: { uuid: string; online: boolean }) => {
+        setOnlineStatus((prev) => ({ ...prev, [uuid]: online }));
+      },
+      friendsOnlineStatus: (statusList: { uuid: string; online: boolean }[]) => {
+        const updated = Object.fromEntries(statusList.map(({ uuid, online }) => [uuid, online]));
+        setOnlineStatus(updated);
+      },
     };
 
-    const handleFriendRequestReceived = () => {
-      loadFriendRequests();
-    };
+    // 등록
+    Object.entries(handlers).forEach(([event, handler]) => socket.on(event, handler));
 
-    const handleFriendRequestResponded = (_: {
-      targetUuid: string;
-      status: "accepted" | "declined";
-    }) => {
-      loadFriends();
-    };
-
-    // 친구 요청 취소 시, 오직 친구 요청 목록만 갱신하도록 수정
-    const handleFriendRequestCancelled = (_: { targetUuid: string }) => {
-      loadFriendRequests();
-    };
-
-    const handleUserOnlineStatus = ({ uuid, online }: { uuid: string; online: boolean }) => {
-      setOnlineStatus((prev) => ({ ...prev, [uuid]: online }));
-    };
-
-    const handleFriendsOnlineStatus = (statusList: { uuid: string; online: boolean }[]) => {
-      const updated: Record<string, boolean> = {};
-      statusList.forEach(({ uuid, online }) => {
-        updated[uuid] = online;
-      });
-      setOnlineStatus(updated);
-    };
-
-    socket.on("friendRemoved", handleFriendRemoved);
-    socket.on("friendRequestReceived", handleFriendRequestReceived);
-    socket.on("friendRequestResponded", handleFriendRequestResponded);
-    socket.on("friendRequestCancelled", handleFriendRequestCancelled);
-    socket.on("userOnlineStatus", handleUserOnlineStatus);
-    socket.on("friendsOnlineStatus", handleFriendsOnlineStatus);
-
+    // 해제
     return () => {
-      socket.off("friendRemoved", handleFriendRemoved);
-      socket.off("friendRequestReceived", handleFriendRequestReceived);
-      socket.off("friendRequestResponded", handleFriendRequestResponded);
-      socket.off("friendRequestCancelled", handleFriendRequestCancelled);
-      socket.off("userOnlineStatus", handleUserOnlineStatus);
-      socket.off("friendsOnlineStatus", handleFriendsOnlineStatus);
+      Object.entries(handlers).forEach(([event, handler]) => socket.off(event, handler));
     };
   }, [socket, loadFriends, loadFriendRequests]);
 
-  // 친구 목록 변경 시 온라인 상태 다시 요청
+  // 친구 목록이 변경되면 온라인 상태 다시 요청
   useEffect(() => {
     if (socket) {
       socket.emit("getFriendsOnlineStatus");
     }
   }, [socket, friends]);
 
-  // 제공할 값들을 useMemo로 감싸서 불필요한 재랜더링 방지
+  // useMemo를 이용하여 제공할 값들을 캐싱 (불필요한 리렌더링 방지)
   const value = useMemo(
     () => ({
       friends,

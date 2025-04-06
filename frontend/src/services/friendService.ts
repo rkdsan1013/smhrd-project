@@ -20,7 +20,6 @@ export interface ReceivedFriendRequest {
 }
 
 // 검색 결과
-// /frontend/src/services/friendService.ts
 
 export interface SearchResultUser {
   uuid: string;
@@ -73,11 +72,7 @@ export const declineFriendRequest = async (uuid: string) => {
   await remove(`/friends/${uuid}/decline`);
 };
 
-export const getUserProfileByUuid = async (uuid: string) => {
-  const res = await get<{ success: boolean; user: Friend }>(`/friends/${uuid}`);
-  return res.user;
-};
-
+// 친구 삭제
 export const deleteFriend = async (targetUuid: string): Promise<void> => {
   await remove(`/friends/${targetUuid}`);
 };

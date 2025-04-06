@@ -1,6 +1,7 @@
 // /backend/src/controllers/friendController.js
 
 const friendModel = require("../models/friendModel");
+const userModel = require("../models/userModel"); // userModel 임포트 추가
 
 // 서버 주소 포함한 프로필 사진 URL 생성 함수
 const formatProfile = (profile) => {
@@ -24,7 +25,8 @@ exports.fetchFriends = async (req, res) => {
 
     const friends = await Promise.all(
       friendUuids.map(async (friend) => {
-        const profile = await friendModel.getFriendProfileByUuid(friend.uuid);
+        // 기존 friendModel.getFriendProfileByUuid 대신 userModel.getProfileByUuid 사용
+        const profile = await userModel.getProfileByUuid(friend.uuid);
         const formatted = formatProfile(profile);
         return {
           uuid: formatted.uuid,
@@ -210,22 +212,6 @@ exports.getReceivedRequests = async (req, res) => {
       success: false,
       message: "요청 목록을 불러오지 못했습니다.",
     });
-  }
-};
-
-exports.getUserProfileByUuid = async (req, res) => {
-  try {
-    const { uuid } = req.params;
-    // 기존의 유저 조회 API를 그대로 사용합니다.
-    const user = await friendModel.getUserProfileByUuid(uuid);
-    if (!user) {
-      return res.status(404).json({ success: false, message: "유저를 찾을 수 없습니다." });
-    }
-    const formatted = formatProfile(user);
-    res.json({ success: true, user: formatted });
-  } catch (error) {
-    console.error("[getUserProfileByUuid] Error:", error);
-    res.status(500).json({ success: false, message: "서버 오류" });
   }
 };
 
