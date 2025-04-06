@@ -1,6 +1,6 @@
 // frontend/src/contexts/FriendContext.tsx
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useState, useMemo } from "react";
 import {
   fetchFriendList,
   Friend,
@@ -38,8 +38,8 @@ export const FriendProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const { socket } = useSocket();
 
-  // 친구 목록 불러오기: accepted 상태의 친구만 반환됨
-  const loadFriends = async () => {
+  // loadFriends와 loadFriendRequests 함수를 useCallback으로 메모이제이션
+  const loadFriends = useCallback(async () => {
     setLoading(true);
     try {
       const fetched = await fetchFriendList();
@@ -50,23 +50,22 @@ export const FriendProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // 친구 요청 목록 불러오기
-  const loadFriendRequests = async () => {
+  const loadFriendRequests = useCallback(async () => {
     try {
       const requests = await fetchReceivedFriendRequests();
       setFriendRequests(requests);
     } catch (err) {
       console.error("친구 요청 로드 실패", err);
     }
-  };
+  }, []);
 
-  // 초기 데이터 로드 (Provider는 전역에 마운트되어 있으므로 FriendList 컴포넌트에 상관없이 최신 상태 유지)
+  // 초기 데이터 로드
   useEffect(() => {
     loadFriends();
     loadFriendRequests();
-  }, []);
+  }, [loadFriends, loadFriendRequests]);
 
   // 소켓 이벤트 처리
   useEffect(() => {
@@ -92,7 +91,7 @@ export const FriendProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       loadFriends();
     };
 
-    // ★ 친구 요청 취소 시, 오직 친구 요청 목록만 갱신하도록 수정
+    // 친구 요청 취소 시, 오직 친구 요청 목록만 갱신하도록 수정
     const handleFriendRequestCancelled = (_: { targetUuid: string }) => {
       loadFriendRequests();
     };
@@ -124,30 +123,30 @@ export const FriendProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       socket.off("userOnlineStatus", handleUserOnlineStatus);
       socket.off("friendsOnlineStatus", handleFriendsOnlineStatus);
     };
-  }, [socket]);
+  }, [socket, loadFriends, loadFriendRequests]);
 
-  // 친구 목록이 변경되면 온라인 상태 다시 요청
+  // 친구 목록 변경 시 온라인 상태 다시 요청
   useEffect(() => {
     if (socket) {
       socket.emit("getFriendsOnlineStatus");
     }
   }, [socket, friends]);
 
-  return (
-    <FriendContext.Provider
-      value={{
-        friends,
-        loading,
-        error,
-        loadFriends,
-        friendRequests,
-        loadFriendRequests,
-        onlineStatus,
-      }}
-    >
-      {children}
-    </FriendContext.Provider>
+  // 제공할 값들을 useMemo로 감싸서 불필요한 재랜더링 방지
+  const value = useMemo(
+    () => ({
+      friends,
+      loading,
+      error,
+      loadFriends,
+      friendRequests,
+      loadFriendRequests,
+      onlineStatus,
+    }),
+    [friends, loading, error, loadFriends, friendRequests, loadFriendRequests, onlineStatus],
   );
+
+  return <FriendContext.Provider value={value}>{children}</FriendContext.Provider>;
 };
 
 export const useFriend = () => useContext(FriendContext);

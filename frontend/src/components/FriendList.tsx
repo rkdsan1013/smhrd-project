@@ -1,5 +1,3 @@
-// frontend/src/components/FriendList.tsx
-
 import React, { useEffect, useState, useLayoutEffect, useRef, MouseEvent } from "react";
 import ReactDOM from "react-dom";
 import {
@@ -11,7 +9,7 @@ import {
   cancelFriendRequest,
 } from "../services/friendService";
 import { openOrCreateDMRoom } from "../services/chatService";
-import FriendProfileCard from "./FriendProfileCard";
+// FriendProfileCard 컴포넌트 관련 임포트 제거됨
 import Icons from "./Icons";
 import DirectMessage from "./DirectMessage";
 import { useUser } from "../contexts/UserContext";
@@ -38,7 +36,6 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
   const [searchResults, setSearchResults] = useState<SearchResultUser[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState("");
-  const [selectedFriendUuid, setSelectedFriendUuid] = useState<string | null>(null);
   const [dmRoomUuid, setDmRoomUuid] = useState<string | null>(null);
   const [localOnlineStatus, setLocalOnlineStatus] = useState<Record<string, boolean>>({});
 
@@ -75,7 +72,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
   useEffect(() => {
     if (!socket) return;
 
-    /*  
+    /*
       - 친구 요청 수신: 동일한 사용자의 요청일 경우, friendStatus를 "pending"으로 업데이트하고 friendRequester를 data.from으로 설정.
       - 친구 요청 취소: 취소 시 friendStatus와 friendRequester를 모두 초기화.
     */
@@ -187,7 +184,8 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
     }
   }, [activeTab, isAdding, searchResults, friends, friendRequests]);
 
-  // 검색 실행 및 정렬: friendRequester가 현재 사용자의 uuid이면 "요청 취소", 아니라면 "요청 받음" 처리
+  // 검색 실행 및 정렬:
+  // friendRequester가 현재 사용자의 uuid이면 "요청 취소", 아니라면 "요청 받음" 처리
   const handleSearch = async () => {
     if (!searchKeyword.trim()) return;
     try {
@@ -282,9 +280,6 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
       alert(err.message || "거절 실패");
     }
   };
-
-  const handleFriendClick = (uuid: string) => setSelectedFriendUuid(uuid);
-  const closeFriendProfile = () => setSelectedFriendUuid(null);
 
   const handleMessageClick = async (friendUuid: string, e: MouseEvent) => {
     e.stopPropagation();
@@ -401,11 +396,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                       ) : (
                         <ul className="space-y-2">
                           {searchResults.map((user) => (
-                            <li
-                              key={user.uuid}
-                              className={liClass}
-                              onClick={() => handleFriendClick(user.uuid)}
-                            >
+                            <li key={user.uuid} className={liClass}>
                               <div className="flex items-center space-x-3 flex-1 min-w-0">
                                 <div className="relative flex-shrink-0 w-12 h-12">
                                   {user.profilePicture ? (
@@ -427,9 +418,6 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    // friendStatus가 "pending"이면 분기:
-                                    // - 내가 보낸 경우: "요청 취소" 버튼 (클릭 가능)
-                                    // - 받은 경우: "요청 받음" 버튼 (disabled)
                                     if (user.friendStatus === "pending") {
                                       if (user.friendRequester === userUuid) {
                                         handleCancelFriendRequest(user.uuid);
@@ -482,7 +470,6 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                       <li
                         key={friend.uuid}
                         className={`${liClass} cursor-pointer transition-colors duration-300 hover:bg-gray-200`}
-                        onClick={() => handleFriendClick(friend.uuid)}
                       >
                         <div className="flex items-center space-x-3 flex-1 min-w-0">
                           <div className="relative flex-shrink-0 w-12 h-12">
@@ -592,23 +579,6 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
             )}
           </button>
         </div>
-        {selectedFriendUuid && (
-          <FriendProfileCard
-            uuid={selectedFriendUuid}
-            onClose={closeFriendProfile}
-            onDeleted={() => {
-              loadFriends();
-              setSearchResults((prev) =>
-                prev.map((user) =>
-                  user.uuid === selectedFriendUuid
-                    ? { ...user, friendStatus: null, friendRequester: undefined }
-                    : user,
-                ),
-              );
-              closeFriendProfile();
-            }}
-          />
-        )}
       </div>
     </div>,
     document.body,
