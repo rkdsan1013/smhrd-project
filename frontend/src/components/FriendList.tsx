@@ -270,7 +270,10 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                     <div className="h-60 overflow-y-auto pr-1 no-scrollbar">
                       {searchLoading ? (
                         <div className="flex justify-center">
-                          <Icons name="spinner" className="animate-spin w-6 h-6 text-gray-500" />
+                          <Icons
+                            name="spinner"
+                            className="animate-spin w-6 h-6 text-gray-200 fill-blue-600"
+                          />
                         </div>
                       ) : searchError ? (
                         <p className="text-center text-red-500">{searchError}</p>
@@ -341,7 +344,10 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                   </>
                 ) : loading ? (
                   <div className="flex justify-center">
-                    <Icons name="spinner" className="animate-spin w-6 h-6 text-gray-500" />
+                    <Icons
+                      name="spinner"
+                      className="animate-spin w-6 h-6 text-gray-200 fill-blue-600"
+                    />
                   </div>
                 ) : error ? (
                   <p className="text-center text-red-500 text-sm">{error}</p>
