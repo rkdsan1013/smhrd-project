@@ -8,7 +8,7 @@ export interface Friend {
   name: string;
   email: string;
   profilePicture?: string;
-  status: "accepted" | "pending" | "blocked";
+  status: "accepted" | "pending";
 }
 
 // 친구 요청 목록
@@ -20,12 +20,15 @@ export interface ReceivedFriendRequest {
 }
 
 // 검색 결과
+// /frontend/src/services/friendService.ts
+
 export interface SearchResultUser {
   uuid: string;
   name: string;
   email: string;
   profilePicture?: string;
   friendStatus?: "pending" | "accepted" | null;
+  friendRequester?: string;
 }
 
 // 친구 목록 가져오기

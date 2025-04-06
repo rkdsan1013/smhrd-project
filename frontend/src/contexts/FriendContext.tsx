@@ -95,7 +95,6 @@ export const FriendProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     // ★ 친구 요청 취소 시, 오직 친구 요청 목록만 갱신하도록 수정
     const handleFriendRequestCancelled = (_: { targetUuid: string }) => {
       loadFriendRequests();
-      // loadFriends() 삭제: 친구 목록은 accepted만 포함하므로 변경할 필요 없음.
     };
 
     const handleUserOnlineStatus = ({ uuid, online }: { uuid: string; online: boolean }) => {

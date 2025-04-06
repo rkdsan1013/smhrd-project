@@ -1,15 +1,20 @@
 // /backend/src/models/friendTransactions.js
 
-// 친구 요청 수락 기능은 트랜잭션을 사용하여 처리함
+// 친구 요청 수락을 트랜잭션으로 처리
+// 파라미터: dbPool, receiverUuid(요청 받은 사용자), requesterUuid(친구 요청을 보낸 사용자)
 const acceptFriendRequest = async (dbPool, receiverUuid, requesterUuid) => {
   const connection = await dbPool.getConnection();
   try {
     await connection.beginTransaction();
 
-    // pending 상태의 친구 요청이 존재하는지 확인 (요청 쪽: requesterUuid에서 receiverUuid로)
+    // pending 상태의 친구 요청이 존재하는지 확인
     const [rows] = await connection.query(
-      `SELECT * FROM friends WHERE user_uuid = ? AND friend_uuid = ? AND status = 'pending'`,
-      [requesterUuid, receiverUuid],
+      `SELECT * FROM friendships
+       WHERE user1_uuid = LEAST(?, ?)
+         AND user2_uuid = GREATEST(?, ?)
+         AND status = 'pending'
+         AND requester_uuid = ?`,
+      [receiverUuid, requesterUuid, receiverUuid, requesterUuid, requesterUuid],
     );
 
     if (!rows || rows.length === 0) {
@@ -17,16 +22,15 @@ const acceptFriendRequest = async (dbPool, receiverUuid, requesterUuid) => {
       return false;
     }
 
-    // 요청을 accepted 상태로 업데이트
+    // pending 상태인 요청을 accepted 상태로 업데이트
     await connection.query(
-      `UPDATE friends SET status = 'accepted' WHERE user_uuid = ? AND friend_uuid = ?`,
-      [requesterUuid, receiverUuid],
-    );
-
-    // 양방향 친구 관계 형성을 위해 반대 방향 데이터 INSERT (중복 방지 처리)
-    await connection.query(
-      `INSERT IGNORE INTO friends (user_uuid, friend_uuid, status) VALUES (?, ?, 'accepted')`,
-      [receiverUuid, requesterUuid],
+      `UPDATE friendships
+       SET status = 'accepted'
+       WHERE user1_uuid = LEAST(?, ?)
+         AND user2_uuid = GREATEST(?, ?)
+         AND status = 'pending'
+         AND requester_uuid = ?`,
+      [receiverUuid, requesterUuid, receiverUuid, requesterUuid, requesterUuid],
     );
 
     await connection.commit();
