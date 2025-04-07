@@ -15,6 +15,7 @@ import Icons from "./Icons";
 import DirectMessage from "./DirectMessage";
 import { useUser } from "../contexts/UserContext";
 import { useFriend } from "../contexts/FriendContext";
+import UserProfileCard from "./UserProfileCard";
 
 const baseInputClass =
   "peer block w-full border-0 border-b-2 pb-2.5 pt-4 text-base bg-transparent focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600 transition-all duration-300 ease-in-out";
@@ -37,6 +38,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
   const [searchLoading, setSearchLoading] = useState<boolean>(false);
   const [searchError, setSearchError] = useState<string>("");
   const [dmRoomUuid, setDmRoomUuid] = useState<string | null>(null);
+  const [selectedProfileUuid, setSelectedProfileUuid] = useState<string | null>(null);
 
   // FriendContext의 글로벌 상태 구독
   const { friends, loading, error, loadFriends, friendRequests, loadFriendRequests, onlineStatus } =
@@ -282,7 +284,11 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                       ) : (
                         <ul className="space-y-2">
                           {searchResults.map((user) => (
-                            <li key={user.uuid} className={liClass}>
+                            <li
+                              key={user.uuid}
+                              className={liClass}
+                              onClick={() => setSelectedProfileUuid(user.uuid)}
+                            >
                               <div className="flex items-center space-x-3 flex-1 min-w-0">
                                 <div className="relative flex-shrink-0 w-12 h-12">
                                   {user.profilePicture ? (
@@ -360,7 +366,10 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                         key={friend.uuid}
                         className={`${liClass} cursor-pointer transition-colors duration-300 hover:bg-gray-200`}
                       >
-                        <div className="flex items-center space-x-3 flex-1 min-w-0">
+                        <div
+                          className="flex items-center space-x-3 flex-1 min-w-0"
+                          onClick={() => setSelectedProfileUuid(friend.uuid)}
+                        >
                           <div className="relative flex-shrink-0 w-12 h-12">
                             {friend.profilePicture ? (
                               <img
@@ -408,7 +417,11 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                 ) : (
                   <ul className="space-y-2">
                     {friendRequests.map((req) => (
-                      <li key={req.uuid} className={liClass}>
+                      <li
+                        key={req.uuid}
+                        className={liClass}
+                        onClick={() => setSelectedProfileUuid(req.uuid)}
+                      >
                         <div className="flex items-center space-x-3 flex-1 min-w-0">
                           <div className="relative flex-shrink-0 w-12 h-12">
                             {req.profilePicture ? (
@@ -428,13 +441,19 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                         </div>
                         <div className="flex-shrink-0 ml-2 text-right flex space-x-1">
                           <button
-                            onClick={() => handleAccept(req.uuid)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAccept(req.uuid);
+                            }}
                             className="p-1 text-green-500 hover:text-green-600 transition"
                           >
                             <Icons name="check" className="w-6 h-6" />
                           </button>
                           <button
-                            onClick={() => handleDecline(req.uuid)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDecline(req.uuid);
+                            }}
                             className="p-1 text-red-500 hover:text-red-600 transition"
                           >
                             <Icons name="close" className="w-6 h-6" />
@@ -470,6 +489,12 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
           </button>
         </div>
       </div>
+      {selectedProfileUuid && (
+        <UserProfileCard
+          targetUuid={selectedProfileUuid}
+          onClose={() => setSelectedProfileUuid(null)}
+        />
+      )}
     </div>,
     document.body,
   );

@@ -29,6 +29,25 @@ const SELECT_PROFILE_BY_UUID = `
 // 프로필 사진 업데이트 쿼리
 const UPDATE_USER_PROFILE_PICTURE = "UPDATE user_profiles SET profile_picture = ? WHERE uuid = ?";
 
+// 🔹 친구 상태 포함된 프로필 조회 쿼리
+const SELECT_PROFILE_WITH_FRIEND_STATUS = `
+  SELECT 
+    u.uuid,
+    u.email,
+    up.name,
+    up.profile_picture AS profilePicture,
+    fs.status AS friendStatus,
+    fs.requester_uuid AS friendRequester
+  FROM users u
+  LEFT JOIN user_profiles up ON u.uuid = up.uuid
+  LEFT JOIN friendships fs
+    ON (
+      (fs.user1_uuid = ? AND fs.user2_uuid = ?) OR
+      (fs.user1_uuid = ? AND fs.user2_uuid = ?)
+    )
+  WHERE u.uuid = ?
+`;
+
 // 동적으로 업데이트할 필드를 구성하는 함수
 const updateUserProfile = async (dbPool, uuid, updateData) => {
   let fields = [];
@@ -64,4 +83,5 @@ module.exports = {
   SELECT_PROFILE_BY_UUID,
   UPDATE_USER_PROFILE_PICTURE,
   updateUserProfile,
+  SELECT_PROFILE_WITH_FRIEND_STATUS,
 };

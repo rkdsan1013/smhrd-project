@@ -133,6 +133,10 @@ const initSocketIO = (server) => {
         console.error("친구 온라인 상태 조회 실패:", err);
       }
     });
+    socket.on("sendFriendRequest", ({ from, to }) => {
+      console.log("📨 친구 요청:", from, "->", to);
+      socket.to(to).emit("friendRequestSent", { from, to }); // ✅ 실시간 전달
+    });
   });
 };
 
