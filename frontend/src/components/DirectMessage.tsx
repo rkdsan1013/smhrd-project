@@ -15,13 +15,9 @@ interface DirectMessageProps {
   roomUuid: string;
   currentUserUuid: string;
   onBack: () => void;
-  // DM 모달의 초기 위치를 오버라이딩할 수 있도록, top/left 또는 bottom/right (문자열, 예: { top: "150", left: "150" } 또는 { bottom: "1rem", right: "1rem" })
   positionOffset?: { top?: string; left?: string; bottom?: string; right?: string };
-  // 상대방의 이름을 전달받아 헤더에 표시
   friendName: string;
-  // DM 창이 포커스되었을 때 호출되는 콜백
   onFocus?: () => void;
-  // zIndex를 통해 마지막에 포커스된 창이 위로 노출되도록 함
   zIndex?: number;
 }
 
@@ -49,11 +45,15 @@ const DirectMessage: React.FC<DirectMessageProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
 
-  // 모달 고정 크기
-  const modalWidth = 384; // w-96 (24rem * 16)
-  const modalHeight = 500; // h-[500px]
+  // 모달 크기를 TailwindCSS 단위(= rem)로 정의
+  // Tailwind의 w-96는 24rem (24 * 16 = 384px)이고,
+  // 500px ≒ 31.25rem (500 / 16)로 변환할 수 있습니다.
+  const MODAL_WIDTH_REM = 24; // 24rem
+  const MODAL_HEIGHT_REM = 31.25; // 31.25rem (약 500px)
+  const modalWidthPx = MODAL_WIDTH_REM * 16; // 384px
+  const modalHeightPx = MODAL_HEIGHT_REM * 16; // 500px
 
-  // 초기 위치를 한 번만 계산 (useMemo를 사용하여 컴포넌트 마운트 시 한 번만 계산)
+  // 최초 위치는 한 번만 계산 (계산된 값을 픽셀 단위로 처리)
   const computedInitialPos = useMemo(() => {
     if (positionOffset?.top || positionOffset?.left) {
       return {
@@ -64,37 +64,37 @@ const DirectMessage: React.FC<DirectMessageProps> = ({
       const bottomPx = positionOffset.bottom ? parseFloat(positionOffset.bottom) * 16 : 16;
       const rightPx = positionOffset.right ? parseFloat(positionOffset.right) * 16 : 16;
       return {
-        top: window.innerHeight - modalHeight - bottomPx,
-        left: window.innerWidth - modalWidth - rightPx,
+        top: window.innerHeight - modalHeightPx - bottomPx,
+        left: window.innerWidth - modalWidthPx - rightPx,
       };
     } else {
       return {
-        top: window.innerHeight - modalHeight - 16,
-        left: window.innerWidth - modalWidth - 16,
+        top: window.innerHeight - modalHeightPx - 16,
+        left: window.innerWidth - modalWidthPx - 16,
       };
     }
-  }, []);
+  }, [positionOffset, modalWidthPx, modalHeightPx]);
 
   const [modalPosition, setModalPosition] = useState<{ top: number; left: number }>(
     computedInitialPos,
   );
 
-  // 창 크기 변경 시 현재 modalPosition이 화면 내에 있도록 clamp 처리
+  // 창 크기 변경 시 모달이 화면 내에 있도록 clamp 처리
   useEffect(() => {
     const handleResize = () => {
       setModalPosition((prev) => {
         let newLeft = prev.left;
         let newTop = prev.top;
-        newLeft = Math.min(newLeft, window.innerWidth - modalWidth);
+        newLeft = Math.min(newLeft, window.innerWidth - modalWidthPx);
         newLeft = Math.max(newLeft, 0);
-        newTop = Math.min(newTop, window.innerHeight - modalHeight);
+        newTop = Math.min(newTop, window.innerHeight - modalHeightPx);
         newTop = Math.max(newTop, 0);
         return { top: newTop, left: newLeft };
       });
     };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [modalWidth, modalHeight]);
+  }, [modalWidthPx, modalHeightPx]);
 
   useEffect(() => {
     setIsVisible(true);
@@ -114,7 +114,6 @@ const DirectMessage: React.FC<DirectMessageProps> = ({
     if (socket) {
       joinChatRoom(socket, roomUuid);
       const handleReceive = (msg: ChatMessage) => {
-        // 서버의 채팅방 식별자는 room_uuid입니다.
         if (msg.room_uuid !== roomUuid) return;
         setMessages((prev) => [...prev, msg]);
       };
@@ -156,11 +155,10 @@ const DirectMessage: React.FC<DirectMessageProps> = ({
       if (!isDragging || !dragStart) return;
       const deltaX = e.clientX - dragStart.x;
       const deltaY = e.clientY - dragStart.y;
-      // 계산한 새 위치를 clamp 처리
       let newLeft = modalPosition.left + deltaX;
       let newTop = modalPosition.top + deltaY;
-      newLeft = Math.min(Math.max(newLeft, 0), window.innerWidth - modalWidth);
-      newTop = Math.min(Math.max(newTop, 0), window.innerHeight - modalHeight);
+      newLeft = Math.min(Math.max(newLeft, 0), window.innerWidth - modalWidthPx);
+      newTop = Math.min(Math.max(newTop, 0), window.innerHeight - modalHeightPx);
       setModalPosition({ left: newLeft, top: newTop });
       setDragStart({ x: e.clientX, y: e.clientY });
     };
@@ -178,7 +176,7 @@ const DirectMessage: React.FC<DirectMessageProps> = ({
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isDragging, dragStart, modalPosition]);
+  }, [isDragging, dragStart, modalPosition, modalWidthPx, modalHeightPx]);
 
   const handleModalClose = () => {
     setIsVisible(false);
@@ -200,11 +198,11 @@ const DirectMessage: React.FC<DirectMessageProps> = ({
       }}
     >
       <div
-        className={`relative bg-white rounded-lg shadow-xl w-96 h-[500px] flex flex-col transition-opacity duration-300 ${
+        className={`relative bg-white rounded-lg shadow-xl w-96 h-[31.25rem] flex flex-col transition-opacity duration-300 ${
           isVisible ? "opacity-100" : "opacity-0"
         }`}
       >
-        {/* 헤더: 상대방 이름 영역과 닫기 버튼 영역 분리 */}
+        {/* 헤더: 상대방 이름과 닫기 버튼 */}
         <div
           className="flex items-center w-full p-4 border-b border-gray-200 cursor-move select-none"
           onMouseDown={handleMouseDown}
@@ -223,7 +221,7 @@ const DirectMessage: React.FC<DirectMessageProps> = ({
           </div>
         </div>
 
-        {/* 콘텐츠 영역 */}
+        {/* 메시지 콘텐츠 영역 */}
         <div className="flex-1 p-6 overflow-y-auto">
           {messages.map((msg, idx) =>
             msg.sender_uuid === currentUserUuid ? (
@@ -253,7 +251,7 @@ const DirectMessage: React.FC<DirectMessageProps> = ({
           <div ref={scrollRef} />
         </div>
 
-        {/* 푸터 */}
+        {/* 푸터: 입력창 및 전송 버튼 */}
         <div className="p-4 border-t border-gray-200">
           <div className="flex gap-2 items-end">
             <div className="relative flex-1">

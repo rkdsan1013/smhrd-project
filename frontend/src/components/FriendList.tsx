@@ -196,7 +196,9 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
       >
         {/* 헤더 */}
         <div className="flex justify-between items-center p-4 border-b border-gray-200">
-          <h2 className="text-xl font-bold">{isAdding ? "친구 추가" : "친구 목록"}</h2>
+          <h2 className="text-xl font-bold">
+            {activeTab === "requests" ? "친구 요청" : isAdding ? "친구 추가" : "친구 목록"}
+          </h2>
           <button
             onClick={handleModalClose}
             className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-300 transition-colors duration-300"
