@@ -26,8 +26,15 @@ interface FriendListProps {
   onClose: () => void;
 }
 
+interface DMRoom {
+  friendUuid: string;
+  roomUuid: string;
+  friendName: string;
+  // 고정 offset: 항상 우하단 { bottom: "1rem", right: "1rem" }
+  positionOffset: { bottom: string; right: string };
+}
+
 const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
-  // 모달 및 탭, 검색, DM, 선택된 프로필 상태 관리
   const [isVisible, setIsVisible] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<"list" | "requests">("list");
   const [isAdding, setIsAdding] = useState<boolean>(false);
@@ -35,26 +42,23 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
   const [searchResults, setSearchResults] = useState<SearchResultUser[]>([]);
   const [searchLoading, setSearchLoading] = useState<boolean>(false);
   const [searchError, setSearchError] = useState<string>("");
-  const [dmRoomUuid, setDmRoomUuid] = useState<string | null>(null);
+  const [dmRooms, setDmRooms] = useState<DMRoom[]>([]);
   const [selectedProfileUuid, setSelectedProfileUuid] = useState<string | null>(null);
 
   const { friends, loading, error, loadFriends, friendRequests, loadFriendRequests, onlineStatus } =
     useFriend();
   const { userUuid } = useUser();
 
-  // 본문 영역 높이 동적 조절을 위한 ref
   const bodyContainerRef = useRef<HTMLDivElement>(null);
   const bodyContentRef = useRef<HTMLDivElement>(null);
 
   const liClass =
     "flex items-center justify-between h-14 px-3 py-2 rounded hover:bg-gray-100 transition-colors duration-300";
 
-  // 모달 오픈 시 애니메이션 적용
   useEffect(() => {
     setIsVisible(true);
   }, []);
 
-  // 본문 영역 높이 동적으로 조절 (탭, 검색 결과 등 변화에 맞춰)
   useLayoutEffect(() => {
     if (bodyContainerRef.current && bodyContentRef.current) {
       const newHeight = bodyContentRef.current.offsetHeight;
@@ -63,14 +67,12 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
     }
   }, [activeTab, isAdding, searchResults, friends, friendRequests]);
 
-  // 검색 실행 – 검색어 입력 후 Enter 또는 검색 버튼 클릭 시 실행
   const handleSearch = async () => {
     if (!searchKeyword.trim()) return;
     try {
       setSearchLoading(true);
       setSearchError("");
       const results = await searchUsers(searchKeyword);
-      // 정렬: pending 상태인 경우 내가 보낸 요청이면 가중치 1, 그렇지 않으면 0, 그 외 null은 2, accepted는 3
       const sortedResults = [...results].sort((a, b) => {
         const weight = (
           status: "pending" | "accepted" | null | undefined,
@@ -95,14 +97,12 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
     }
   };
 
-  // 글로벌 상태(friendRequests, friends) 변경 시 친구 추가 모드 상태에서 최신 검색 실행
   useEffect(() => {
     if (isAdding && searchKeyword.trim() !== "") {
       handleSearch();
     }
   }, [friendRequests, friends]);
 
-  // 탭 전환 및 친구 추가 모드 토글
   const handleToggleMode = () => {
     setActiveTab("list");
     setIsAdding((prev) => !prev);
@@ -111,7 +111,6 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
     setSearchError("");
   };
 
-  // 친구 요청 보내기
   const handleSendFriendRequest = async (targetUuid: string) => {
     try {
       await sendFriendRequest(targetUuid);
@@ -121,7 +120,6 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
     }
   };
 
-  // 친구 요청 취소
   const handleCancelFriendRequest = async (targetUuid: string) => {
     try {
       await cancelFriendRequest(targetUuid);
@@ -152,12 +150,16 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
     }
   };
 
-  // DM 채팅방 열기
-  const handleMessageClick = async (friendUuid: string, e: MouseEvent) => {
+  // 새로운 DM 창 생성: friendName도 함께 저장하고, 고정 offset { bottom: "1rem", right: "1rem" } 사용
+  const handleMessageClick = async (friendUuid: string, friendName: string, e: MouseEvent) => {
     e.stopPropagation();
     try {
       const roomUuid = await openOrCreateDMRoom(friendUuid);
-      setDmRoomUuid(roomUuid);
+      setDmRooms((prev) => {
+        if (prev.find((dm) => dm.roomUuid === roomUuid)) return prev;
+        const newOffset = { bottom: "1rem", right: "1rem" }; // 고정 오프셋
+        return [...prev, { friendUuid, roomUuid, friendName, positionOffset: newOffset }];
+      });
     } catch (err) {
       alert("채팅방 열기 실패");
     }
@@ -170,7 +172,21 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
     }, 300);
   };
 
-  // FriendList 모달 JSX를 Portal로 렌더링
+  // DM 창 닫기: 해당 roomUuid 제거 (나머지는 그대로 유지)
+  const handleCloseDM = (roomUuid: string) => {
+    setDmRooms((prev) => prev.filter((dm) => dm.roomUuid !== roomUuid));
+  };
+
+  // DM 창 포커스 시 해당 창을 배열의 마지막 요소로 재배열
+  const bringDMToFront = (roomUuid: string) => {
+    setDmRooms((prev) => {
+      const target = prev.find((dm) => dm.roomUuid === roomUuid);
+      if (!target) return prev;
+      const others = prev.filter((dm) => dm.roomUuid !== roomUuid);
+      return [...others, target];
+    });
+  };
+
   const friendListModal = ReactDOM.createPortal(
     <div className="fixed bottom-4 right-4 z-50">
       <div
@@ -383,7 +399,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                         </div>
                         <div className="flex-shrink-0 ml-2 text-right">
                           <button
-                            onClick={(e) => handleMessageClick(friend.uuid, e)}
+                            onClick={(e) => handleMessageClick(friend.uuid, friend.name, e)}
                             title="채팅하기"
                             className="p-1"
                             onMouseDown={(e) => e.stopPropagation()}
@@ -400,7 +416,6 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                 )}
               </>
             ) : (
-              // 친구 요청 탭
               <>
                 {friendRequests.length === 0 ? (
                   <p className="text-center text-gray-500 text-sm">받은 친구 요청이 없습니다.</p>
@@ -492,13 +507,18 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
   return (
     <>
       {friendListModal}
-      {dmRoomUuid && userUuid && (
+      {dmRooms.map((dm, index) => (
         <DirectMessage
-          roomUuid={dmRoomUuid}
-          onBack={() => setDmRoomUuid(null)}
+          key={dm.roomUuid}
+          roomUuid={dm.roomUuid}
+          onBack={() => handleCloseDM(dm.roomUuid)}
           currentUserUuid={userUuid}
+          positionOffset={dm.positionOffset}
+          friendName={dm.friendName}
+          onFocus={() => bringDMToFront(dm.roomUuid)}
+          zIndex={100 + index}
         />
-      )}
+      ))}
     </>
   );
 };
