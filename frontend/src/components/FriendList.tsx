@@ -226,7 +226,10 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                   activeTab === "requests" ? "font-semibold text-blue-600" : "text-gray-500"
                 }`}
               >
-                <Icons name="userGroup" className="w-5 h-5 inline-block mr-1" />
+                <Icons
+                  name={friendRequests.length > 0 ? "bellActive" : "bell"}
+                  className="w-5 h-5 inline-block mr-1"
+                />
                 친구 요청{friendRequests.length > 0 ? ` (${friendRequests.length})` : ""}
               </button>
             </div>

@@ -26,6 +26,7 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({ targetUuid, onClose }
   useEffect(() => {
     setIsVisible(true);
     loadProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -35,14 +36,11 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({ targetUuid, onClose }
       loadProfile();
     };
 
-    // 기존 이벤트: 친구 삭제, 요청 취소, 수락/거절 시 프로필 갱신
     socket.on("friendRequestCancelled", refreshProfile);
     socket.on("friendRemoved", refreshProfile);
     socket.on("friendRequestResponded", refreshProfile);
-    // ★ 추가: 백엔드에서 친구 요청 시 대상에게 "friendRequestReceived" 이벤트를 보냄
     socket.on("friendRequestReceived", refreshProfile);
 
-    // 기존에 내게 도착한 friendRequestSent 이벤트도 처리 (추가 안전장치)
     const handleFriendRequestSent = ({ to }: { to: string }) => {
       if (to === userUuid) refreshProfile();
     };
@@ -100,7 +98,7 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({ targetUuid, onClose }
 
       await loadFriends();
       await loadFriendRequests();
-      await loadProfile(); // UI 상태 최신화
+      await loadProfile(); // UI 상태 최신화를 위해
     } catch (err: any) {
       alert(err.message || "처리에 실패했습니다.");
     }
@@ -167,9 +165,10 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({ targetUuid, onClose }
                 ) : (
                   <div className="w-24 h-24 rounded-full bg-gray-300"></div>
                 )}
-                <div>
-                  <p className="font-semibold text-lg">{profile?.name}</p>
-                  <p className="text-gray-500 text-sm">{profile?.email}</p>
+                <div className="w-full text-center">
+                  {/* 이름과 이메일을 한 줄에 표시하고, 길 경우 '...'으로 생략 */}
+                  <p className="font-semibold text-lg truncate w-full">{profile?.name}</p>
+                  <p className="text-gray-500 text-sm truncate w-full">{profile?.email}</p>
                 </div>
               </div>
             </>
