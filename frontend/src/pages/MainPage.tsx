@@ -7,6 +7,7 @@ import Home from "../components/Home";
 import GroupSearch from "../components/GroupSearch";
 import GroupRoom from "../components/GroupRoom";
 import { UserProfileProvider } from "../contexts/UserProfileContext";
+import { AnimatePresence, motion } from "framer-motion";
 
 type MainView = "home" | "groupSearch" | "groupRoom";
 
@@ -47,24 +48,40 @@ const MainPage: React.FC = () => {
     }
   };
 
+  // 애니메이션 효과를 위한 Framer Motion variants
+  const motionVariants = {
+    initial: { opacity: 0, x: 50 },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: -50 },
+  };
+
   return (
     <UserProfileProvider>
       <div className="h-screen p-4">
-        {/* 전체 화면을 h-screen으로 잡고 내부에는 flex 컨테이너로 배치 */}
         <div className="h-full flex flex-col md:flex-row gap-5">
           <Sidebar
             onHomeSelect={handleHomeSelect}
             onGroupSearchSelect={handleGroupSearchSelect}
             onGroupSelect={handleGroupSelect}
           />
-          {/* 메인 컨텐츠 영역과 푸터를 포함하는 오른쪽 영역 */}
-          {/* min-h-0 을 지정하여 내부에서 overflow-y-auto가 올바르게 동작하도록 함 */}
           <div className="flex-1 flex flex-col gap-5 min-h-0">
-            {/* 메인 영역 - flex-1과 overflow-y-auto로 내부 컨텐츠가 부족할 경우 스크롤 발생 */}
-            <main className="flex-1 bg-white rounded-lg shadow-lg p-6 overflow-y-auto min-h-0">
-              {renderMainContent()}
+            <main className="flex-1 bg-white rounded-lg shadow-lg p-6 overflow-y-auto min-h-0 relative">
+              {/* 애니메이션 영역을 overflow-hidden으로 감싸 스크롤 숨김 */}
+              <div className="overflow-hidden">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={`${mainContent.view}-${mainContent.groupUuid || ""}`}
+                    variants={motionVariants}
+                    initial="initial"
+                    animate="animate"
+                    exit="exit"
+                    transition={{ duration: 0.3 }}
+                  >
+                    {renderMainContent()}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
             </main>
-            {/* 푸터는 항상 화면 하단에 표시 */}
             <Footer />
           </div>
         </div>
