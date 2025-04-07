@@ -1,5 +1,3 @@
-// /frontend/src/components/Sidebar.tsx
-
 import React, { useState, useEffect, useRef, MouseEvent } from "react";
 import ReactDOM from "react-dom";
 import Icons from "./Icons";
@@ -60,7 +58,13 @@ const calcTooltipStyle = (rect: DOMRect, isDesktop: boolean): React.CSSPropertie
         transform: "translateX(-50%)",
       };
 
-const Sidebar: React.FC = () => {
+interface SidebarProps {
+  onHomeSelect: () => void;
+  onGroupSearchSelect: () => void;
+  onGroupSelect: (groupUuid: string) => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ onHomeSelect, onGroupSearchSelect, onGroupSelect }) => {
   const [groups, setGroups] = useState<Group[]>([]);
   const [tooltips, setTooltips] = useState<TooltipState[]>([]);
   const tooltipIdCounter = useRef(0);
@@ -83,8 +87,9 @@ const Sidebar: React.FC = () => {
     fetchGroups();
   }, []);
 
+  // 그룹 목록에서 그룹 클릭 시 해당 그룹의 UUID를 부모에게 전달
   const navigateTo = (groupUuid: string) => {
-    alert(`그룹 UUID: ${groupUuid}로 이동`);
+    onGroupSelect(groupUuid);
   };
 
   const addTooltip = (target: HTMLElement, text: string): number => {
@@ -153,10 +158,10 @@ const Sidebar: React.FC = () => {
     <>
       <aside className="w-full h-20 md:w-20 md:h-full bg-white rounded-lg shadow-lg p-2">
         <div className="flex flex-row md:flex-col h-full">
-          {/* 홈 버튼 */}
+          {/* 메인 버튼 */}
           <div className="flex-shrink-0 flex items-center justify-center relative">
             <button
-              onClick={() => alert("")}
+              onClick={onHomeSelect}
               onMouseEnter={(e) => handleMouseEnter(e, "메인 화면")}
               onMouseLeave={handleMouseLeave}
               className="flex items-center justify-center focus:outline-none"
@@ -212,7 +217,7 @@ const Sidebar: React.FC = () => {
             <div className="hidden md:block w-full border-t border-gray-300 my-2" />
           </div>
 
-          {/* 추가 버튼 */}
+          {/* 추가 버튼들 */}
           <div className="flex flex-row md:flex-col flex-shrink-0 p-1 gap-2">
             <div className="relative flex items-center justify-center">
               <button
@@ -229,7 +234,7 @@ const Sidebar: React.FC = () => {
             </div>
             <div className="relative flex items-center justify-center">
               <button
-                onClick={() => alert("")}
+                onClick={onGroupSearchSelect}
                 onMouseEnter={(e) => handleMouseEnter(e, "그룹 검색")}
                 onMouseLeave={handleMouseLeave}
                 className="flex items-center justify-center focus:outline-none"
