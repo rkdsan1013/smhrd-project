@@ -1,6 +1,7 @@
 // /frontend/src/components/DirectMessage.tsx
 
 import React, { useEffect, useRef, useState } from "react";
+import ReactDOM from "react-dom";
 import {
   sendMessageSocket,
   joinChatRoom,
@@ -8,6 +9,7 @@ import {
   ChatMessage,
 } from "../services/chatService";
 import { useSocket } from "../contexts/SocketContext";
+import Icons from "./Icons";
 
 interface DirectMessageProps {
   roomUuid: string;
@@ -18,9 +20,16 @@ interface DirectMessageProps {
 const DirectMessage: React.FC<DirectMessageProps> = ({ roomUuid, currentUserUuid, onBack }) => {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isVisible, setIsVisible] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const { socket } = useSocket(); // ✅ 소켓 컨텍스트에서 가져옴
+  const { socket } = useSocket();
 
+  // 모달 마운트 시 fade‑in 효과
+  useEffect(() => {
+    setIsVisible(true);
+  }, []);
+
+  // 채팅방의 초기 메시지를 불러오고 소켓 이벤트를 설정합니다.
   useEffect(() => {
     const loadMessages = async () => {
       try {
@@ -48,7 +57,7 @@ const DirectMessage: React.FC<DirectMessageProps> = ({ roomUuid, currentUserUuid
     }
   }, [roomUuid, socket]);
 
-  // ✅ 메시지 변경 시 가장 하단으로 스크롤
+  // 메시지가 변경될 때마다 가장 하단으로 스크롤 처리합니다.
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: "auto" });
@@ -57,11 +66,11 @@ const DirectMessage: React.FC<DirectMessageProps> = ({ roomUuid, currentUserUuid
 
   const handleSendMessage = () => {
     if (!input.trim() || !socket) return;
-    sendMessageSocket(socket, roomUuid, input); // ✅ 소켓 전달
+    sendMessageSocket(socket, roomUuid, input);
     setInput("");
   };
 
-  // ✅ 엔터 키로 메시지 전송
+  // 엔터 키 입력 시 메시지를 전송합니다.
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -69,79 +78,101 @@ const DirectMessage: React.FC<DirectMessageProps> = ({ roomUuid, currentUserUuid
     }
   };
 
-  return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-lg w-80 h-[500px] p-4 flex flex-col">
-      {/* 헤더 */}
-      <div className="flex justify-between items-center border-b pb-2 mb-4">
-        <h2 className="text-lg font-semibold">채팅방</h2>
-        <button onClick={onBack} className="text-gray-500 hover:text-gray-800 transition">
-          ✕
-        </button>
-      </div>
+  // 모달 종료 시 fade‑out 효과 적용 후 onBack() 호출
+  const handleModalClose = () => {
+    setIsVisible(false);
+    setTimeout(() => {
+      onBack();
+    }, 300);
+  };
 
-      {/* 메시지 목록 */}
-      <div className="flex-1 min-h-0 overflow-y-auto text-sm text-gray-700 space-y-2 mb-2">
-        {messages.map((msg, idx) =>
-          msg.sender_uuid === currentUserUuid ? (
-            <div key={msg.uuid ?? idx} className="flex justify-end pr-1">
-              <div className="bg-blue-500 text-white px-3 py-2 rounded-lg max-w-[70%] break-words">
-                {msg.message}
-              </div>
-            </div>
-          ) : (
-            <div key={msg.uuid ?? idx} className="flex items-start space-x-2">
-              {msg.sender_picture ? (
-                <img
-                  src={msg.sender_picture}
-                  alt={msg.sender_name}
-                  className="w-8 h-8 rounded-full object-cover mt-1"
-                />
-              ) : (
-                <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center mt-1">
-                  <svg
-                    className="w-4 h-4 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M5.121 17.804A10 10 0 1119 12.001M15 11h.01M9 11h.01M7 15s1.5 2 5 2 5-2 5-2"
-                    />
-                  </svg>
+  return ReactDOM.createPortal(
+    // 우하단에 고정되도록 수정 (배경 오버레이는 제거됨)
+    <div className="fixed bottom-4 right-4 z-50">
+      {/* 모달 컨테이너 */}
+      <div
+        className={`relative bg-white rounded-lg shadow-xl w-96 h-[500px] flex flex-col transition-opacity duration-300 ${
+          isVisible ? "opacity-100" : "opacity-0"
+        }`}
+      >
+        {/* 헤더 */}
+        <div className="flex justify-between items-center p-4 border-b border-gray-200">
+          <h2 className="text-lg font-semibold">채팅방</h2>
+          <button
+            onClick={handleModalClose}
+            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-300 transition"
+          >
+            <Icons name="close" className="w-6 h-6 text-gray-600" />
+          </button>
+        </div>
+
+        {/* 콘텐츠 영역 */}
+        <div className="flex-1 p-6 overflow-y-auto">
+          {messages.map((msg, idx) =>
+            msg.sender_uuid === currentUserUuid ? (
+              <div key={msg.uuid ?? idx} className="flex justify-end pl-1 mb-2">
+                <div className="bg-blue-500 text-white px-3 py-2 rounded-lg max-w-[70%] break-words">
+                  {msg.message}
                 </div>
-              )}
-              <div className="bg-gray-100 px-3 py-2 rounded-lg max-w-[70%] break-words">
-                <p className="text-xs text-gray-500 mb-1">{msg.sender_name}</p>
-                <p>{msg.message}</p>
               </div>
-            </div>
-          ),
-        )}
-        <div ref={scrollRef} />
-      </div>
+            ) : (
+              <div key={msg.uuid ?? idx} className="flex items-start space-x-2 mb-2">
+                {msg.sender_picture ? (
+                  <img
+                    src={msg.sender_picture}
+                    alt={msg.sender_name}
+                    className="w-8 h-8 rounded-full object-cover mt-1"
+                  />
+                ) : (
+                  <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center mt-1">
+                    <svg
+                      className="w-4 h-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M5.121 17.804A10 10 0 1119 12.001M15 11h.01M9 11h.01M7 15s1.5 2 5 2 5-2 5-2"
+                      />
+                    </svg>
+                  </div>
+                )}
+                <div className="bg-gray-100 px-3 py-2 rounded-lg max-w-[70%] break-words">
+                  <p className="text-xs text-gray-500 mb-1">{msg.sender_name}</p>
+                  <p>{msg.message}</p>
+                </div>
+              </div>
+            ),
+          )}
+          <div ref={scrollRef} />
+        </div>
 
-      {/* 입력창 */}
-      <div className="mt-2 flex gap-2">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="메시지를 입력하세요"
-          className="flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-        />
-        <button
-          onClick={handleSendMessage}
-          className="px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          전송
-        </button>
+        {/* 푸터 */}
+        <div className="p-4 border-t border-gray-200">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="메시지를 입력하세요"
+              className="flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+            <button
+              onClick={handleSendMessage}
+              className="px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              전송
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
 
