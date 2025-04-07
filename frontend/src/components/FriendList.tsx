@@ -1,4 +1,4 @@
-// frontend/src/components/FriendList.tsx
+// /frontend/src/components/FriendList.tsx
 
 import React, { useEffect, useState, useLayoutEffect, useRef, MouseEvent } from "react";
 import ReactDOM from "react-dom";
@@ -27,11 +27,9 @@ interface FriendListProps {
 }
 
 const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
-  // 모달 노출 여부
+  // 모달 및 탭, 검색, DM, 선택된 프로필 상태 관리
   const [isVisible, setIsVisible] = useState<boolean>(false);
-  // 탭 상태: "list" (친구 목록 및 DM) / "requests" (친구 요청)
   const [activeTab, setActiveTab] = useState<"list" | "requests">("list");
-  // 친구 추가 모드 여부 (검색창 노출)
   const [isAdding, setIsAdding] = useState<boolean>(false);
   const [searchKeyword, setSearchKeyword] = useState<string>("");
   const [searchResults, setSearchResults] = useState<SearchResultUser[]>([]);
@@ -40,24 +38,23 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
   const [dmRoomUuid, setDmRoomUuid] = useState<string | null>(null);
   const [selectedProfileUuid, setSelectedProfileUuid] = useState<string | null>(null);
 
-  // FriendContext의 글로벌 상태 구독
   const { friends, loading, error, loadFriends, friendRequests, loadFriendRequests, onlineStatus } =
     useFriend();
   const { userUuid } = useUser();
 
-  // 본문 높이 조절을 위한 ref
+  // 본문 영역 높이 동적 조절을 위한 ref
   const bodyContainerRef = useRef<HTMLDivElement>(null);
   const bodyContentRef = useRef<HTMLDivElement>(null);
 
   const liClass =
     "flex items-center justify-between h-14 px-3 py-2 rounded hover:bg-gray-100 transition-colors duration-300";
 
-  // 모달 오픈 시 페이드인 효과 적용
+  // 모달 오픈 시 애니메이션 적용
   useEffect(() => {
     setIsVisible(true);
   }, []);
 
-  // 본문 영역 높이 동적으로 조절
+  // 본문 영역 높이 동적으로 조절 (탭, 검색 결과 등 변화에 맞춰)
   useLayoutEffect(() => {
     if (bodyContainerRef.current && bodyContentRef.current) {
       const newHeight = bodyContentRef.current.offsetHeight;
@@ -66,7 +63,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
     }
   }, [activeTab, isAdding, searchResults, friends, friendRequests]);
 
-  // 검색 실행 – 검색창 입력 후 검색 버튼이나 Enter 입력 시 서버에서 최신 데이터를 가져옴
+  // 검색 실행 – 검색어 입력 후 Enter 또는 검색 버튼 클릭 시 실행
   const handleSearch = async () => {
     if (!searchKeyword.trim()) return;
     try {
@@ -98,8 +95,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
     }
   };
 
-  // 만약 글로벌 상태(friendRequests 또는 friends)가 변경되면,
-  // 추가 모드가 활성화되어있고 검색어가 있는 경우 새로 검색하여 항상 서버 데이터를 반영하도록 함
+  // 글로벌 상태(friendRequests, friends) 변경 시 친구 추가 모드 상태에서 최신 검색 실행
   useEffect(() => {
     if (isAdding && searchKeyword.trim() !== "") {
       handleSearch();
@@ -115,7 +111,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
     setSearchError("");
   };
 
-  // 친구 요청 보내기 – 성공 시 handleSearch() 호출로 서버에서 최신 상태를 받아옴
+  // 친구 요청 보내기
   const handleSendFriendRequest = async (targetUuid: string) => {
     try {
       await sendFriendRequest(targetUuid);
@@ -125,7 +121,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
     }
   };
 
-  // 친구 요청 취소 – 성공 시 handleSearch() 호출로 서버에서 최신 상태를 받아옴
+  // 친구 요청 취소
   const handleCancelFriendRequest = async (targetUuid: string) => {
     try {
       await cancelFriendRequest(targetUuid);
@@ -174,17 +170,8 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
     }, 300);
   };
 
-  if (dmRoomUuid && userUuid) {
-    return (
-      <DirectMessage
-        roomUuid={dmRoomUuid}
-        onBack={() => setDmRoomUuid(null)}
-        currentUserUuid={userUuid}
-      />
-    );
-  }
-
-  return ReactDOM.createPortal(
+  // FriendList 모달 JSX를 Portal로 렌더링
+  const friendListModal = ReactDOM.createPortal(
     <div className="fixed bottom-4 right-4 z-50">
       <div
         className={`relative bg-white rounded-lg shadow-xl w-96 select-none transition-opacity duration-300 ${
@@ -500,6 +487,19 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
       )}
     </div>,
     document.body,
+  );
+
+  return (
+    <>
+      {friendListModal}
+      {dmRoomUuid && userUuid && (
+        <DirectMessage
+          roomUuid={dmRoomUuid}
+          onBack={() => setDmRoomUuid(null)}
+          currentUserUuid={userUuid}
+        />
+      )}
+    </>
   );
 };
 

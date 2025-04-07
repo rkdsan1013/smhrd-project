@@ -24,6 +24,12 @@ const DirectMessage: React.FC<DirectMessageProps> = ({ roomUuid, currentUserUuid
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const { socket } = useSocket();
 
+  // 플로팅 라벨 입력칸 관련 클래스 (참고: input을 위한 peer + label 애니메이션)
+  const baseInputClass =
+    "peer block w-full border-0 border-b-2 pb-2.5 pt-4 text-base bg-transparent focus:outline-none focus:ring-0 border-gray-300 focus:border-blue-600 transition-all duration-300 ease-in-out";
+  const labelClass =
+    "absolute left-0 top-4 z-10 text-sm text-gray-500 whitespace-nowrap origin-top-left duration-300 transform -translate-y-6 scale-75 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100 peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600";
+
   // 모달 마운트 시 fade‑in 효과
   useEffect(() => {
     setIsVisible(true);
@@ -124,25 +130,11 @@ const DirectMessage: React.FC<DirectMessageProps> = ({ roomUuid, currentUserUuid
                     className="w-8 h-8 rounded-full object-cover mt-1"
                   />
                 ) : (
-                  <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center mt-1">
-                    <svg
-                      className="w-4 h-4 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M5.121 17.804A10 10 0 1119 12.001M15 11h.01M9 11h.01M7 15s1.5 2 5 2 5-2 5-2"
-                      />
-                    </svg>
-                  </div>
+                  // 프로필 사진이 없을 경우 기본 아이콘 없이 동일한 크기의 빈 placeholder만 표시
+                  <div className="w-8 h-8 bg-gray-300 rounded-full mt-1"></div>
                 )}
                 <div className="bg-gray-100 px-3 py-2 rounded-lg max-w-[70%] break-words">
-                  <p className="text-xs text-gray-500 mb-1">{msg.sender_name}</p>
+                  <p className="text-xs text-gray-500 mb-1 truncate">{msg.sender_name}</p>
                   <p>{msg.message}</p>
                 </div>
               </div>
@@ -153,20 +145,27 @@ const DirectMessage: React.FC<DirectMessageProps> = ({ roomUuid, currentUserUuid
 
         {/* 푸터 */}
         <div className="p-4 border-t border-gray-200">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="메시지를 입력하세요"
-              className="flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
+          <div className="flex gap-2 items-end">
+            {/* 플로팅 라벨 입력칸 */}
+            <div className="relative flex-1">
+              <input
+                type="text"
+                id="message"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder=" " // placeholder 는 공백 처리하여 label 표시
+                className={baseInputClass}
+              />
+              <label htmlFor="message" className={labelClass}>
+                메시지를 입력하세요
+              </label>
+            </div>
             <button
               onClick={handleSendMessage}
-              className="px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              className="w-10 h-10 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center justify-center"
             >
-              전송
+              <Icons name="send" className="w-6 h-6" />
             </button>
           </div>
         </div>
