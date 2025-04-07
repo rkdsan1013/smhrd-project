@@ -3,14 +3,13 @@
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
 import { useUserProfile } from "../contexts/UserProfileContext";
-import { useFriend } from "../contexts/FriendContext"; // FriendContext 추가
+import { useFriend } from "../contexts/FriendContext";
 import ProfileCard from "./ProfileCard";
 import Icons from "./Icons";
 import FriendList from "./FriendList";
 
 const Footer: React.FC = () => {
   const { profile, loading, error } = useUserProfile();
-  // 기존 UserContext의 requestCount 대신 FriendContext에서 friendRequests를 사용
   const { friendRequests } = useFriend();
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showFriendList, setShowFriendList] = useState(false);
@@ -69,10 +68,11 @@ const Footer: React.FC = () => {
             <button
               onClick={handleFriendListClick}
               title="친구 목록"
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 hover:shadow-md active:scale-95 transition-all duration-200 focus:outline-none"
+              className="flex items-center justify-center md:justify-start px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 hover:shadow-md active:scale-95 transition-all duration-200 focus:outline-none"
             >
               <Icons name="users" className="w-6 h-6 text-white" />
-              <span className="font-medium">친구 목록</span>
+              {/* md 이상일 때만 텍스트가 보이며, ml-2를 통해 아이콘과의 간격을 줌 */}
+              <span className="hidden md:inline-block ml-2 font-medium">친구 목록</span>
             </button>
             {friendRequests.length > 0 && (
               <span className="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-md">
