@@ -14,3 +14,9 @@ export const updateUserProfile = (formData: FormData) => {
     headers: { "Content-Type": "multipart/form-data" },
   });
 };
+
+// uuid를 기반으로 상대방 프로필 + 친구 상태 정보 가져오기
+export const getUserProfileWithStatus = async (uuid: string) => {
+  const res = await get<{ success: boolean; profile: any }>(`/users/profile-with-status/${uuid}`);
+  return res.profile;
+};

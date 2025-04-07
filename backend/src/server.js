@@ -17,6 +17,7 @@ const chatRoutes = require("./routes/chatRoutes");
 
 const app = express();
 
+// CORS 설정
 app.use(
   cors({
     origin: process.env.FRONTEND_URL || "http://localhost:5173",
@@ -24,13 +25,14 @@ app.use(
   }),
 );
 
+// 기본 미들웨어
 app.use(express.json());
 app.use(cookieParser());
 
-// 정적 파일 제공 (예: uploads 폴더)
+// 정적 파일 제공
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
-// API 라우트 설정
+// API 라우트
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/groups", groupRoutes);
@@ -45,14 +47,14 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 
-// Express 앱을 포함한 HTTP 서버 생성
+// ✅ HTTP 서버 생성
 const server = http.createServer(app);
 
-// Socket.IO 초기화 (웹소켓 기능 추가)
+// ✅ 소켓 초기화 + 인스턴스 주입
 const { initSocketIO } = require("./socket");
-initSocketIO(server);
+const io = initSocketIO(server); // 소켓 서버 생성
+app.set("io", io); // 👈 Express 앱에 등록 (중요!)
 
-// 서버 실행
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });

@@ -1,4 +1,4 @@
-// frontend/src/contexts/FriendContext.tsx
+// /frontend/src/contexts/FriendContext.tsx
 
 import React, { createContext, useCallback, useContext, useEffect, useState, useMemo } from "react";
 import {
@@ -8,6 +8,7 @@ import {
   ReceivedFriendRequest,
 } from "../services/friendService";
 import { useSocket } from "./SocketContext";
+import { useUser } from "./UserContext";
 
 interface IFriendContext {
   friends: Friend[];
@@ -37,8 +38,8 @@ export const FriendProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [onlineStatus, setOnlineStatus] = useState<Record<string, boolean>>({});
 
   const { socket } = useSocket();
+  const { userUuid } = useUser();
 
-  // loadFriends와 loadFriendRequests를 useCallback으로 메모이제이션
   const loadFriends = useCallback(async () => {
     setLoading(true);
     try {
@@ -61,13 +62,11 @@ export const FriendProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, []);
 
-  // 초기 데이터 로드
   useEffect(() => {
     loadFriends();
     loadFriendRequests();
   }, [loadFriends, loadFriendRequests]);
 
-  // 소켓 이벤트 핸들러들을 하나의 객체에 모아서 반복 등록/해제로 처리
   useEffect(() => {
     if (!socket) return;
 
@@ -85,9 +84,16 @@ export const FriendProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       },
       friendRequestResponded: () => {
         loadFriends();
+        loadFriendRequests();
       },
       friendRequestCancelled: () => {
+        loadFriends();
         loadFriendRequests();
+      },
+      friendRequestSent: ({ to }: { to: string }) => {
+        if (to === userUuid) {
+          loadFriendRequests();
+        }
       },
       userOnlineStatus: ({ uuid, online }: { uuid: string; online: boolean }) => {
         setOnlineStatus((prev) => ({ ...prev, [uuid]: online }));
@@ -98,23 +104,19 @@ export const FriendProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       },
     };
 
-    // 등록
     Object.entries(handlers).forEach(([event, handler]) => socket.on(event, handler));
 
-    // 해제
     return () => {
       Object.entries(handlers).forEach(([event, handler]) => socket.off(event, handler));
     };
-  }, [socket, loadFriends, loadFriendRequests]);
+  }, [socket, loadFriends, loadFriendRequests, userUuid]);
 
-  // 친구 목록이 변경되면 온라인 상태 다시 요청
   useEffect(() => {
     if (socket) {
       socket.emit("getFriendsOnlineStatus");
     }
   }, [socket, friends]);
 
-  // useMemo를 이용하여 제공할 값들을 캐싱 (불필요한 리렌더링 방지)
   const value = useMemo(
     () => ({
       friends,

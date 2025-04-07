@@ -74,12 +74,14 @@ exports.sendFriendRequest = async (req, res) => {
   try {
     const requesterUuid = req.user.uuid;
     const { targetUuid } = req.body;
+    const io = req.app.get("io");
 
+    // 유효성 검사
     if (!targetUuid || targetUuid === requesterUuid) {
       return res.status(400).json({ success: false, message: "유효하지 않은 요청입니다." });
     }
 
-    // 친구 상태를 확인하여 이미 존재하면 진행하지 않습니다.
+    // 친구 상태 체크
     const existing = await friendModel.checkFriendStatus(requesterUuid, targetUuid);
     if (existing) {
       return res
@@ -87,10 +89,10 @@ exports.sendFriendRequest = async (req, res) => {
         .json({ success: false, message: "이미 친구 상태이거나 요청 중입니다." });
     }
 
-    // 친구 요청 생성 (내부적으로 LEAST/GREATEST로 정렬 후 한 건 저장됨)
+    // 친구 요청 생성
     await friendModel.createFriendRequest(requesterUuid, targetUuid);
 
-    // 소켓을 통해 상대방에게 친구 요청 알림 전송
+    // 🔔 소켓 알림 전송 (✅ 이게 맞는 방식)
     if (global.io) {
       global.io.to(targetUuid).emit("friendRequestReceived", {
         from: requesterUuid,

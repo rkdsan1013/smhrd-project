@@ -103,3 +103,33 @@ exports.updateProfile = async (req, res) => {
     return res.status(500).json({ success: false, message: "서버 오류가 발생했습니다." });
   }
 };
+
+// 🔹 상대방 프로필 + 친구 상태 포함 조회
+exports.getProfileWithFriendStatus = async (req, res) => {
+  try {
+    const currentUuid = req.user.uuid;
+    const targetUuid = req.params.uuid;
+
+    if (!targetUuid) {
+      return res.status(400).json({ success: false, message: "유효한 uuid를 제공해주세요." });
+    }
+
+    const profile = await userModel.getProfileWithFriendStatus(currentUuid, targetUuid);
+    if (!profile) {
+      return res.status(404).json({ success: false, message: "프로필 정보를 찾을 수 없습니다." });
+    }
+
+    const formatted = {
+      name: profile.name,
+      email: profile.email,
+      profilePicture: profile.profilePicture ? formatImageUrl(profile.profilePicture) : null,
+      friendStatus: profile.friendStatus,
+      friendRequester: profile.friendRequester,
+    };
+
+    return res.json({ success: true, profile: formatted });
+  } catch (error) {
+    console.error("[getProfileWithFriendStatus] Error:", error);
+    return res.status(500).json({ success: false, message: "서버 오류가 발생했습니다." });
+  }
+};
