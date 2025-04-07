@@ -49,6 +49,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
     useFriend();
   const { userUuid } = useUser();
 
+  // 본문 영역과 탭 네비게이션을 함께 측정하기 위한 ref
   const bodyContainerRef = useRef<HTMLDivElement>(null);
   const bodyContentRef = useRef<HTMLDivElement>(null);
 
@@ -206,274 +207,287 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
             <Icons name="close" className="w-6 h-6 text-gray-600" />
           </button>
         </div>
-        {/* 탭 네비게이션 */}
-        {!isAdding && (
-          <div className="relative border-b border-gray-200">
-            <div className="flex gap-4 mb-2 px-4 pt-2">
-              <button
-                onClick={() => {
-                  setActiveTab("list");
-                  setIsAdding(false);
-                }}
-                className={`flex-1 text-sm py-2 transition-all duration-300 ${
-                  activeTab === "list" ? "font-semibold text-blue-600" : "text-gray-500"
-                }`}
-              >
-                <Icons name="users" className="w-5 h-5 inline-block mr-1" />
-                친구 목록{friends.length > 0 ? ` (${friends.length})` : ""}
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTab("requests");
-                  setIsAdding(false);
-                }}
-                className={`flex-1 text-sm py-2 transition-all duration-300 ${
-                  activeTab === "requests" ? "font-semibold text-blue-600" : "text-gray-500"
-                }`}
-              >
-                <Icons
-                  name={friendRequests.length > 0 ? "bellActive" : "bell"}
-                  className="w-5 h-5 inline-block mr-1"
-                />
-                친구 요청{friendRequests.length > 0 ? ` (${friendRequests.length})` : ""}
-              </button>
-            </div>
-            <div
-              className="absolute bottom-0 left-0 h-1 bg-blue-500 transition-all duration-300"
-              style={{ left: activeTab === "list" ? "0%" : "50%", width: "50%" }}
-            ></div>
-          </div>
-        )}
-        {/* 본문 영역 */}
+        {/* 본문 영역 (탭 네비게이션 포함) */}
         <div ref={bodyContainerRef} className="overflow-hidden">
-          <div ref={bodyContentRef} className="p-6">
-            {activeTab === "list" ? (
-              <>
-                {isAdding ? (
-                  <>
-                    <div className="space-y-3 mb-3">
-                      <div className="flex items-center gap-2">
-                        <div className="relative flex-1">
-                          <input
-                            id="search-input"
-                            type="text"
-                            value={searchKeyword}
-                            onChange={(e) => setSearchKeyword(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") handleSearch();
-                            }}
-                            placeholder=" "
-                            className={baseInputClass}
-                          />
-                          <label htmlFor="search-input" className={labelClass}>
-                            이메일 또는 이름 검색
-                          </label>
+          <div ref={bodyContentRef}>
+            {!isAdding && (
+              <div className="relative border-b border-gray-200">
+                <div className="flex gap-4 mb-2 px-4 pt-2">
+                  <button
+                    onClick={() => {
+                      setActiveTab("list");
+                      setIsAdding(false);
+                    }}
+                    className={`flex-1 text-sm py-2 transition-all duration-300 ${
+                      activeTab === "list" ? "font-semibold text-blue-600" : "text-gray-500"
+                    }`}
+                  >
+                    <Icons name="users" className="w-5 h-5 inline-block mr-1" />
+                    친구 목록{friends.length > 0 ? ` (${friends.length})` : ""}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveTab("requests");
+                      setIsAdding(false);
+                    }}
+                    className={`flex-1 text-sm py-2 transition-all duration-300 ${
+                      activeTab === "requests" ? "font-semibold text-blue-600" : "text-gray-500"
+                    }`}
+                  >
+                    <Icons
+                      name={friendRequests.length > 0 ? "bellActive" : "bell"}
+                      className="w-5 h-5 inline-block mr-1"
+                    />
+                    친구 요청{friendRequests.length > 0 ? ` (${friendRequests.length})` : ""}
+                  </button>
+                </div>
+                <div
+                  className="absolute bottom-0 left-0 h-1 bg-blue-500 transition-all duration-300"
+                  style={{ left: activeTab === "list" ? "0%" : "50%", width: "50%" }}
+                ></div>
+              </div>
+            )}
+            <div className="p-6">
+              {activeTab === "list" ? (
+                <>
+                  {isAdding ? (
+                    <>
+                      <div className="space-y-3 mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="relative flex-1">
+                            <input
+                              id="search-input"
+                              type="text"
+                              value={searchKeyword}
+                              onChange={(e) => setSearchKeyword(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") handleSearch();
+                              }}
+                              placeholder=" "
+                              className={baseInputClass}
+                            />
+                            <label htmlFor="search-input" className={labelClass}>
+                              이메일 또는 이름 검색
+                            </label>
+                          </div>
+                          <button
+                            onClick={handleSearch}
+                            className="flex items-center justify-center p-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
+                          >
+                            <Icons name="search" className="w-6 h-6" />
+                          </button>
                         </div>
-                        <button
-                          onClick={handleSearch}
-                          className="flex items-center justify-center p-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
-                        >
-                          <Icons name="search" className="w-6 h-6" />
-                        </button>
                       </div>
-                    </div>
-                    <div className="h-60 overflow-y-auto pr-1 no-scrollbar">
-                      {searchLoading ? (
-                        <div className="flex justify-center">
-                          <Icons
-                            name="spinner"
-                            className="animate-spin w-6 h-6 text-gray-200 fill-blue-600"
-                          />
-                        </div>
-                      ) : searchError ? (
-                        <p className="text-center text-red-500">{searchError}</p>
-                      ) : searchResults.length === 0 ? (
-                        <p className="text-center text-gray-500 text-sm">검색 결과 없음</p>
-                      ) : (
-                        <ul className="space-y-2">
-                          {searchResults.map((user) => (
-                            <li
-                              key={user.uuid}
-                              className={liClass}
-                              onClick={() => setSelectedProfileUuid(user.uuid)}
-                            >
-                              <div className="flex items-center space-x-3 flex-1 min-w-0">
-                                <div className="relative flex-shrink-0 w-12 h-12">
-                                  {user.profilePicture ? (
-                                    <img
-                                      src={user.profilePicture}
-                                      alt={user.name}
-                                      className="w-12 h-12 rounded-full object-cover"
-                                    />
-                                  ) : (
-                                    <div className="w-12 h-12 bg-gray-300 rounded-full"></div>
-                                  )}
+                      <div className="h-60 overflow-y-auto pr-1 no-scrollbar">
+                        {searchLoading ? (
+                          <div className="flex justify-center">
+                            <Icons
+                              name="spinner"
+                              className="animate-spin w-6 h-6 text-gray-200 fill-blue-600"
+                            />
+                          </div>
+                        ) : searchError ? (
+                          <p className="text-center text-red-500">{searchError}</p>
+                        ) : searchResults.length === 0 ? (
+                          <p className="text-center text-gray-500 text-sm">검색 결과 없음</p>
+                        ) : (
+                          <ul className="space-y-2">
+                            {searchResults.map((user) => (
+                              <li
+                                key={user.uuid}
+                                className={liClass}
+                                onClick={() => setSelectedProfileUuid(user.uuid)}
+                              >
+                                <div className="flex items-center space-x-3 flex-1 min-w-0">
+                                  <div className="relative flex-shrink-0 w-12 h-12">
+                                    {user.profilePicture ? (
+                                      <img
+                                        src={user.profilePicture}
+                                        alt={user.name}
+                                        className="w-12 h-12 rounded-full object-cover"
+                                      />
+                                    ) : (
+                                      <div className="w-12 h-12 bg-gray-300 rounded-full"></div>
+                                    )}
+                                  </div>
+                                  <div className="flex flex-col flex-1 min-w-0">
+                                    <p className="font-semibold truncate">{user.name}</p>
+                                    <p className="text-sm text-gray-500 truncate">{user.email}</p>
+                                  </div>
                                 </div>
-                                <div className="flex flex-col flex-1 min-w-0">
-                                  <p className="font-semibold truncate">{user.name}</p>
-                                  <p className="text-sm text-gray-500 truncate">{user.email}</p>
-                                </div>
-                              </div>
-                              <div className="flex-shrink-0 ml-2 text-right">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (user.friendStatus === "pending") {
-                                      if (user.friendRequester === userUuid) {
-                                        handleCancelFriendRequest(user.uuid);
+                                <div className="flex-shrink-0 ml-2 text-right">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (user.friendStatus === "pending") {
+                                        if (user.friendRequester === userUuid) {
+                                          handleCancelFriendRequest(user.uuid);
+                                        }
+                                      } else {
+                                        handleSendFriendRequest(user.uuid);
                                       }
-                                    } else {
-                                      handleSendFriendRequest(user.uuid);
+                                    }}
+                                    disabled={
+                                      user.friendStatus === "accepted" ||
+                                      (user.friendStatus === "pending" &&
+                                        user.friendRequester !== userUuid)
                                     }
-                                  }}
-                                  disabled={
-                                    user.friendStatus === "accepted" ||
-                                    (user.friendStatus === "pending" &&
-                                      user.friendRequester !== userUuid)
-                                  }
-                                  className={`px-2 py-1 text-sm rounded whitespace-nowrap ${
-                                    user.friendStatus === "accepted"
-                                      ? "text-gray-400 cursor-not-allowed"
+                                    className={`px-2 py-1 text-sm rounded whitespace-nowrap ${
+                                      user.friendStatus === "accepted"
+                                        ? "text-gray-400 cursor-not-allowed"
+                                        : user.friendStatus === "pending"
+                                        ? user.friendRequester === userUuid
+                                          ? "text-red-500 hover:text-red-600"
+                                          : "text-blue-500 cursor-default"
+                                        : "text-green-500 hover:text-green-600"
+                                    }`}
+                                  >
+                                    {user.friendStatus === "accepted"
+                                      ? "친구"
                                       : user.friendStatus === "pending"
                                       ? user.friendRequester === userUuid
-                                        ? "text-red-500 hover:text-red-600"
-                                        : "text-blue-500 cursor-default"
-                                      : "text-green-500 hover:text-green-600"
-                                  }`}
-                                >
-                                  {user.friendStatus === "accepted"
-                                    ? "친구"
-                                    : user.friendStatus === "pending"
-                                    ? user.friendRequester === userUuid
-                                      ? "요청 취소"
-                                      : "요청 받음"
-                                    : "친구 요청"}
-                                </button>
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
+                                        ? "요청 취소"
+                                        : "요청 받음"
+                                      : "친구 요청"}
+                                  </button>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    </>
+                  ) : loading ? (
+                    <div className="flex justify-center">
+                      <Icons
+                        name="spinner"
+                        className="animate-spin w-6 h-6 text-gray-200 fill-blue-600"
+                      />
                     </div>
-                  </>
-                ) : loading ? (
-                  <div className="flex justify-center">
-                    <Icons
-                      name="spinner"
-                      className="animate-spin w-6 h-6 text-gray-200 fill-blue-600"
-                    />
-                  </div>
-                ) : error ? (
-                  <p className="text-center text-red-500 text-sm">{error}</p>
-                ) : friends.length === 0 ? (
-                  <p className="text-center text-gray-500 text-sm">친구가 없습니다.</p>
-                ) : (
-                  <ul className="space-y-2 max-h-60 overflow-y-auto pr-1 no-scrollbar">
-                    {friends.map((friend) => (
-                      <li
-                        key={friend.uuid}
-                        className={`${liClass} cursor-pointer transition-colors duration-300 hover:bg-gray-200`}
-                      >
-                        <div
-                          className="flex items-center space-x-3 flex-1 min-w-0"
-                          onClick={() => setSelectedProfileUuid(friend.uuid)}
+                  ) : error ? (
+                    <p className="text-center text-red-500 text-sm">{error}</p>
+                  ) : friends.length === 0 ? (
+                    <p className="text-center text-gray-500 text-sm">친구가 없습니다.</p>
+                  ) : (
+                    <ul className="space-y-2 max-h-60 overflow-y-auto pr-1 no-scrollbar">
+                      {[...friends]
+                        .sort((a, b) => {
+                          const aOnline = onlineStatus[a.uuid] ? 1 : 0;
+                          const bOnline = onlineStatus[b.uuid] ? 1 : 0;
+                          // 온라인 상태가 다르면 온라인 먼저 배치, 상태가 같으면 이름순 정렬
+                          if (aOnline !== bOnline) {
+                            return bOnline - aOnline;
+                          } else {
+                            return a.name.localeCompare(b.name);
+                          }
+                        })
+                        .map((friend) => (
+                          <li
+                            key={friend.uuid}
+                            className={`${liClass} cursor-pointer transition-colors duration-300 hover:bg-gray-200`}
+                          >
+                            <div
+                              className="flex items-center space-x-3 flex-1 min-w-0"
+                              onClick={() => setSelectedProfileUuid(friend.uuid)}
+                            >
+                              <div className="relative flex-shrink-0 w-12 h-12">
+                                {friend.profilePicture ? (
+                                  <img
+                                    src={friend.profilePicture}
+                                    alt={friend.name}
+                                    className="w-12 h-12 rounded-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-12 h-12 bg-gray-300 rounded-full"></div>
+                                )}
+                                <span
+                                  className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
+                                    onlineStatus[friend.uuid] ? "bg-green-500" : "bg-gray-500"
+                                  }`}
+                                ></span>
+                              </div>
+                              <div className="flex flex-col flex-1 min-w-0">
+                                <p className="font-semibold truncate">{friend.name}</p>
+                                <p className="text-sm text-gray-500 truncate">{friend.email}</p>
+                              </div>
+                            </div>
+                            <div className="flex-shrink-0 ml-2 text-right">
+                              <button
+                                onClick={(e) => handleMessageClick(friend.uuid, friend.name, e)}
+                                title="채팅하기"
+                                className="p-1"
+                                onMouseDown={(e) => e.stopPropagation()}
+                              >
+                                <Icons
+                                  name="chat"
+                                  className="w-6 h-6 text-gray-400 hover:text-blue-400 duration-300"
+                                />
+                              </button>
+                            </div>
+                          </li>
+                        ))}
+                    </ul>
+                  )}
+                </>
+              ) : (
+                <>
+                  {friendRequests.length === 0 ? (
+                    <p className="text-center text-gray-500 text-sm">받은 친구 요청이 없습니다.</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {friendRequests.map((req) => (
+                        <li
+                          key={req.uuid}
+                          className={liClass}
+                          onClick={() => setSelectedProfileUuid(req.uuid)}
                         >
-                          <div className="relative flex-shrink-0 w-12 h-12">
-                            {friend.profilePicture ? (
-                              <img
-                                src={friend.profilePicture}
-                                alt={friend.name}
-                                className="w-12 h-12 rounded-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-12 h-12 bg-gray-300 rounded-full"></div>
-                            )}
-                            <span
-                              className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
-                                onlineStatus[friend.uuid] ? "bg-green-500" : "bg-gray-500"
-                              }`}
-                            ></span>
+                          <div className="flex items-center space-x-3 flex-1 min-w-0">
+                            <div className="relative flex-shrink-0 w-12 h-12">
+                              {req.profilePicture ? (
+                                <img
+                                  src={req.profilePicture}
+                                  alt={req.name}
+                                  className="w-12 h-12 rounded-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 bg-gray-300 rounded-full"></div>
+                              )}
+                            </div>
+                            <div className="flex flex-col flex-1 min-w-0">
+                              <p className="font-semibold truncate">{req.name}</p>
+                              <p className="text-sm text-gray-500 truncate">{req.email}</p>
+                            </div>
                           </div>
-                          <div className="flex flex-col flex-1 min-w-0">
-                            <p className="font-semibold truncate">{friend.name}</p>
-                            <p className="text-sm text-gray-500 truncate">{friend.email}</p>
+                          <div className="flex-shrink-0 ml-2 text-right flex space-x-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAccept(req.uuid);
+                              }}
+                              className="p-1 text-green-500 hover:text-green-600 transition"
+                            >
+                              <Icons name="check" className="w-6 h-6" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDecline(req.uuid);
+                              }}
+                              className="p-1 text-red-500 hover:text-red-600 transition"
+                            >
+                              <Icons name="close" className="w-6 h-6" />
+                            </button>
                           </div>
-                        </div>
-                        <div className="flex-shrink-0 ml-2 text-right">
-                          <button
-                            onClick={(e) => handleMessageClick(friend.uuid, friend.name, e)}
-                            title="채팅하기"
-                            className="p-1"
-                            onMouseDown={(e) => e.stopPropagation()}
-                          >
-                            <Icons
-                              name="chat"
-                              className="w-6 h-6 text-gray-400 hover:text-blue-400 duration-300"
-                            />
-                          </button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </>
-            ) : (
-              <>
-                {friendRequests.length === 0 ? (
-                  <p className="text-center text-gray-500 text-sm">받은 친구 요청이 없습니다.</p>
-                ) : (
-                  <ul className="space-y-2">
-                    {friendRequests.map((req) => (
-                      <li
-                        key={req.uuid}
-                        className={liClass}
-                        onClick={() => setSelectedProfileUuid(req.uuid)}
-                      >
-                        <div className="flex items-center space-x-3 flex-1 min-w-0">
-                          <div className="relative flex-shrink-0 w-12 h-12">
-                            {req.profilePicture ? (
-                              <img
-                                src={req.profilePicture}
-                                alt={req.name}
-                                className="w-12 h-12 rounded-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-12 h-12 bg-gray-300 rounded-full"></div>
-                            )}
-                          </div>
-                          <div className="flex flex-col flex-1 min-w-0">
-                            <p className="font-semibold truncate">{req.name}</p>
-                            <p className="text-sm text-gray-500 truncate">{req.email}</p>
-                          </div>
-                        </div>
-                        <div className="flex-shrink-0 ml-2 text-right flex space-x-1">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleAccept(req.uuid);
-                            }}
-                            className="p-1 text-green-500 hover:text-green-600 transition"
-                          >
-                            <Icons name="check" className="w-6 h-6" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDecline(req.uuid);
-                            }}
-                            className="p-1 text-red-500 hover:text-red-600 transition"
-                          >
-                            <Icons name="close" className="w-6 h-6" />
-                          </button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </>
-            )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         </div>
+        {/* 푸터 영역 */}
         <div className="p-4 border-t border-gray-200 text-right">
           <button
             onClick={() => {
