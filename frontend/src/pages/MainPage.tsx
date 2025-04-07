@@ -1,3 +1,5 @@
+// /frontend/src/pages/MainPage.tsx
+
 import React, { useState } from "react";
 import Sidebar from "../components/Sidebar";
 import Footer from "../components/Footer";

@@ -1,3 +1,5 @@
+// /frontend/src/components/GroupSearch.tsx
+
 import React from "react";
 
 const GroupSearch: React.FC = () => {

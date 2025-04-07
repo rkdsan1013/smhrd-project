@@ -1,3 +1,5 @@
+// /frontend/src/components/Home.tsx
+
 import React from "react";
 
 const Home: React.FC = () => {

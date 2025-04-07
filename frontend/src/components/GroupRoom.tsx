@@ -1,3 +1,5 @@
+// /frontend/src/components/GroupRoom.tsx
+
 import React from "react";
 
 interface GroupRoomProps {
