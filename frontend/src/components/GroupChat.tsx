@@ -1,5 +1,5 @@
 // /frontend/src/components/GroupChat.tsx
-import React, { useEffect, useRef, useState, KeyboardEvent } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState, KeyboardEvent } from "react";
 import {
   sendMessageSocket,
   joinChatRoom,
@@ -51,8 +51,9 @@ const GroupChat: React.FC<GroupChatProps> = ({ roomUuid, currentUserUuid, roomNa
     }
   }, [roomUuid, socket]);
 
-  useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+  // useLayoutEffect로 렌더링 직후 스크롤 위치를 최하단으로 이동
+  useLayoutEffect(() => {
+    scrollRef.current?.scrollIntoView({ behavior: "auto" });
   }, [messages]);
 
   const handleSendMessage = () => {
@@ -71,32 +72,32 @@ const GroupChat: React.FC<GroupChatProps> = ({ roomUuid, currentUserUuid, roomNa
   return (
     <div className="h-full flex flex-col">
       {/* 헤더: 채팅룸 제목 */}
-      <div className="p-4 border-b border-gray-300">
+      <div className="p-4 border-b border-gray-200">
         <h2 className="text-lg font-semibold">{roomName}</h2>
       </div>
 
-      {/* 메시지 영역: 배경색을 bg-white로 통일 */}
-      <div className="flex-1 p-4 overflow-y-auto bg-white">
+      {/* 메시지 영역 */}
+      <div className="flex-1 p-6 overflow-y-auto bg-white">
         {messages.map((msg, idx) =>
           msg.sender_uuid === currentUserUuid ? (
-            <div key={msg.uuid ?? idx} className="flex justify-end mb-2">
-              <div className="py-2 px-3 rounded-lg max-w-[70%] break-words bg-blue-500 text-white">
+            <div key={msg.uuid ?? idx} className="flex justify-end pl-1 mb-2">
+              <div className="bg-blue-500 text-white px-3 py-2 rounded-lg max-w-[70%] break-words">
                 {msg.message}
               </div>
             </div>
           ) : (
-            <div key={msg.uuid ?? idx} className="flex mb-2 space-x-2">
+            <div key={msg.uuid ?? idx} className="flex items-start space-x-2 mb-2">
               {msg.sender_picture ? (
                 <img
                   src={msg.sender_picture}
                   alt={msg.sender_name}
-                  className="w-8 h-8 rounded-full object-cover"
+                  className="w-8 h-8 rounded-full object-cover mt-1"
                 />
               ) : (
-                <div className="w-8 h-8 rounded-full bg-gray-300" />
+                <div className="w-8 h-8 bg-gray-300 rounded-full mt-1" />
               )}
-              <div className="py-2 px-3 rounded-lg max-w-[70%] break-words bg-gray-200 text-gray-800">
-                <p className="text-xs font-medium mb-1">{msg.sender_name}</p>
+              <div className="bg-gray-100 px-3 py-2 rounded-lg max-w-[70%] break-words">
+                <p className="text-xs text-gray-500 mb-1 truncate">{msg.sender_name}</p>
                 <p>{msg.message}</p>
               </div>
             </div>
@@ -107,7 +108,7 @@ const GroupChat: React.FC<GroupChatProps> = ({ roomUuid, currentUserUuid, roomNa
 
       {/* 입력 영역 */}
       <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center">
+        <div className="flex gap-2 items-end">
           <div className="relative flex-1">
             <input
               type="text"
@@ -119,12 +120,12 @@ const GroupChat: React.FC<GroupChatProps> = ({ roomUuid, currentUserUuid, roomNa
               className={baseInputClass}
             />
             <label htmlFor="groupChatInput" className={labelClass}>
-              메시지를 입력하세요...
+              메시지를 입력하세요
             </label>
           </div>
           <button
             onClick={handleSendMessage}
-            className="ml-4 w-10 h-10 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center justify-center transition-all duration-300"
+            className="w-10 h-10 flex items-center justify-center bg-blue-500 text-white rounded-lg hover:bg-blue-600 hover:scale-105 active:scale-95 transition-all duration-300"
           >
             <Icons name="send" className="w-6 h-6" />
           </button>

@@ -1,5 +1,6 @@
 // /frontend/src/components/GroupRoom.tsx
 import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import GroupChat from "./GroupChat";
 import GroupAnnouncement from "./GroupAnnouncement";
 import GroupCalendar from "./GroupCalendar";
@@ -16,10 +17,16 @@ interface GroupRoomProps {
 
 type TabType = "announcement" | "calendar" | "chat" | "settings";
 
+const motionVariants = {
+  initial: { opacity: 0, x: 50 },
+  animate: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: -50 },
+};
+
 const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, groupName }) => {
   // 기본 탭은 채팅으로 설정합니다.
   const [selectedTab, setSelectedTab] = useState<TabType>("chat");
-  // 백엔드로부터 가져온 채팅방 UUID (그룹과 연결된 채팅창)
+  // 백엔드에서 받아온 채팅방 UUID
   const [chatRoomUuid, setChatRoomUuid] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -99,24 +106,71 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
         </aside>
 
         {/* 중앙 콘텐츠 영역 */}
-        <section className="flex-1 p-4 overflow-y-auto">
-          {selectedTab === "announcement" && <GroupAnnouncement />}
-          {selectedTab === "calendar" && <GroupCalendar />}
-          {selectedTab === "chat" && (
-            <>
-              {loading && <div>채팅방을 불러오는 중...</div>}
-              {!loading && chatRoomUuid ? (
-                <GroupChat
-                  roomUuid={chatRoomUuid}
-                  currentUserUuid={currentUserUuid}
-                  roomName={groupName}
-                />
-              ) : (
-                !loading && <div>채팅방 정보를 가져오지 못했습니다.</div>
-              )}
-            </>
-          )}
-          {selectedTab === "settings" && <GroupSettings />}
+        {/* no-scrollbar 클래스를 추가하여 스크롤바를 숨깁니다 */}
+        <section className="flex-1 p-4 overflow-y-auto no-scrollbar">
+          <AnimatePresence mode="wait">
+            {selectedTab === "announcement" && (
+              <motion.div
+                key={`announcement-${groupUuid}`}
+                className="h-auto lg:h-full"
+                variants={motionVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={{ duration: 0.3 }}
+              >
+                <GroupAnnouncement />
+              </motion.div>
+            )}
+            {selectedTab === "calendar" && (
+              <motion.div
+                key={`calendar-${groupUuid}`}
+                className="h-auto lg:h-full"
+                variants={motionVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={{ duration: 0.3 }}
+              >
+                <GroupCalendar />
+              </motion.div>
+            )}
+            {selectedTab === "chat" && (
+              <motion.div
+                key={`chat-${groupUuid}`}
+                className="h-auto lg:h-full"
+                variants={motionVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={{ duration: 0.3 }}
+              >
+                {loading && <div>채팅방을 불러오는 중...</div>}
+                {!loading && chatRoomUuid ? (
+                  <GroupChat
+                    roomUuid={chatRoomUuid}
+                    currentUserUuid={currentUserUuid}
+                    roomName={groupName}
+                  />
+                ) : (
+                  !loading && <div>채팅방 정보를 가져오지 못했습니다.</div>
+                )}
+              </motion.div>
+            )}
+            {selectedTab === "settings" && (
+              <motion.div
+                key={`settings-${groupUuid}`}
+                className="h-auto lg:h-full"
+                variants={motionVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={{ duration: 0.3 }}
+              >
+                <GroupSettings />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </section>
 
         {/* 우측 멤버 리스트 영역 */}
