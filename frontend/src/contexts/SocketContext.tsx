@@ -1,6 +1,6 @@
 // /frontend/src/contexts/SocketContext.tsx
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useMemo, ReactNode } from "react";
 import { io, Socket } from "socket.io-client";
 
 interface SocketContextValue {
@@ -13,16 +13,17 @@ const SocketContext = createContext<SocketContextValue>({
   isConnected: false,
 });
 
-export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+interface SocketProviderProps {
+  children: ReactNode;
+}
+
+export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState<boolean>(false);
 
   useEffect(() => {
-    // 환경변수에서 소켓 서버 URL 가져오기
     const SOCKET_SERVER_URL = import.meta.env.VITE_SOCKET_URL as string;
-    const newSocket = io(SOCKET_SERVER_URL, {
-      withCredentials: true,
-    });
+    const newSocket = io(SOCKET_SERVER_URL, { withCredentials: true });
 
     newSocket.on("connect", () => {
       console.log("Socket connected, Socket ID:", newSocket.id);
@@ -42,9 +43,10 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
   }, []);
 
-  return (
-    <SocketContext.Provider value={{ socket, isConnected }}>{children}</SocketContext.Provider>
-  );
+  // 컨텍스트 값을 메모이제이션하여 불필요한 리렌더링 방지
+  const contextValue = useMemo(() => ({ socket, isConnected }), [socket, isConnected]);
+
+  return <SocketContext.Provider value={contextValue}>{children}</SocketContext.Provider>;
 };
 
-export const useSocket = () => useContext(SocketContext);
+export const useSocket = (): SocketContextValue => useContext(SocketContext);

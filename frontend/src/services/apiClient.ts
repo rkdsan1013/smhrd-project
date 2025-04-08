@@ -7,7 +7,7 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 
-// ApiError 커스텀 에러 클래스
+// 커스텀 ApiError 클래스
 export class ApiError extends Error {
   public statusCode?: number;
   public data?: any;
@@ -19,17 +19,17 @@ export class ApiError extends Error {
   }
 }
 
-// Axios 인스턴스 생성 및 기본 설정
+// axios 인스턴스 생성 및 기본 설정
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
   withCredentials: true,
   timeout: 15000,
 });
 
-// 요청 인터셉터: 공통 헤더(토큰) 추가
+// 요청 인터셉터 - 토큰 헤더 추가
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    config.headers = config.headers || {}; // headers가 undefined인 경우 초기화
+    config.headers = config.headers || {}; // headers 초기화
     const token = window.localStorage.getItem("token");
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
@@ -39,13 +39,14 @@ axiosInstance.interceptors.request.use(
   (error: AxiosError) => Promise.reject(error),
 );
 
-// 응답 인터셉터: 오류 메시지 통일 및 ApiError 반환
+// 응답 인터셉터 - 에러 메시지 통일 및 ApiError 반환
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error: AxiosError) => {
     let errorMessage = "알 수 없는 오류가 발생했습니다.";
     let statusCode: number | undefined = undefined;
     let errorData: any = undefined;
+
     if (error.response && error.response.data) {
       const data = error.response.data as { message?: string };
       errorMessage = data.message || errorMessage;

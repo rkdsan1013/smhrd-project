@@ -1,9 +1,9 @@
 // /frontend/src/contexts/GroupContext.tsx
 
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { useSocket } from "./SocketContext"; // ✅ SocketContext를 통해 socket 사용
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
+import { useSocket } from "./SocketContext";
 
-interface GroupInvite {
+export interface GroupInvite {
   inviteUuid: string;
   groupUuid: string;
   groupName: string;
@@ -11,20 +11,25 @@ interface GroupInvite {
   inviterName: string;
 }
 
-interface GroupContextValue {
+export interface GroupContextValue {
   groupInvites: GroupInvite[];
-  removeInvite: (groupUuid: string) => void;
+  removeInvite: (inviteUuid: string) => void;
 }
 
 const GroupContext = createContext<GroupContextValue | undefined>(undefined);
 
-export const GroupProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { socket } = useSocket(); // ✅ socketContext에서 가져오기
+interface GroupProviderProps {
+  children: React.ReactNode;
+}
+
+export const GroupProvider: React.FC<GroupProviderProps> = ({ children }) => {
+  const { socket } = useSocket();
   const [groupInvites, setGroupInvites] = useState<GroupInvite[]>([]);
 
   useEffect(() => {
     if (!socket) return;
 
+    // 새로운 그룹 초대 이벤트 핸들러 등록
     const handleInvite = (invite: GroupInvite) => {
       setGroupInvites((prev) => [...prev, invite]);
     };
@@ -36,17 +41,25 @@ export const GroupProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, [socket]);
 
-  const removeInvite = (inviteUuid: string) => {
+  const removeInvite = useCallback((inviteUuid: string) => {
     setGroupInvites((prev) => prev.filter((invite) => invite.inviteUuid !== inviteUuid));
-  };
+  }, []);
 
-  return (
-    <GroupContext.Provider value={{ groupInvites, removeInvite }}>{children}</GroupContext.Provider>
+  const value = useMemo(
+    () => ({
+      groupInvites,
+      removeInvite,
+    }),
+    [groupInvites, removeInvite],
   );
+
+  return <GroupContext.Provider value={value}>{children}</GroupContext.Provider>;
 };
 
-export const useGroup = () => {
+export const useGroup = (): GroupContextValue => {
   const context = useContext(GroupContext);
-  if (!context) throw new Error("useGroup must be used within a GroupProvider");
+  if (!context) {
+    throw new Error("useGroup must be used within a GroupProvider");
+  }
   return context;
 };

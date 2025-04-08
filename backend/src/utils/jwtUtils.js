@@ -3,6 +3,7 @@
 const { SignJWT, jwtVerify, decodeJwt } = require("jose");
 const { TextEncoder } = require("util");
 
+// JWT 비밀키 (환경변수에서 가져오거나 기본값 사용)
 const jwtSecret = process.env.JWT_SECRET || "default";
 const secretKey = new TextEncoder().encode(jwtSecret);
 

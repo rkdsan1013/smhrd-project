@@ -59,7 +59,7 @@ exports.updateProfile = async (req, res) => {
     const { uuid } = req.user;
     const { name: updatedName } = req.body;
 
-    // DB에서 현재 사용자 프로필 정보를 조회하여 기존 이름을 획득합니다.
+    // 현재 프로필 조회하여 기존 이름 획득
     const currentProfile = await userModel.getProfileByUuid(uuid);
     if (!currentProfile) {
       return res
@@ -68,7 +68,7 @@ exports.updateProfile = async (req, res) => {
     }
     const originalName = currentProfile.name;
 
-    // 프로필 업데이트 검증: 새 이름과 프로필 사진의 변경 여부를 확인
+    // 업데이트 검증: 새 이름 및 프로필 사진 변경 여부 확인
     const updateValidation = validateUpdateProfile(originalName, updatedName, req.file);
     if (!updateValidation.valid) {
       return res.status(400).json({
@@ -77,10 +77,10 @@ exports.updateProfile = async (req, res) => {
       });
     }
 
-    // 새 이름 정규화 (불필요한 공백 제거 등)
+    // 새 이름 정규화 (불필요한 공백 제거)
     const normalizedName = normalizeName(updatedName);
 
-    // 프로필 사진 첨부 시 처리 (첨부된 이미지가 있다면 서버에 저장 후 경로 반환)
+    // 프로필 사진 첨부 시 처리: 서버에 저장 후 경로 반환
     let profilePicturePath = null;
     if (req.file) {
       profilePicturePath = await saveProfilePicture(uuid, req.file);
@@ -104,7 +104,7 @@ exports.updateProfile = async (req, res) => {
   }
 };
 
-// 🔹 상대방 프로필 + 친구 상태 포함 조회
+// 상대방 프로필 + 친구 상태 포함 조회
 exports.getProfileWithFriendStatus = async (req, res) => {
   try {
     const currentUuid = req.user.uuid;

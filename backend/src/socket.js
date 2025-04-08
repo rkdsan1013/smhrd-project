@@ -1,3 +1,5 @@
+// /backend/src/socket.js
+
 const { Server } = require("socket.io");
 const { jwtVerify, secretKey } = require("./utils/jwtUtils");
 const cookie = require("cookie");
@@ -8,7 +10,9 @@ const pool = require("./config/db");
 
 const onlineUsers = new Map();
 
+// 소켓 초기화 함수 (싱글턴 패턴)
 const initSocketIO = (server) => {
+  // 소켓 서버 생성 및 CORS 설정
   const io = new Server(server, {
     cors: {
       origin: process.env.FRONTEND_URL || "http://localhost:5173",
@@ -19,6 +23,7 @@ const initSocketIO = (server) => {
 
   global.io = io;
 
+  // 소켓 미들웨어: JWT 토큰 검증
   io.use(async (socket, next) => {
     try {
       const cookieHeader = socket.handshake.headers.cookie || "";
@@ -34,16 +39,18 @@ const initSocketIO = (server) => {
     }
   });
 
+  // 소켓 연결 이벤트
   io.on("connection", async (socket) => {
     console.log("✅ Socket 연결됨:", socket.id);
     const userUuid = socket.user?.uuid;
     if (userUuid) {
-      socket.join(userUuid);
+      socket.join(userUuid); // 각 유저 별로 개별 룸 생성
       if (onlineUsers.has(userUuid)) {
         onlineUsers.get(userUuid).push(socket.id);
       } else {
         onlineUsers.set(userUuid, [socket.id]);
       }
+      // 친구 목록 가져와서 온라인 상태 전파
       try {
         const friends = await friendModel.getAcceptedFriendUuidsForSocket(userUuid);
         friends.forEach(({ uuid }) => {
@@ -54,10 +61,12 @@ const initSocketIO = (server) => {
       }
     }
 
+    // 룸 참여 이벤트
     socket.on("joinRoom", (roomUuid) => {
       socket.join(roomUuid);
     });
 
+    // 메시지 전송 이벤트 (DB 저장 후 전파)
     socket.on("sendMessage", async ({ roomUuid, message }) => {
       try {
         const senderUuid = socket.user.uuid;
@@ -68,6 +77,7 @@ const initSocketIO = (server) => {
       }
     });
 
+    // 그룹 참여 이벤트
     socket.on("joinGroup", async (data, callback) => {
       const { groupUuid, userUuid } = data;
       console.log("joinGroup 요청 수신:", data);
@@ -90,30 +100,27 @@ const initSocketIO = (server) => {
       }
     });
 
-    // ✅ 그룹 초대 이벤트
+    // 그룹 초대 이벤트
     socket.on("inviteToGroup", async ({ groupUuid, invitedUserUuid }, callback) => {
       const inviterUuid = socket.user?.uuid;
       try {
-        // 초대 생성 → inviteUuid 반환
+        // 그룹 초대 생성 및 초대 UUID 반환
         const inviteUuid = await groupModel.sendGroupInvite(
           groupUuid,
           inviterUuid,
           invitedUserUuid,
         );
-
-        // 초대자, 그룹 정보 조회
+        // 초대자와 그룹 정보 조회
         const inviterProfile = await friendModel.getFriendProfileByUuid(inviterUuid);
         const group = await groupModel.getGroupByUuid(groupUuid);
-
-        // 실시간 알림 전송
+        // 초대 알림 전송
         io.to(invitedUserUuid).emit("group-invite", {
-          inviteUuid, // ✅ 초대 UUID 포함
+          inviteUuid, // 초대 UUID 포함
           groupUuid,
           groupName: group?.name,
           inviterUuid,
           inviterName: inviterProfile?.name,
         });
-
         if (callback) callback({ success: true });
       } catch (err) {
         console.error("❌ 그룹 초대 오류:", err);
@@ -121,16 +128,15 @@ const initSocketIO = (server) => {
       }
     });
 
+    // 소켓 연결 종료 이벤트
     socket.on("disconnect", () => {
       console.log("❌ Socket 연결 종료:", socket.id);
       const userUuid = socket.user?.uuid;
       if (!userUuid) return;
-
       if (onlineUsers.has(userUuid)) {
         const userSockets = onlineUsers.get(userUuid);
         const index = userSockets.indexOf(socket.id);
         if (index !== -1) userSockets.splice(index, 1);
-
         if (userSockets.length === 0) {
           onlineUsers.delete(userUuid);
           friendModel
@@ -147,6 +153,7 @@ const initSocketIO = (server) => {
       }
     });
 
+    // 친구 온라인 상태 조회 요청
     socket.on("getFriendsOnlineStatus", async () => {
       const userUuid = socket.user?.uuid;
       if (!userUuid) return;
@@ -162,6 +169,7 @@ const initSocketIO = (server) => {
       }
     });
 
+    // 친구 요청 전송 이벤트
     socket.on("sendFriendRequest", ({ from, to }) => {
       console.log("📨 친구 요청:", from, "->", to);
       socket.to(to).emit("friendRequestSent", { from, to });

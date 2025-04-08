@@ -1,5 +1,8 @@
+// /frontend/src/services/groupService.ts
+
 import { get, post, put } from "./apiClient";
 
+// 그룹 생성 페이로드 인터페이스
 export interface CreateGroupPayload {
   name: string;
   description: string;
@@ -8,6 +11,7 @@ export interface CreateGroupPayload {
   visibility: "public" | "private";
 }
 
+// 그룹 수정 페이로드 인터페이스
 export interface UpdateGroupPayload {
   uuid: string;
   name: string;
@@ -17,93 +21,89 @@ export interface UpdateGroupPayload {
   visibility: "public" | "private";
 }
 
+// 그룹 정보 인터페이스
 export interface GroupInfo {
   uuid: string;
   name: string;
   description?: string;
-  group_icon?: string; // 그룹 아이콘 URL; 아이콘은 UI에서 동그라미(원)로 표시
-  group_picture?: string; // 그룹 사진 URL; 사진은 UI에서 사각형으로 표시하며, 없을 경우 기본 회색 배경 적용
+  group_icon?: string; // 그룹 아이콘 URL, UI에서 동그라미로 표시
+  group_picture?: string; // 그룹 사진 URL, UI에서 사각형으로 표시; 없으면 기본 회색 배경 적용
   visibility: "public" | "private";
   group_leader_uuid?: string;
   created_at: string;
   updated_at: string;
 }
 
+// 멤버 인터페이스
 export interface Member {
   uuid: string;
   name: string;
   profilePicture?: string;
 }
 
+// 그룹 멤버 응답 인터페이스
 export interface GroupMembersResponse {
   members: Member[];
 }
 
+// 내부 헬퍼 함수 - FormData 생성
+const buildGroupFormData = (data: {
+  name: string;
+  description: string;
+  visibility: "public" | "private";
+  groupIcon?: File | null;
+  groupPicture?: File | null;
+}) => {
+  const formData = new FormData();
+  formData.append("name", data.name);
+  formData.append("description", data.description);
+  formData.append("visibility", data.visibility);
+  if (data.groupIcon) formData.append("groupIcon", data.groupIcon);
+  if (data.groupPicture) formData.append("groupPicture", data.groupPicture);
+  return formData;
+};
+
 // 그룹 생성 함수 (새 그룹 등록)
 export const createGroup = async (payload: CreateGroupPayload): Promise<GroupInfo> => {
-  const formData = new FormData();
-  formData.append("name", payload.name);
-  formData.append("description", payload.description);
-  formData.append("visibility", payload.visibility);
-
-  if (payload.groupIcon) {
-    formData.append("groupIcon", payload.groupIcon);
-  }
-  if (payload.groupPicture) {
-    formData.append("groupPicture", payload.groupPicture);
-  }
-
+  const formData = buildGroupFormData(payload);
   return post<GroupInfo>("/groups", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
 };
 
-// 그룹 수정 함수 (기존 그룹정보를 업데이트)
-// 그룹 아이콘과 그룹 사진 변경 시 파일 업로드 그대로 진행하며,
-// 수정 후 UI에서는 group_icon(동그라미)와 group_picture(사각형) 영역에 표시되며,
-// 만약 해당 값이 없으면 기본 회색 배경이 적용되도록 처리합니다.
+// 그룹 수정 함수 (기존 그룹 업데이트)
+// 아이콘은 동그라미, 사진은 사각형; 값 없으면 기본 회색 배경 적용
 export const updateGroup = async (payload: UpdateGroupPayload): Promise<GroupInfo> => {
-  const formData = new FormData();
-  formData.append("name", payload.name);
-  formData.append("description", payload.description);
-  formData.append("visibility", payload.visibility);
-
-  if (payload.groupIcon) {
-    formData.append("groupIcon", payload.groupIcon);
-  }
-  if (payload.groupPicture) {
-    formData.append("groupPicture", payload.groupPicture);
-  }
-
+  const formData = buildGroupFormData(payload);
   return put<GroupInfo>(`/groups/${payload.uuid}`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
 };
 
+// 내 그룹 목록 조회 함수
 export const getMyGroups = async (): Promise<GroupInfo[]> => {
   return get<GroupInfo[]>("/groups/my");
 };
 
+// 그룹 검색 함수
 export const searchGroups = async (keyword: string): Promise<GroupInfo[]> => {
   return post<GroupInfo[]>("/groups/search", { name: keyword });
 };
 
+// 그룹 초대 응답 함수
 export const respondToGroupInvite = async (
   inviteUuid: string,
   action: "accept" | "decline",
 ): Promise<{ message: string }> => {
-  return post<{ message: string }>("/groups/invite/respond", {
-    inviteUuid,
-    action,
-  });
+  return post<{ message: string }>("/groups/invite/respond", { inviteUuid, action });
 };
 
-// joinGroup는 소켓 이벤트로 처리하므로 별도의 HTTP API 함수는 사용하지 않습니다.
+// 그룹 멤버 조회 함수
 export const getGroupMembers = async (groupUuid: string): Promise<GroupMembersResponse> => {
   return get<GroupMembersResponse>(`/groups/${groupUuid}/members`);
 };
 
-// ★ 그룹 채팅방 UUID 조회 함수 추가
+// 그룹 채팅방 UUID 조회 함수
 export const getGroupChatRoomUuid = async (
   groupUuid: string,
 ): Promise<{ chat_room_uuid: string }> => {

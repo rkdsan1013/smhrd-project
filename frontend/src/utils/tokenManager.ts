@@ -2,20 +2,24 @@
 
 import { refreshTokens } from "../services/authService";
 
-const REFRESH_INTERVAL_MS = 10 * 60 * 1000; // 10분 간격
-const ACTIVITY_THRESHOLD_MS = 5 * 60 * 1000; // 5분 이내 활동 기준
-const MAX_RETRIES = 3; // 최대 재시도 횟수
-const RETRY_DELAY_MS = 2000; // 재시도 간격 (2초)
+// 10분 간격 토큰 갱신
+const REFRESH_INTERVAL_MS = 10 * 60 * 1000;
+// 5분 이내 활동 기준
+const ACTIVITY_THRESHOLD_MS = 5 * 60 * 1000;
+// 최대 재시도 횟수
+const MAX_RETRIES = 3;
+// 재시도 간격 (2초)
+const RETRY_DELAY_MS = 2000;
 
-// 마지막 활동 시간 저장
+// 마지막 활동 시간 기록
 let lastActivityTimestamp = Date.now();
 
-// 마지막 활동 시간 업데이트 함수
+// 마지막 활동 업데이트
 const updateLastActivity = (): void => {
   lastActivityTimestamp = Date.now();
 };
 
-// 토큰 갱신을 재시도와 함께 수행하는 함수
+// 토큰 갱신 재시도 함수
 const refreshWithRetry = async (
   renewRefresh: boolean,
   maxRetries = MAX_RETRIES,
@@ -38,12 +42,12 @@ const refreshWithRetry = async (
   }
 };
 
-// 토큰 갱신 폴링을 시작하고, 정리(cleanup) 함수를 반환함
+// 토큰 갱신 폴링 시작 및 정리 함수 반환
 const startTokenRefreshPolling = (): (() => void) => {
   const activityEvents = ["mousemove", "keydown", "click", "touchstart"];
   activityEvents.forEach((event) => window.addEventListener(event, updateLastActivity));
 
-  // 페이지 로드 시 즉시 전체 토큰 갱신 시도
+  // 페이지 로드 시 전체 토큰 갱신 시도
   (async () => {
     try {
       await refreshWithRetry(true);

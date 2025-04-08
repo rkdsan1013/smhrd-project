@@ -3,6 +3,7 @@
 const validator = require("validator");
 const { normalizeName } = require("./normalize");
 
+// 상수 정의
 const MIN_EMAIL_LENGTH = 5;
 const MAX_EMAIL_LENGTH = 254;
 const MIN_PASSWORD_LENGTH = 8;
@@ -11,7 +12,7 @@ const MIN_NAME_LENGTH = 2;
 const MAX_NAME_LENGTH = 50;
 const MAX_DESCRIPTION_LENGTH = 1000;
 
-// 이메일 검사: 공백 제거, 형식과 길이 체크
+// 이메일 검사: 공백 제거 후 형식 및 길이 체크
 const validateEmail = (email) => {
   const trimmedEmail = typeof email === "string" ? email.trim() : "";
   if (validator.isEmpty(trimmedEmail, { ignore_whitespace: true })) {
@@ -48,21 +49,20 @@ const validatePassword = (password) => {
   return { valid: true };
 };
 
-// 이름 검사: 입력값을 정규화한 후 길이와 형식을 체크
+// 이름 검사: 입력값 정규화 후 길이 및 형식 체크
 const validateName = (name) => {
-  const normalizedName = normalizeName(name);
-
-  if (validator.isEmpty(normalizedName, { ignore_whitespace: true })) {
+  const normalized = normalizeName(name);
+  if (validator.isEmpty(normalized, { ignore_whitespace: true })) {
     return { valid: false, message: "이름을 입력해 주세요." };
   }
-  if (normalizedName.length < MIN_NAME_LENGTH) {
+  if (normalized.length < MIN_NAME_LENGTH) {
     return { valid: false, message: "이름이 너무 짧습니다. 최소 2자 이상 입력해 주세요." };
   }
-  if (normalizedName.length > MAX_NAME_LENGTH) {
+  if (normalized.length > MAX_NAME_LENGTH) {
     return { valid: false, message: "이름이 너무 깁니다. 50자 이하로 입력해 주세요." };
   }
   const nameRegex = /^[\p{L}\s.'-]+$/u;
-  if (!nameRegex.test(normalizedName)) {
+  if (!nameRegex.test(normalized)) {
     return { valid: false, message: "올바른 형식의 이름을 입력해 주세요." };
   }
   return { valid: true };
@@ -114,15 +114,17 @@ const validateDescription = (description) => {
   return { valid: true };
 };
 
-// 전체 프로필 검사: 이름, 생년월일, 성별 및 나이/미래 날짜 체크
-// 순서: (name, gender, year, month, day, paradoxFlag)
+// 전체 프로필 검사: 이름, 성별, 생년월일 및 나이/미래 날짜 체크
 const validateFullProfile = (name, gender, year, month, day, paradoxFlag) => {
   const nameResult = validateName(name);
   if (!nameResult.valid) return nameResult;
+
   const birthResult = validateBirthDate(year, month, day);
   if (!birthResult.valid) return birthResult;
+
   const genderResult = validateGender(gender);
   if (!genderResult.valid) return genderResult;
+
   const y = parseInt(year.trim(), 10);
   const m = parseInt(month.trim(), 10);
   const d = parseInt(day.trim(), 10);
@@ -145,9 +147,9 @@ const validateFullProfile = (name, gender, year, month, day, paradoxFlag) => {
   return { valid: true };
 };
 
-// 프로필 수정 업데이트 검사: 이름이나 프로필 사진의 변경이 있는지 확인
+// 프로필 수정 업데이트 검사: 이름이나 프로필 사진 변경 여부 확인
 const validateUpdateProfile = (originalName, updatedName, newProfilePicture) => {
-  // 이름을 정규화하여 비교하고, 새로운 프로필 사진이 없을 경우 변경된 내용이 없다고 판단
+  // 이름 정규화 후 비교, 프로필 사진 변경 없으면 변경된 내용 없음
   if (normalizeName(originalName) === normalizeName(updatedName) && !newProfilePicture) {
     return { valid: false, message: "변경된 내용이 없습니다." };
   }

@@ -2,17 +2,14 @@
 
 const groupModel = require("../models/groupModel");
 const chatTransactions = require("../models/chatTransactions");
-const chatModel = require("../models/chatModel"); // 그룹 채팅방 조회를 위한 모델
+const chatModel = require("../models/chatModel"); // 그룹 채팅방 조회용 모델
 const { saveGroupIcon, saveGroupPicture } = require("../utils/imageHelper");
 const { formatImageUrl } = require("../utils/imageUrlHelper");
 const { validateName, validateDescription } = require("../utils/validators");
 const userModel = require("../models/userModel");
 const pool = require("../config/db");
 
-/**
- * 프로필 객체 내에 profilePicture가 존재하면,
- * 서버 주소가 붙은 이미지 URL로 변환합니다.
- */
+// 프로필 이미지 URL 포매팅
 const formatProfile = (profile) => {
   if (profile.profilePicture) {
     profile.profilePicture = formatImageUrl(profile.profilePicture);
@@ -20,33 +17,26 @@ const formatProfile = (profile) => {
   return profile;
 };
 
-/**
- * 그룹 생성
- * - 그룹 생성 후 파일 업로드 처리 (아이콘, 사진)
- * - 변경된 이미지 정보가 있으면 DB를 업데이트
- * - 그룹 채팅방 생성 후 chat_room_uuid를 그룹 객체에 포함
- */
+// 그룹 생성
 const createGroup = async (req, res, next) => {
   try {
     const groupLeaderUuid = req.user.uuid;
     const { name, description, visibility } = req.body;
 
-    // 그룹 이름 유효성 검사
+    // 그룹 이름 및 설명, 공개 상태 검사
     const nameValidation = validateName(name);
     if (!nameValidation.valid) {
       return res.status(400).json({ message: nameValidation.message });
     }
-    // 그룹 설명 유효성 검사
     const descriptionValidation = validateDescription(description);
     if (!descriptionValidation.valid) {
       return res.status(400).json({ message: descriptionValidation.message });
     }
-    // 공개 유형 검사
     if (visibility !== "public" && visibility !== "private") {
       return res.status(400).json({ message: "유효한 공개 상태를 선택해 주세요." });
     }
 
-    // 그룹 생성 및 생성된 그룹 정보 획득
+    // 그룹 생성 (아이콘, 사진은 null로 초기화)
     let createdGroup = await groupModel.createGroup(
       name,
       description,
@@ -57,7 +47,7 @@ const createGroup = async (req, res, next) => {
     );
     const groupUuid = createdGroup.uuid;
 
-    // 파일이 업로드되었으면 해당 파일들을 처리
+    // 업로드된 파일 처리 (그룹 아이콘, 그룹 사진)
     let groupIconFile = null;
     let groupPictureFile = null;
     if (req.files) {
@@ -68,7 +58,6 @@ const createGroup = async (req, res, next) => {
         groupPictureFile = req.files.groupPicture[0];
       }
     }
-
     let groupIconUrl = createdGroup.group_icon;
     let groupPictureUrl = createdGroup.group_picture;
     if (groupIconFile) {
@@ -77,8 +66,7 @@ const createGroup = async (req, res, next) => {
     if (groupPictureFile) {
       groupPictureUrl = await saveGroupPicture(groupUuid, groupPictureFile);
     }
-
-    // 이미지가 변경되었으면 DB상의 그룹 이미지 정보 업데이트
+    // 이미지가 변경되었으면 DB 업데이트
     if (
       groupIconUrl !== createdGroup.group_icon ||
       groupPictureUrl !== createdGroup.group_picture
@@ -87,15 +75,14 @@ const createGroup = async (req, res, next) => {
       createdGroup = await groupModel.getGroupByUuid(groupUuid);
     }
 
-    // 그룹 채팅방 생성 (chat_rooms 테이블에 그룹 채팅방 생성 후, chat_room_members에 그룹 리더 추가)
+    // 그룹 채팅방 생성 및 그룹 리더 추가
     const groupRoomUuid = await chatTransactions.createGroupRoomWithLeader(
       groupUuid,
       groupLeaderUuid,
     );
-    // 원한다면 생성된 채팅방의 ID를 그룹 정보에 포함
     createdGroup.chat_room_uuid = groupRoomUuid;
 
-    // 클라이언트에 반환하기 전에 이미지 URL에 서버 주소를 붙임
+    // 이미지 URL 포매팅
     createdGroup.group_icon = formatImageUrl(createdGroup.group_icon);
     createdGroup.group_picture = formatImageUrl(createdGroup.group_picture);
 
@@ -105,10 +92,7 @@ const createGroup = async (req, res, next) => {
   }
 };
 
-/**
- * 내 그룹 조회
- * 로그인한 사용자의 그룹 목록을 반환합니다.
- */
+// 내 그룹 목록 조회
 const getMyGroups = async (req, res, next) => {
   try {
     const userUuid = req.user.uuid;
@@ -124,10 +108,7 @@ const getMyGroups = async (req, res, next) => {
   }
 };
 
-/**
- * 그룹 검색
- * 요청 본문의 name 값으로 그룹 목록 검색 후 반환합니다.
- */
+// 그룹 검색
 const searchGroups = async (req, res, next) => {
   try {
     const { name } = req.body;
@@ -146,10 +127,7 @@ const searchGroups = async (req, res, next) => {
   }
 };
 
-/**
- * 그룹 참여 (가입)
- * 사용자가 그룹에 참여하면 그룹 멤버 테이블에 등록합니다.
- */
+// 그룹 참여 (가입)
 const joinGroup = async (req, res, next) => {
   try {
     const { groupUuid } = req.body;
@@ -157,16 +135,12 @@ const joinGroup = async (req, res, next) => {
     if (!groupUuid) {
       return res.status(400).json({ message: "그룹 UUID가 필요합니다." });
     }
-
-    // 이미 그룹의 멤버인지 확인 (내가 가입한 그룹 목록 조회)
     const myGroups = await groupModel.getMyGroups(userUuid);
     const isMember = myGroups.some((group) => group.uuid === groupUuid);
     if (isMember) {
       return res.status(400).json({ message: "이미 그룹의 멤버입니다." });
     }
-
-    // 그룹 멤버로 등록 (role: 'member')
-    const [result] = await pool.query(
+    await pool.query(
       "INSERT INTO group_members (group_uuid, user_uuid, role) VALUES (?, ?, 'member')",
       [groupUuid, userUuid],
     );
@@ -176,10 +150,7 @@ const joinGroup = async (req, res, next) => {
   }
 };
 
-/**
- * 그룹 리더(사용자) 프로필 조회
- * URL 파라미터로 전달된 uuid에 해당하는 사용자의 프로필을 반환합니다.
- */
+// 그룹 리더 프로필 조회
 const getUserProfile = async (req, res, next) => {
   try {
     const userUuid = req.params.uuid;
@@ -193,54 +164,40 @@ const getUserProfile = async (req, res, next) => {
   }
 };
 
-/**
- * 그룹 초대 응답
- * 사용자가 그룹 초대를 수락하거나 거절할 때 호출됩니다.
- */
+// 그룹 초대 응답
 const respondToGroupInvite = async (req, res) => {
   const { inviteUuid, action } = req.body;
-  const userUuid = req.user?.uuid; // 로그인된 사용자 uuid 획득
-
+  const userUuid = req.user?.uuid;
   if (!userUuid || !inviteUuid || !action) {
     return res.status(400).json({ success: false, message: "필수 정보가 누락되었습니다." });
   }
-
   try {
     const result = await groupModel.respondToGroupInvite(inviteUuid, userUuid, action);
     res.status(200).json(result);
   } catch (err) {
-    console.error("❌ 초대 응답 처리 실패:", err);
+    console.error("초대 응답 실패:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 };
 
-/**
- * 그룹 멤버 조회
- * 해당 그룹에 속한 멤버 목록을 반환하며, 각 멤버의 프로필 사진 URL을 포맷합니다.
- */
+// 그룹 멤버 조회
 const getGroupMembers = async (req, res, next) => {
   try {
     const { groupUuid } = req.params;
     let members = await groupModel.getGroupMembers(groupUuid);
-
-    // 각 멤버의 프로필 사진에 서버 URL을 붙여 포매팅 적용
     members = members.map((member) => {
       if (member.profilePicture) {
         member.profilePicture = formatImageUrl(member.profilePicture);
       }
       return member;
     });
-
     res.status(200).json({ members });
   } catch (error) {
     next(error);
   }
 };
 
-/**
- * 그룹 채팅방 UUID 조회
- * 그룹과 연결된 채팅방을 조회하여 해당 채팅방의 UUID를 JSON 으로 반환합니다.
- */
+// 그룹 채팅방 UUID 조회
 const getGroupChatRoom = async (req, res, next) => {
   try {
     const { groupUuid } = req.params;

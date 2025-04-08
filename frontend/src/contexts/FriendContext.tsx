@@ -1,6 +1,14 @@
 // /frontend/src/contexts/FriendContext.tsx
 
-import React, { createContext, useCallback, useContext, useEffect, useState, useMemo } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  useMemo,
+  ReactNode,
+} from "react";
 import {
   fetchFriendList,
   Friend,
@@ -10,7 +18,7 @@ import {
 import { useSocket } from "./SocketContext";
 import { useUser } from "./UserContext";
 
-interface IFriendContext {
+interface FriendContextValue {
   friends: Friend[];
   loading: boolean;
   error: string | null;
@@ -20,17 +28,13 @@ interface IFriendContext {
   onlineStatus: Record<string, boolean>;
 }
 
-const FriendContext = createContext<IFriendContext>({
-  friends: [],
-  loading: false,
-  error: null,
-  loadFriends: async () => {},
-  friendRequests: [],
-  loadFriendRequests: async () => {},
-  onlineStatus: {},
-});
+const FriendContext = createContext<FriendContextValue | undefined>(undefined);
 
-export const FriendProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+interface FriendProviderProps {
+  children: ReactNode;
+}
+
+export const FriendProvider: React.FC<FriendProviderProps> = ({ children }) => {
   const [friends, setFriends] = useState<Friend[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,10 +47,10 @@ export const FriendProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const loadFriends = useCallback(async () => {
     setLoading(true);
     try {
-      const fetched = await fetchFriendList();
-      setFriends(fetched);
+      const fetchedFriends = await fetchFriendList();
+      setFriends(fetchedFriends);
       setError(null);
-    } catch (err) {
+    } catch (error) {
       setError("친구 목록 로드 실패");
     } finally {
       setLoading(false);
@@ -57,11 +61,12 @@ export const FriendProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     try {
       const requests = await fetchReceivedFriendRequests();
       setFriendRequests(requests);
-    } catch (err) {
-      console.error("친구 요청 로드 실패", err);
+    } catch (error) {
+      console.error("친구 요청 로드 실패", error);
     }
   }, []);
 
+  // 초기 친구 목록 및 친구 요청 데이터 로드
   useEffect(() => {
     loadFriends();
     loadFriendRequests();
@@ -72,11 +77,11 @@ export const FriendProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     const handlers: Record<string, (data: any) => void> = {
       friendRemoved: ({ removedUuid }: { removedUuid: string }) => {
-        setFriends((prev) => prev.filter((f) => f.uuid !== removedUuid));
+        setFriends((prev) => prev.filter((friend) => friend.uuid !== removedUuid));
         setOnlineStatus((prev) => {
-          const copy = { ...prev };
-          delete copy[removedUuid];
-          return copy;
+          const updatedStatus = { ...prev };
+          delete updatedStatus[removedUuid];
+          return updatedStatus;
         });
       },
       friendRequestReceived: () => {
@@ -99,18 +104,27 @@ export const FriendProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setOnlineStatus((prev) => ({ ...prev, [uuid]: online }));
       },
       friendsOnlineStatus: (statusList: { uuid: string; online: boolean }[]) => {
-        const updated = Object.fromEntries(statusList.map(({ uuid, online }) => [uuid, online]));
-        setOnlineStatus(updated);
+        const updatedStatus = Object.fromEntries(
+          statusList.map(({ uuid, online }) => [uuid, online]),
+        );
+        setOnlineStatus(updatedStatus);
       },
     };
 
-    Object.entries(handlers).forEach(([event, handler]) => socket.on(event, handler));
+    // 소켓 이벤트 핸들러 등록
+    Object.entries(handlers).forEach(([event, handler]) => {
+      socket.on(event, handler);
+    });
 
+    // 컴포넌트 언마운트 시 이벤트 클린업
     return () => {
-      Object.entries(handlers).forEach(([event, handler]) => socket.off(event, handler));
+      Object.entries(handlers).forEach(([event, handler]) => {
+        socket.off(event, handler);
+      });
     };
   }, [socket, loadFriends, loadFriendRequests, userUuid]);
 
+  // 친구 온라인 상태 요청
   useEffect(() => {
     if (socket) {
       socket.emit("getFriendsOnlineStatus");
@@ -133,4 +147,10 @@ export const FriendProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   return <FriendContext.Provider value={value}>{children}</FriendContext.Provider>;
 };
 
-export const useFriend = () => useContext(FriendContext);
+export const useFriend = (): FriendContextValue => {
+  const context = useContext(FriendContext);
+  if (!context) {
+    throw new Error("useFriend must be used within a FriendProvider");
+  }
+  return context;
+};

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+
 import { get, post } from "./services/apiClient";
 import LandingPage from "./pages/LandingPage";
 import MainPage from "./pages/MainPage";
@@ -11,6 +12,10 @@ import Icons from "./components/Icons";
 import { SocketProvider } from "./contexts/SocketContext";
 import { FriendProvider } from "./contexts/FriendContext";
 import { GroupProvider } from "./contexts/GroupContext";
+
+// 상수 추출: 모션 전환 설정 및 인증 재검사 간격
+const MOTION_TRANSITION = { duration: 0.5, ease: "easeInOut" };
+const REFRESH_INTERVAL_MS = 30000;
 
 const AppContent: React.FC = () => {
   const { setUserUuid } = useUser();
@@ -51,7 +56,7 @@ const AppContent: React.FC = () => {
     }
   };
 
-  // 초기 인증 검사
+  // 컴포넌트가 마운트될 때 초기 인증 검사 실행
   useEffect(() => {
     fetchCurrentUser();
   }, []);
@@ -67,21 +72,22 @@ const AppContent: React.FC = () => {
     };
   }, [isLoggedIn]);
 
-  // 로그인 상태일 때 30초마다 사용자 인증 재확인
+  // 로그인 상태일 때 사용자 인증 재확인
   useEffect(() => {
     if (isLoggedIn) {
-      const intervalId = setInterval(fetchCurrentUser, 30000);
+      const intervalId = setInterval(fetchCurrentUser, REFRESH_INTERVAL_MS);
       return () => clearInterval(intervalId);
     }
   }, [isLoggedIn]);
 
-  // 전역 이벤트 리스너로 로그인/로그아웃 상태 업데이트
+  // 전역 이벤트 리스너를 통한 로그인/로그아웃 상태 업데이트
   useEffect(() => {
     const handleSignOut = () => setIsLoggedIn(false);
     const handleSignIn = (e: CustomEvent) => {
       if (e.detail?.user) setUserUuid(e.detail.user.uuid);
       setIsLoggedIn(true);
     };
+
     window.addEventListener("userSignedOut", handleSignOut);
     window.addEventListener("userSignedIn", handleSignIn as EventListener);
     return () => {
@@ -90,7 +96,7 @@ const AppContent: React.FC = () => {
     };
   }, [setUserUuid]);
 
-  // 인증 체크 전에는 로딩 스피너 표시
+  // 인증 체크 전에는 로딩 스피너를 표시
   if (!isAuthChecked) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -109,10 +115,9 @@ const AppContent: React.FC = () => {
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -50 }}
-            transition={{ duration: 0.5, ease: "easeInOut" }}
+            transition={MOTION_TRANSITION}
             className="h-full"
           >
-            {/* 로그인 상태일 때 SocketProvider와 FriendProvider 등을 중첩하여 사용 */}
             <SocketProvider>
               <FriendProvider>
                 <GroupProvider>
@@ -127,7 +132,7 @@ const AppContent: React.FC = () => {
             initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 50 }}
-            transition={{ duration: 0.5, ease: "easeInOut" }}
+            transition={MOTION_TRANSITION}
             className="h-full"
           >
             <LandingPage />

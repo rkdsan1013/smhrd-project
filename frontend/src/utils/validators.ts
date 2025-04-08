@@ -3,6 +3,7 @@
 import validator from "validator";
 import { normalizeName } from "./normalize";
 
+// 상수 정의
 export const MIN_EMAIL_LENGTH = 5;
 export const MAX_EMAIL_LENGTH = 254;
 export const MIN_PASSWORD_LENGTH = 8;
@@ -11,7 +12,7 @@ export const MIN_NAME_LENGTH = 2;
 export const MAX_NAME_LENGTH = 50;
 export const MAX_DESCRIPTION_LENGTH = 1000;
 
-// 이메일 검사: 공백 제거, 형식과 길이 체크
+// 이메일 검사: 공백 제거 후 형식 및 길이 체크
 export const validateEmail = (email: string): { valid: boolean; message?: string } => {
   const trimmedEmail = email.trim();
   if (validator.isEmpty(trimmedEmail, { ignore_whitespace: true })) {
@@ -27,7 +28,7 @@ export const validateEmail = (email: string): { valid: boolean; message?: string
   return { valid: true };
 };
 
-// 비밀번호 검사: 공백 제거, 길이 및 ASCII 문자 여부 확인
+// 비밀번호 검사: 공백 제거, 길이 및 ASCII 문자 검사
 export const validatePassword = (password: string): { valid: boolean; message?: string } => {
   const trimmedPassword = password.trim();
   if (validator.isEmpty(trimmedPassword, { ignore_whitespace: true })) {
@@ -48,10 +49,9 @@ export const validatePassword = (password: string): { valid: boolean; message?: 
   return { valid: true };
 };
 
-// 이름 검사: 이름을 정규화한 후, 길이 및 형식 체크
+// 이름 검사: 입력값 정규화 후 길이 및 형식 체크
 export const validateName = (name: string): { valid: boolean; message?: string } => {
   const normalizedName = normalizeName(name);
-
   if (validator.isEmpty(normalizedName, { ignore_whitespace: true })) {
     return { valid: false, message: "이름을 입력해 주세요." };
   }
@@ -77,7 +77,7 @@ export const validateGender = (gender: string): { valid: boolean; message?: stri
   return { valid: true };
 };
 
-// 생년월일 검사: 공백 제거, 형식 및 날짜 유효성 체크
+// 생년월일 검사: 필수 입력, 형식 및 날짜 유효성 체크
 export const validateBirthDate = (
   year: string,
   month: string,
@@ -112,8 +112,7 @@ export const validateDescription = (description: string): { valid: boolean; mess
   return { valid: true };
 };
 
-// 전체 프로필 검사: 이름, 생년월일, 성별, 그리고 나이/미래 날짜 체크
-// 인자 순서: name, gender, year, month, day, paradoxFlag
+// 전체 프로필 검사: 이름, 성별, 생년월일 및 나이/미래 날짜 체크
 export const validateFullProfile = (
   name: string,
   gender: string,
@@ -124,10 +123,13 @@ export const validateFullProfile = (
 ): { valid: boolean; message?: string; requiresOverride?: boolean } => {
   const nameValidation = validateName(name);
   if (!nameValidation.valid) return nameValidation;
+
   const birthValidation = validateBirthDate(year, month, day);
   if (!birthValidation.valid) return birthValidation;
+
   const genderValidation = validateGender(gender);
   if (!genderValidation.valid) return genderValidation;
+
   const y = parseInt(year.trim(), 10);
   const m = parseInt(month.trim(), 10);
   const d = parseInt(day.trim(), 10);
@@ -150,12 +152,13 @@ export const validateFullProfile = (
   return { valid: true };
 };
 
-// 프로필 수정 업데이트 검사: 이름이나 프로필 사진의 변경이 있는지 확인
+// 프로필 수정 업데이트 검사: 이름이나 프로필 사진 변경 여부 확인
 export const validateUpdateProfile = (
   originalName: string,
   updatedName: string,
   newProfilePicture?: File | null,
 ): { valid: boolean; message?: string } => {
+  // 이름 정규화 후 비교, 프로필 사진 변경 없으면 변경된 내용 없음
   if (normalizeName(originalName) === normalizeName(updatedName) && !newProfilePicture) {
     return { valid: false, message: "변경된 내용이 없습니다." };
   }

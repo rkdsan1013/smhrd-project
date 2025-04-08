@@ -1,6 +1,6 @@
 // /frontend/src/hooks/useUserProfile.ts
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { fetchUserProfile } from "../services/userService";
 import { useUser } from "../contexts/UserContext";
 
@@ -14,40 +14,43 @@ export interface UserProfile {
   profilePicture?: string;
 }
 
-// 자신의 프로필 정보를 가져오는 훅 (forceRefresh, version 포함)
+// 사용자 프로필을 가져오는 커스텀 훅, forceRefresh와 version 지원
 export const useUserProfile = () => {
   const { userUuid } = useUser();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string>("");
+  const [error, setError] = useState<string | null>(null);
   const [refresh, setRefresh] = useState<boolean>(false);
   const [version, setVersion] = useState<number>(0);
 
-  // forceRefresh를 호출하면 refresh와 version이 업데이트됨
-  const forceRefresh = () => {
+  // refresh 토글 및 버전 증가
+  const forceRefresh = useCallback(() => {
     setRefresh((prev) => !prev);
     setVersion((prev) => prev + 1);
-  };
+  }, []);
 
   useEffect(() => {
-    if (userUuid) {
+    if (!userUuid) return;
+
+    const loadUserProfile = async () => {
       setLoading(true);
-      fetchUserProfile()
-        .then((data) => {
-          if (data.success) {
-            setProfile(data.profile);
-          } else {
-            setError("프로필 정보를 불러올 수 없습니다.");
-          }
-        })
-        .catch((err) => {
-          console.error("프로필 조회 실패:", err);
-          setError("프로필 정보를 불러오는 데 실패했습니다.");
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    }
+      setError(null);
+      try {
+        const data = await fetchUserProfile();
+        if (data.success) {
+          setProfile(data.profile);
+        } else {
+          setError("프로필 정보를 불러올 수 없습니다.");
+        }
+      } catch (err: any) {
+        console.error("프로필 조회 실패:", err);
+        setError("프로필 정보를 불러오는 데 실패했습니다.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUserProfile();
   }, [userUuid, refresh]);
 
   return { profile, loading, error, forceRefresh, version };

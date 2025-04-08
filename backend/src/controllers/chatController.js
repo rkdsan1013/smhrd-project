@@ -1,3 +1,5 @@
+// /backend/src/controllers/chatController.js
+
 const chatModel = require("../models/chatModel");
 
 // DM 채팅방 조회 또는 생성
@@ -5,11 +7,9 @@ exports.openOrCreateDMRoom = async (req, res) => {
   try {
     const userUuid = req.user.uuid;
     const { friendUuid } = req.body;
-
     if (!friendUuid) {
       return res.status(400).json({ success: false, message: "friendUuid가 필요합니다." });
     }
-
     const roomUuid = await chatModel.getOrCreateDMRoom(userUuid, friendUuid);
     return res.status(200).json({ success: true, roomUuid });
   } catch (err) {
@@ -25,7 +25,6 @@ exports.getMessagesByRoom = async (req, res) => {
     if (!roomUuid) {
       return res.status(400).json({ success: false, message: "roomUuid가 필요합니다." });
     }
-
     const messages = await chatModel.getMessagesByRoom(roomUuid);
     return res.status(200).json({ success: true, messages });
   } catch (err) {
@@ -34,7 +33,7 @@ exports.getMessagesByRoom = async (req, res) => {
   }
 };
 
-// ✅ 사용자 탈퇴 시 DM 방 정리
+// 사용자 탈퇴 시 DM 방 정리
 exports.cleanUpDMRooms = async (req, res) => {
   try {
     await chatModel.deleteDMRoomsWithOneMember();

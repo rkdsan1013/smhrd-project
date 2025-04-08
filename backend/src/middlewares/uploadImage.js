@@ -14,14 +14,14 @@ const fileFilter = (req, file, cb) => {
   cb(new Error("오직 이미지 파일만 업로드할 수 있습니다."), false);
 };
 
-// multer 업로드 인스턴스 생성, 파일 크기 제한 10MB
+// multer 업로드 인스턴스 생성 (파일 크기 제한: 10MB)
 const upload = multer({
   storage,
   fileFilter,
   limits: { fileSize: 10 * 1024 * 1024 },
 });
 
-// 업로드된 이미지 자동 회전, 512x512 리사이즈, 가운데 crop, webp 변환 (단일 및 다중 파일 모두 처리)
+// 업로드된 이미지 자동 회전, 512x512 리사이즈, 가운데 crop, webp 변환 처리 (단일 및 다중 파일 모두 적용)
 async function resizeImage(req, res, next) {
   try {
     // 단일 파일 처리 (upload.single 사용 시)

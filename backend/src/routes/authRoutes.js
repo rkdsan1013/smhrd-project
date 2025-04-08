@@ -7,7 +7,7 @@ const { upload, resizeImage } = require("../middlewares/uploadImage");
 
 const router = express.Router();
 
-// 회원가입 (프로필 이미지 업로드 후 리사이징)
+// 회원가입: 프로필 이미지 업로드 후 리사이징
 router.post("/sign-up", upload.single("profilePicture"), resizeImage, authController.signUp);
 
 // 로그인, 이메일 중복 확인, 토큰 갱신, 로그아웃, 현재 사용자 조회
