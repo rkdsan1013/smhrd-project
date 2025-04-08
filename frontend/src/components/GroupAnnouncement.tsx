@@ -1,4 +1,5 @@
 // /frontend/src/components/GroupAnnouncement.tsx
+
 import React from "react";
 
 const GroupAnnouncement: React.FC = () => {

@@ -10,7 +10,7 @@ const pool = require("./config/db");
 
 const onlineUsers = new Map();
 
-// 소켓 초기화 함수 (싱글턴 패턴)
+// 소켓 초기화 함수
 const initSocketIO = (server) => {
   // 소켓 서버 생성 및 CORS 설정
   const io = new Server(server, {

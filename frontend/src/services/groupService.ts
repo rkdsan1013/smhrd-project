@@ -72,7 +72,6 @@ export const createGroup = async (payload: CreateGroupPayload): Promise<GroupInf
 };
 
 // 그룹 수정 함수 (기존 그룹 업데이트)
-// 아이콘은 동그라미, 사진은 사각형; 값 없으면 기본 회색 배경 적용
 export const updateGroup = async (payload: UpdateGroupPayload): Promise<GroupInfo> => {
   const formData = buildGroupFormData(payload);
   return put<GroupInfo>(`/groups/${payload.uuid}`, formData, {

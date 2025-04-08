@@ -1,4 +1,5 @@
 // /frontend/src/components/GroupCalendar.tsx
+
 import React from "react";
 
 const GroupCalendar: React.FC = () => {

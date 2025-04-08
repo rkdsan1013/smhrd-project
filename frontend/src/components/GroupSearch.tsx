@@ -1,4 +1,5 @@
 // /frontend/src/components/GroupSearch.tsx
+
 import React, { useState } from "react";
 import { searchGroups, GroupInfo } from "../services/groupService";
 import Icons from "./Icons";

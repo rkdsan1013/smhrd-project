@@ -47,7 +47,7 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
   return (
     <div className="h-full flex flex-col">
       {/* 모바일 상단 네비게이션 (md 미만) */}
-      <div className="block md:hidden mb-4 border-b border-gray-300 pb-2">
+      <div className="block md:hidden mb-4 border-b border-gray-300 py-2">
         <div className="flex items-center justify-around">
           <button
             onClick={() => setSelectedTab("announcement")}

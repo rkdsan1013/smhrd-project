@@ -12,8 +12,8 @@ import Icons from "./components/Icons";
 import { SocketProvider } from "./contexts/SocketContext";
 import { FriendProvider } from "./contexts/FriendContext";
 import { GroupProvider } from "./contexts/GroupContext";
+import { NotificationProvider } from "./contexts/NotificationContext";
 
-// 상수 추출: 모션 전환 설정 및 인증 재검사 간격
 const MOTION_TRANSITION = { duration: 0.5, ease: "easeInOut" };
 const REFRESH_INTERVAL_MS = 30000;
 
@@ -22,7 +22,6 @@ const AppContent: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAuthChecked, setIsAuthChecked] = useState(false);
 
-  // 사용자 인증 상태 확인 및 토큰 리프레시 처리
   const fetchCurrentUser = async () => {
     try {
       const data = await get<{ user?: { uuid: string } }>("/auth/me");
@@ -56,12 +55,10 @@ const AppContent: React.FC = () => {
     }
   };
 
-  // 컴포넌트가 마운트될 때 초기 인증 검사 실행
   useEffect(() => {
     fetchCurrentUser();
   }, []);
 
-  // 로그인 상태일 때 토큰 갱신 폴링 시작
   useEffect(() => {
     let cleanup: (() => void) | undefined;
     if (isLoggedIn) {
@@ -72,7 +69,6 @@ const AppContent: React.FC = () => {
     };
   }, [isLoggedIn]);
 
-  // 로그인 상태일 때 사용자 인증 재확인
   useEffect(() => {
     if (isLoggedIn) {
       const intervalId = setInterval(fetchCurrentUser, REFRESH_INTERVAL_MS);
@@ -80,7 +76,6 @@ const AppContent: React.FC = () => {
     }
   }, [isLoggedIn]);
 
-  // 전역 이벤트 리스너를 통한 로그인/로그아웃 상태 업데이트
   useEffect(() => {
     const handleSignOut = () => setIsLoggedIn(false);
     const handleSignIn = (e: CustomEvent) => {
@@ -96,7 +91,6 @@ const AppContent: React.FC = () => {
     };
   }, [setUserUuid]);
 
-  // 인증 체크 전에는 로딩 스피너를 표시
   if (!isAuthChecked) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -105,7 +99,6 @@ const AppContent: React.FC = () => {
     );
   }
 
-  // 페이지 전환 애니메이션: 로그인 상태면 MainPage, 아니면 LandingPage 렌더링
   return (
     <div className="h-screen bg-gray-100 overflow-hidden">
       <AnimatePresence mode="wait">
@@ -121,7 +114,10 @@ const AppContent: React.FC = () => {
             <SocketProvider>
               <FriendProvider>
                 <GroupProvider>
-                  <MainPage />
+                  {/* 로그인 시에만 NotificationProvider로 감싸서 알림 Context 활성화 */}
+                  <NotificationProvider>
+                    <MainPage />
+                  </NotificationProvider>
                 </GroupProvider>
               </FriendProvider>
             </SocketProvider>
