@@ -1,6 +1,8 @@
 // /backend/src/controllers/groupController.js
 
 const groupModel = require("../models/groupModel");
+const chatTransactions = require("../models/chatTransactions");
+const chatModel = require("../models/chatModel"); // 그룹 채팅방 조회를 위한 모델
 const { saveGroupIcon, saveGroupPicture } = require("../utils/imageHelper");
 const { formatImageUrl } = require("../utils/imageUrlHelper");
 const { validateName, validateDescription } = require("../utils/validators");
@@ -18,21 +20,28 @@ const formatProfile = (profile) => {
   return profile;
 };
 
+/**
+ * 그룹 생성
+ * - 그룹 생성 후 파일 업로드 처리 (아이콘, 사진)
+ * - 변경된 이미지 정보가 있으면 DB를 업데이트
+ * - 그룹 채팅방 생성 후 chat_room_uuid를 그룹 객체에 포함
+ */
 const createGroup = async (req, res, next) => {
   try {
     const groupLeaderUuid = req.user.uuid;
     const { name, description, visibility } = req.body;
 
+    // 그룹 이름 유효성 검사
     const nameValidation = validateName(name);
     if (!nameValidation.valid) {
       return res.status(400).json({ message: nameValidation.message });
     }
-
+    // 그룹 설명 유효성 검사
     const descriptionValidation = validateDescription(description);
     if (!descriptionValidation.valid) {
       return res.status(400).json({ message: descriptionValidation.message });
     }
-
+    // 공개 유형 검사
     if (visibility !== "public" && visibility !== "private") {
       return res.status(400).json({ message: "유효한 공개 상태를 선택해 주세요." });
     }
@@ -78,6 +87,14 @@ const createGroup = async (req, res, next) => {
       createdGroup = await groupModel.getGroupByUuid(groupUuid);
     }
 
+    // 그룹 채팅방 생성 (chat_rooms 테이블에 그룹 채팅방 생성 후, chat_room_members에 그룹 리더 추가)
+    const groupRoomUuid = await chatTransactions.createGroupRoomWithLeader(
+      groupUuid,
+      groupLeaderUuid,
+    );
+    // 원한다면 생성된 채팅방의 ID를 그룹 정보에 포함
+    createdGroup.chat_room_uuid = groupRoomUuid;
+
     // 클라이언트에 반환하기 전에 이미지 URL에 서버 주소를 붙임
     createdGroup.group_icon = formatImageUrl(createdGroup.group_icon);
     createdGroup.group_picture = formatImageUrl(createdGroup.group_picture);
@@ -88,6 +105,10 @@ const createGroup = async (req, res, next) => {
   }
 };
 
+/**
+ * 내 그룹 조회
+ * 로그인한 사용자의 그룹 목록을 반환합니다.
+ */
 const getMyGroups = async (req, res, next) => {
   try {
     const userUuid = req.user.uuid;
@@ -103,6 +124,10 @@ const getMyGroups = async (req, res, next) => {
   }
 };
 
+/**
+ * 그룹 검색
+ * 요청 본문의 name 값으로 그룹 목록 검색 후 반환합니다.
+ */
 const searchGroups = async (req, res, next) => {
   try {
     const { name } = req.body;
@@ -121,7 +146,10 @@ const searchGroups = async (req, res, next) => {
   }
 };
 
-/* 그룹 참여 기능 */
+/**
+ * 그룹 참여 (가입)
+ * 사용자가 그룹에 참여하면 그룹 멤버 테이블에 등록합니다.
+ */
 const joinGroup = async (req, res, next) => {
   try {
     const { groupUuid } = req.body;
@@ -148,7 +176,10 @@ const joinGroup = async (req, res, next) => {
   }
 };
 
-/* 그룹 리더(사용자) 프로필 조회 함수 */
+/**
+ * 그룹 리더(사용자) 프로필 조회
+ * URL 파라미터로 전달된 uuid에 해당하는 사용자의 프로필을 반환합니다.
+ */
 const getUserProfile = async (req, res, next) => {
   try {
     const userUuid = req.params.uuid;
@@ -162,10 +193,13 @@ const getUserProfile = async (req, res, next) => {
   }
 };
 
-// 그룹 초대 장 수락 및 거절
+/**
+ * 그룹 초대 응답
+ * 사용자가 그룹 초대를 수락하거나 거절할 때 호출됩니다.
+ */
 const respondToGroupInvite = async (req, res) => {
   const { inviteUuid, action } = req.body;
-  const userUuid = req.user?.uuid; // ✅ 로그인된 사용자 uuid 가져오기
+  const userUuid = req.user?.uuid; // 로그인된 사용자 uuid 획득
 
   if (!userUuid || !inviteUuid || !action) {
     return res.status(400).json({ success: false, message: "필수 정보가 누락되었습니다." });
@@ -180,12 +214,16 @@ const respondToGroupInvite = async (req, res) => {
   }
 };
 
+/**
+ * 그룹 멤버 조회
+ * 해당 그룹에 속한 멤버 목록을 반환하며, 각 멤버의 프로필 사진 URL을 포맷합니다.
+ */
 const getGroupMembers = async (req, res, next) => {
   try {
     const { groupUuid } = req.params;
     let members = await groupModel.getGroupMembers(groupUuid);
 
-    // 각 멤버의 프로필 사진에 서버 주소를 붙여 포매팅 적용
+    // 각 멤버의 프로필 사진에 서버 URL을 붙여 포매팅 적용
     members = members.map((member) => {
       if (member.profilePicture) {
         member.profilePicture = formatImageUrl(member.profilePicture);
@@ -199,12 +237,30 @@ const getGroupMembers = async (req, res, next) => {
   }
 };
 
+/**
+ * 그룹 채팅방 UUID 조회
+ * 그룹과 연결된 채팅방을 조회하여 해당 채팅방의 UUID를 JSON 으로 반환합니다.
+ */
+const getGroupChatRoom = async (req, res, next) => {
+  try {
+    const { groupUuid } = req.params;
+    const chatRoom = await chatModel.getGroupChatRoomByGroupUuid(groupUuid);
+    if (!chatRoom) {
+      return res.status(404).json({ message: "채팅방 정보를 찾을 수 없습니다." });
+    }
+    res.status(200).json({ chat_room_uuid: chatRoom.uuid });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createGroup,
   getMyGroups,
   searchGroups,
   joinGroup,
   getUserProfile,
-  getGroupMembers,
   respondToGroupInvite,
+  getGroupMembers,
+  getGroupChatRoom,
 };

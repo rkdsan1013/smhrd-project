@@ -1,11 +1,12 @@
 // /frontend/src/components/GroupRoom.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import GroupChat from "./GroupChat";
 import GroupAnnouncement from "./GroupAnnouncement";
 import GroupCalendar from "./GroupCalendar";
 import GroupSettings from "./GroupSettings";
 import GroupMemberList from "./GroupMemberList";
 import Icons from "./Icons";
+import { getGroupChatRoomUuid } from "../services/groupService";
 
 interface GroupRoomProps {
   groupUuid: string;
@@ -18,6 +19,25 @@ type TabType = "announcement" | "calendar" | "chat" | "settings";
 const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, groupName }) => {
   // 기본 탭은 채팅으로 설정합니다.
   const [selectedTab, setSelectedTab] = useState<TabType>("chat");
+  // 백엔드로부터 가져온 채팅방 UUID (그룹과 연결된 채팅창)
+  const [chatRoomUuid, setChatRoomUuid] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    const fetchChatRoomUuid = async () => {
+      try {
+        const data = await getGroupChatRoomUuid(groupUuid);
+        // 응답 예시: { chat_room_uuid: "..." }
+        setChatRoomUuid(data.chat_room_uuid);
+      } catch (error) {
+        console.error("채팅방 정보를 가져오는데 실패했습니다.", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchChatRoomUuid();
+  }, [groupUuid]);
 
   return (
     <div className="h-full flex flex-col p-4">
@@ -83,11 +103,18 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
           {selectedTab === "announcement" && <GroupAnnouncement />}
           {selectedTab === "calendar" && <GroupCalendar />}
           {selectedTab === "chat" && (
-            <GroupChat
-              roomUuid={groupUuid}
-              currentUserUuid={currentUserUuid}
-              roomName={groupName}
-            />
+            <>
+              {loading && <div>채팅방을 불러오는 중...</div>}
+              {!loading && chatRoomUuid ? (
+                <GroupChat
+                  roomUuid={chatRoomUuid}
+                  currentUserUuid={currentUserUuid}
+                  roomName={groupName}
+                />
+              ) : (
+                !loading && <div>채팅방 정보를 가져오지 못했습니다.</div>
+              )}
+            </>
           )}
           {selectedTab === "settings" && <GroupSettings />}
         </section>

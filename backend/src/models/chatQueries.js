@@ -1,5 +1,3 @@
-// backend/src/models/chatQueries.js
-
 const findDMRoom = `
   SELECT cr.uuid
   FROM chat_rooms cr

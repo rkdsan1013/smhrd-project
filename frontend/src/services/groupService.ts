@@ -1,3 +1,4 @@
+// /frontend/src/services/groupService.ts
 import { get, post } from "./apiClient";
 
 export interface CreateGroupPayload {
@@ -66,9 +67,14 @@ export const respondToGroupInvite = async (
   });
 };
 
-// joinGroup는 소켓 이벤트로 처리하므로 여기서는 별도 HTTP API 함수를 사용하지 않습니다.
+// joinGroup는 소켓 이벤트로 처리하므로 별도의 HTTP API 함수가 필요하지 않습니다.
 export const getGroupMembers = async (groupUuid: string): Promise<GroupMembersResponse> => {
   return get<GroupMembersResponse>(`/groups/${groupUuid}/members`);
 };
 
-// joinGroup는 소켓 이벤트로 처리하므로 이 파일에서는 별도로 HTTP API 함수를 사용하지 않습니다.
+// ★ 그룹 채팅방 UUID 조회 함수 추가
+export const getGroupChatRoomUuid = async (
+  groupUuid: string,
+): Promise<{ chat_room_uuid: string }> => {
+  return get<{ chat_room_uuid: string }>(`/groups/${groupUuid}/chatroom`);
+};
