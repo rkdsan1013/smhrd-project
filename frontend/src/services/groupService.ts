@@ -1,8 +1,5 @@
-// /frontend/src/services/groupService.ts
-
 import { get, post } from "./apiClient";
 
-// 그룹 생성에 필요한 페이로드 타입
 export interface CreateGroupPayload {
   name: string;
   description: string;
@@ -11,7 +8,6 @@ export interface CreateGroupPayload {
   visibility: "public" | "private";
 }
 
-// 그룹 정보 타입
 export interface GroupInfo {
   uuid: string;
   name: string;
@@ -24,7 +20,6 @@ export interface GroupInfo {
   updated_at: string;
 }
 
-// 그룹 생성 API 호출 함수 (POST /groups)
 export const createGroup = async (payload: CreateGroupPayload): Promise<GroupInfo> => {
   const formData = new FormData();
   formData.append("name", payload.name);
@@ -39,13 +34,16 @@ export const createGroup = async (payload: CreateGroupPayload): Promise<GroupInf
   }
 
   return post<GroupInfo>("/groups", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
+    headers: { "Content-Type": "multipart/form-data" },
   });
 };
 
-// 내가 가입한 그룹 리스트 API 호출 함수 (GET /groups/my)
 export const getMyGroups = async (): Promise<GroupInfo[]> => {
   return get<GroupInfo[]>("/groups/my");
 };
+
+export const searchGroups = async (keyword: string): Promise<GroupInfo[]> => {
+  return post<GroupInfo[]>("/groups/search", { name: keyword });
+};
+
+// joinGroup는 소켓 이벤트로 처리하므로 여기서는 별도 HTTP API 함수를 사용하지 않습니다.

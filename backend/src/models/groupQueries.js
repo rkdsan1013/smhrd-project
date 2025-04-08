@@ -44,6 +44,12 @@ const SELECT_GROUPS_FOR_MEMBER = `
   WHERE gm.user_uuid = ?
   ORDER BY gi.created_at DESC
 `;
+// 그룹 이름으로 검색
+const SEARCH_GROUPS_BY_NAME = `
+  SELECT * FROM group_info
+  WHERE name LIKE ? AND visibility = 'public'
+  ORDER BY created_at DESC
+`;
 
 module.exports = {
   INSERT_GROUP_INFO,
@@ -52,4 +58,5 @@ module.exports = {
   SELECT_LATEST_GROUP_BY_LEADER,
   UPDATE_GROUP_IMAGES,
   SELECT_GROUPS_FOR_MEMBER,
+  SEARCH_GROUPS_BY_NAME,
 };

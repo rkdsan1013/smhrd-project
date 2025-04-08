@@ -26,6 +26,12 @@ const getMyGroups = async (userUuid) => {
   return rows;
 };
 
+// 그룹 이름으로 검색
+const searchGroups = async (name) => {
+  const [rows] = await pool.query(groupQueries.SEARCH_GROUPS_BY_NAME, [`%${name}%`]);
+  return rows;
+};
+
 // 그룹 생성 트랜잭션 (DB에서 자동 생성된 uuid를 사용함)
 // 매개변수: name, description, visibility, groupLeaderUuid, groupIconUrl, groupPictureUrl
 // (이미지 URL은 파일 업로드가 있을 경우 업데이트할 수 있으므로 기본값은 null)
@@ -53,4 +59,5 @@ module.exports = {
   updateGroupImages,
   getMyGroups,
   createGroup,
+  searchGroups,
 };
