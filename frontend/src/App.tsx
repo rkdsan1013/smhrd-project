@@ -10,6 +10,7 @@ import startTokenRefreshPolling from "./utils/tokenManager";
 import Icons from "./components/Icons";
 import { SocketProvider } from "./contexts/SocketContext";
 import { FriendProvider } from "./contexts/FriendContext";
+import { GroupProvider } from "./contexts/GroupContext";
 
 const AppContent: React.FC = () => {
   const { setUserUuid } = useUser();
@@ -114,7 +115,9 @@ const AppContent: React.FC = () => {
             {/* 로그인 상태일 때 SocketProvider와 FriendProvider를 중첩하여 사용 */}
             <SocketProvider>
               <FriendProvider>
-                <MainPage />
+                <GroupProvider>
+                  <MainPage />
+                </GroupProvider>
               </FriendProvider>
             </SocketProvider>
           </motion.div>

@@ -46,4 +46,14 @@ export const searchGroups = async (keyword: string): Promise<GroupInfo[]> => {
   return post<GroupInfo[]>("/groups/search", { name: keyword });
 };
 
+export const respondToGroupInvite = async (
+  inviteUuid: string,
+  action: "accept" | "decline",
+): Promise<{ message: string }> => {
+  return post<{ message: string }>("/groups/invite/respond", {
+    inviteUuid,
+    action,
+  });
+};
+
 // joinGroup는 소켓 이벤트로 처리하므로 여기서는 별도 HTTP API 함수를 사용하지 않습니다.

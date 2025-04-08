@@ -3,10 +3,9 @@ const { jwtVerify, secretKey } = require("./utils/jwtUtils");
 const cookie = require("cookie");
 const chatModel = require("./models/chatModel");
 const friendModel = require("./models/friendModel");
+const groupModel = require("./models/groupModel");
 const pool = require("./config/db");
-const groupModel = require("./models/groupModel"); // 그룹 관련 함수 사용
 
-// onlineUsers: 각 사용자 uuid에 대해 연결된 socket id들을 배열로 저장
 const onlineUsers = new Map();
 
 const initSocketIO = (server) => {
@@ -18,9 +17,8 @@ const initSocketIO = (server) => {
     },
   });
 
-  global.io = io; // 전역에서 소켓 사용
+  global.io = io;
 
-  // 인증 미들웨어
   io.use(async (socket, next) => {
     try {
       const cookieHeader = socket.handshake.headers.cookie || "";
@@ -70,24 +68,19 @@ const initSocketIO = (server) => {
       }
     });
 
-    // ▶️ 그룹 참여 이벤트
     socket.on("joinGroup", async (data, callback) => {
       const { groupUuid, userUuid } = data;
       console.log("joinGroup 요청 수신:", data);
       try {
-        // 현재 사용자가 이미 해당 그룹의 멤버인지 확인
         const myGroups = await groupModel.getMyGroups(userUuid);
         const isMember = myGroups.some((group) => group.uuid === groupUuid);
         if (isMember) {
-          console.log(`사용자 ${userUuid}는 이미 그룹 ${groupUuid}의 멤버입니다.`);
           return callback({ success: false, message: "이미 그룹의 멤버입니다." });
         }
-        // 그룹 멤버 등록 (role: 'member')
         await pool.query(
           "INSERT INTO group_members (group_uuid, user_uuid, role) VALUES (?, ?, 'member')",
           [groupUuid, userUuid],
         );
-        console.log(`사용자 ${userUuid}가 그룹 ${groupUuid}에 참여 등록되었습니다.`);
         callback({ success: true, message: "그룹 참여 완료" });
         socket.join(groupUuid);
         io.to(groupUuid).emit("groupMemberJoined", { userUuid });
@@ -97,19 +90,47 @@ const initSocketIO = (server) => {
       }
     });
 
+    // ✅ 그룹 초대 이벤트
+    socket.on("inviteToGroup", async ({ groupUuid, invitedUserUuid }, callback) => {
+      const inviterUuid = socket.user?.uuid;
+      try {
+        // 초대 생성 → inviteUuid 반환
+        const inviteUuid = await groupModel.sendGroupInvite(
+          groupUuid,
+          inviterUuid,
+          invitedUserUuid,
+        );
+
+        // 초대자, 그룹 정보 조회
+        const inviterProfile = await friendModel.getFriendProfileByUuid(inviterUuid);
+        const group = await groupModel.getGroupByUuid(groupUuid);
+
+        // 실시간 알림 전송
+        io.to(invitedUserUuid).emit("group-invite", {
+          inviteUuid, // ✅ 초대 UUID 포함
+          groupUuid,
+          groupName: group?.name,
+          inviterUuid,
+          inviterName: inviterProfile?.name,
+        });
+
+        if (callback) callback({ success: true });
+      } catch (err) {
+        console.error("❌ 그룹 초대 오류:", err);
+        if (callback) callback({ success: false, message: err.message });
+      }
+    });
+
     socket.on("disconnect", () => {
       console.log("❌ Socket 연결 종료:", socket.id);
       const userUuid = socket.user?.uuid;
-      if (!userUuid) {
-        console.warn("disconnect 시점에 userUuid가 없습니다.");
-        return;
-      }
+      if (!userUuid) return;
+
       if (onlineUsers.has(userUuid)) {
         const userSockets = onlineUsers.get(userUuid);
         const index = userSockets.indexOf(socket.id);
-        if (index !== -1) {
-          userSockets.splice(index, 1);
-        }
+        if (index !== -1) userSockets.splice(index, 1);
+
         if (userSockets.length === 0) {
           onlineUsers.delete(userUuid);
           friendModel

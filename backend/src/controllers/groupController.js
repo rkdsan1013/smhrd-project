@@ -147,10 +147,29 @@ const getUserProfile = async (req, res, next) => {
   }
 };
 
+// 그룹 초대 장 수락 및 거절
+const respondToGroupInvite = async (req, res) => {
+  const { inviteUuid, action } = req.body;
+  const userUuid = req.user?.uuid; // ✅ 로그인된 사용자 uuid 가져오기
+
+  if (!userUuid || !inviteUuid || !action) {
+    return res.status(400).json({ success: false, message: "필수 정보가 누락되었습니다." });
+  }
+
+  try {
+    const result = await groupModel.respondToGroupInvite(inviteUuid, userUuid, action);
+    res.status(200).json(result);
+  } catch (err) {
+    console.error("❌ 초대 응답 처리 실패:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 module.exports = {
   createGroup,
   getMyGroups,
   searchGroups,
   joinGroup,
   getUserProfile,
+  respondToGroupInvite,
 };

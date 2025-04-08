@@ -50,6 +50,51 @@ const SEARCH_GROUPS_BY_NAME = `
   WHERE name LIKE ? AND visibility = 'public'
   ORDER BY created_at DESC
 `;
+// 그룹 초대장 생성
+const SELECT_GROUP_INVITE_BY_UUID = `
+  SELECT * FROM group_invites
+  WHERE uuid = ? AND invited_user_uuid = ?
+`;
+// 그룹 초대장 삭제
+const DELETE_GROUP_INVITE_BY_UUID = `
+  DELETE FROM group_invites
+  WHERE uuid = ?
+`;
+// 그룹 초대장 수락 시, 그룹 멤버 등록 (role은 'member'로 고정)
+const INSERT_GROUP_MEMBER_FROM_INVITE = `
+  INSERT INTO group_members (group_uuid, user_uuid, role)
+  VALUES (?, ?, 'member')
+`;
+// 그룹 초대 생성 쿼리 추가
+const INSERT_GROUP_INVITE = `
+  INSERT INTO group_invites (group_uuid, invited_by_uuid, invited_user_uuid)
+  VALUES (?, ?, ?)
+`;
+
+const SELECT_LATEST_INVITE_UUID = `
+  SELECT uuid
+  FROM group_invites
+  WHERE group_uuid = ? AND invited_by_uuid = ? AND invited_user_uuid = ?
+  ORDER BY invited_at DESC
+  LIMIT 1
+`;
+
+const DELETE_ALL_INVITES_FOR_GROUP_AND_USER = `
+  DELETE FROM group_invites
+  WHERE group_uuid = ? AND invited_user_uuid = ?
+`;
+
+const CHECK_DUPLICATE_INVITE = `
+  SELECT uuid FROM group_invites
+  WHERE group_uuid = ? AND invited_by_uuid = ? AND invited_user_uuid = ?
+  LIMIT 1
+`;
+// 그룹 멤버 확인 쿼리
+const CHECK_IS_GROUP_MEMBER = `
+  SELECT 1 FROM group_members
+  WHERE group_uuid = ? AND user_uuid = ?
+  LIMIT 1
+`;
 
 module.exports = {
   INSERT_GROUP_INFO,
@@ -59,4 +104,12 @@ module.exports = {
   UPDATE_GROUP_IMAGES,
   SELECT_GROUPS_FOR_MEMBER,
   SEARCH_GROUPS_BY_NAME,
+  SELECT_GROUP_INVITE_BY_UUID,
+  DELETE_GROUP_INVITE_BY_UUID,
+  DELETE_ALL_INVITES_FOR_GROUP_AND_USER,
+  INSERT_GROUP_MEMBER_FROM_INVITE,
+  INSERT_GROUP_INVITE,
+  SELECT_LATEST_INVITE_UUID,
+  CHECK_DUPLICATE_INVITE,
+  CHECK_IS_GROUP_MEMBER,
 };

@@ -22,4 +22,7 @@ router.post("/", verifyToken, cpUpload, resizeImage, groupController.createGroup
 // 그룹 리더(사용자) 프로필 조회 엔드포인트
 router.get("/profile/:uuid", verifyToken, groupController.getUserProfile);
 
+// 그룹 초대 응답 라우트
+router.post("/invite/respond", verifyToken, groupController.respondToGroupInvite);
+
 module.exports = router;
