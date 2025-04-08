@@ -99,7 +99,7 @@ const AppContent: React.FC = () => {
     );
   }
 
-  // 페이지 전환 애니메이션 : 로그인 상태면 MainPage, 아니면 LandingPage 렌더링
+  // 페이지 전환 애니메이션: 로그인 상태면 MainPage, 아니면 LandingPage 렌더링
   return (
     <div className="h-screen bg-gray-100 overflow-hidden">
       <AnimatePresence mode="wait">
@@ -112,7 +112,7 @@ const AppContent: React.FC = () => {
             transition={{ duration: 0.5, ease: "easeInOut" }}
             className="h-full"
           >
-            {/* 로그인 상태일 때 SocketProvider와 FriendProvider를 중첩하여 사용 */}
+            {/* 로그인 상태일 때 SocketProvider와 FriendProvider 등을 중첩하여 사용 */}
             <SocketProvider>
               <FriendProvider>
                 <GroupProvider>

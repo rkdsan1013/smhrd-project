@@ -1,4 +1,5 @@
 // /frontend/src/components/GroupSettings.tsx
+
 import React, { useState } from "react";
 import { GroupInfo, updateGroup, UpdateGroupPayload } from "../services/groupService";
 import Icons from "./Icons";
@@ -76,7 +77,8 @@ const GroupSettings: React.FC<GroupSettingsProps> = ({ group, onUpdate }) => {
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-6 space-y-8">
+    // h-full과 overflow-y-auto 클래스를 추가하여 내용이 많을 경우 스크롤이 가능하도록 함
+    <div className="max-w-3xl mx-auto p-6 space-y-8 h-full overflow-y-auto">
       {/* 헤더 영역 */}
       <header className="mb-4">
         <h2 className="text-2xl font-bold text-left border-b pb-2">설정</h2>

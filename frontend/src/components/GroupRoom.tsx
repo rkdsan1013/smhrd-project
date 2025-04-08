@@ -46,7 +46,7 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
 
   return (
     <div className="h-full flex flex-col p-4">
-      {/* 모바일 상단 네비게이션: md 미만에서만 표시 */}
+      {/* 모바일 상단 네비게이션 (md 미만) */}
       <div className="block md:hidden mb-4 border-b border-gray-300 pb-2">
         <div className="flex items-center justify-around">
           <button
@@ -80,52 +80,58 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
         </div>
       </div>
 
-      {/* 메인 콘텐츠 영역: 모바일과 데스크탑 모두 flex-1로 남은 공간 채움 */}
+      {/* 메인 콘텐츠 영역: 좌측 메뉴, 중앙 콘텐츠, 우측 멤버 리스트 */}
       <div className="flex flex-1 overflow-hidden">
-        {/* 데스크탑 좌측 메뉴 (md 이상) */}
-        <aside className="hidden md:flex md:flex-col md:w-64 border-r border-gray-300 p-4">
-          <ul className="space-y-4">
-            <li>
-              <button
-                onClick={() => setSelectedTab("announcement")}
-                className="w-full text-left flex items-center hover:bg-gray-100 px-4 py-3 rounded transition-transform duration-200 hover:scale-105 active:scale-95"
-              >
-                <Icons name="bell" className="w-6 h-6 mr-2" />
-                공지사항
-              </button>
-            </li>
-            <li>
-              <button
-                onClick={() => setSelectedTab("calendar")}
-                className="w-full text-left flex items-center hover:bg-gray-100 px-4 py-3 rounded transition-transform duration-200 hover:scale-105 active:scale-95"
-              >
-                <Icons name="calendar" className="w-6 h-6 mr-2" />
-                일정
-              </button>
-            </li>
-            <li>
-              <button
-                onClick={() => setSelectedTab("chat")}
-                className="w-full text-left flex items-center hover:bg-gray-100 px-4 py-3 rounded transition-transform duration-200 hover:scale-105 active:scale-95"
-              >
-                <Icons name="chat" className="w-6 h-6 mr-2" />
-                채팅
-              </button>
-            </li>
-          </ul>
+        {/* 데스크톱 좌측 메뉴 - 반응형으로 텍스트 노출 / 숨김 및 구역 분리 */}
+        <aside className="hidden md:flex md:flex-col md:basis-[15%] lg:basis-[20%] min-w-[60px] md:min-w-[150px] border-r border-gray-300 p-4">
+          {/* 상단: 공지사항, 일정 */}
+          <div className="space-y-4">
+            <button
+              onClick={() => setSelectedTab("announcement")}
+              className="w-full text-left flex items-center hover:bg-gray-100 px-4 py-3 rounded transition-transform duration-200 hover:scale-105 active:scale-95"
+            >
+              <Icons name="bell" className="w-6 h-6" />
+              <span className="hidden lg:inline ml-2">공지사항</span>
+            </button>
+            <button
+              onClick={() => setSelectedTab("calendar")}
+              className="w-full text-left flex items-center hover:bg-gray-100 px-4 py-3 rounded transition-transform duration-200 hover:scale-105 active:scale-95"
+            >
+              <Icons name="calendar" className="w-6 h-6" />
+              <span className="hidden lg:inline ml-2">일정</span>
+            </button>
+          </div>
+
+          <div className="my-2 border-t border-gray-300" />
+
+          {/* 중간: 채팅 */}
+          <div className="space-y-4">
+            <button
+              onClick={() => setSelectedTab("chat")}
+              className="w-full text-left flex items-center hover:bg-gray-100 px-4 py-3 rounded transition-transform duration-200 hover:scale-105 active:scale-95"
+            >
+              <Icons name="chat" className="w-6 h-6" />
+              <span className="hidden lg:inline ml-2">채팅</span>
+            </button>
+          </div>
+
+          {/* 남은 공간 채우기 */}
           <div className="flex-grow" />
-          <div className="mb-2 border-t border-gray-300" />
+
+          <div className="my-2 border-t border-gray-300" />
+
+          {/* 하단: 설정 */}
           <button
             onClick={() => setSelectedTab("settings")}
             className="w-full text-left flex items-center hover:bg-gray-100 px-4 py-3 rounded transition-transform duration-200 hover:scale-105 active:scale-95"
           >
-            <Icons name="cog" className="w-6 h-6 mr-2" />
-            설정
+            <Icons name="cog" className="w-6 h-6" />
+            <span className="hidden lg:inline ml-2">설정</span>
           </button>
         </aside>
 
         {/* 중앙 콘텐츠 영역 */}
-        <section className="flex-1 overflow-hidden p-4">
+        <section className="flex-1 min-w-[300px] overflow-hidden p-4">
           <AnimatePresence mode="wait">
             {selectedTab === "announcement" && (
               <motion.div
@@ -203,8 +209,8 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
           </AnimatePresence>
         </section>
 
-        {/* 데스크탑 우측 멤버 리스트 (md 이상) */}
-        <aside className="hidden md:flex md:w-80 border-l border-gray-300 p-4 flex-col">
+        {/* 데스크톱 우측 멤버 리스트 - 내부 내용도 반응형 처리 (내부 컴포넌트에서 추가 작업 필요) */}
+        <aside className="hidden md:flex md:flex-col md:basis-[15%] lg:basis-[20%] min-w-[60px] md:min-w-[150px] border-l border-gray-300 p-4">
           <GroupMemberList groupUuid={groupUuid} />
         </aside>
       </div>
