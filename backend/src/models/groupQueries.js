@@ -44,6 +44,7 @@ const SELECT_GROUPS_FOR_MEMBER = `
   WHERE gm.user_uuid = ?
   ORDER BY gi.created_at DESC
 `;
+
 // 그룹 이름으로 검색
 const SEARCH_GROUPS_BY_NAME = `
   SELECT * FROM group_info
@@ -96,6 +97,17 @@ const CHECK_IS_GROUP_MEMBER = `
   LIMIT 1
 `;
 
+// 그룹 멤버 조회: group_members 테이블과 user_profiles 테이블을 조인하여 멤버 정보를 조회
+const SELECT_GROUP_MEMBERS = `
+  SELECT 
+    up.uuid, 
+    up.name, 
+    up.profile_picture AS profilePicture
+  FROM group_members AS gm
+  JOIN user_profiles AS up ON gm.user_uuid = up.uuid
+  WHERE gm.group_uuid = ?
+`;
+
 module.exports = {
   INSERT_GROUP_INFO,
   INSERT_GROUP_MEMBER,
@@ -112,4 +124,5 @@ module.exports = {
   SELECT_LATEST_INVITE_UUID,
   CHECK_DUPLICATE_INVITE,
   CHECK_IS_GROUP_MEMBER,
+  SELECT_GROUP_MEMBERS,
 };

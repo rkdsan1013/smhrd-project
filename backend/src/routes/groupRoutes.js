@@ -16,10 +16,10 @@ const cpUpload = upload.fields([
 ]);
 router.post("/", verifyToken, cpUpload, resizeImage, groupController.createGroup);
 
-// (옵션) HTTP 방식 그룹 참여 엔드포인트 – 소켓을 사용할 경우 필요없음
-// router.post("/join", verifyToken, groupController.joinGroup);
+// ── 새 엔드포인트: 그룹 멤버 조회 ──
+router.get("/:groupUuid/members", verifyToken, groupController.getGroupMembers);
 
-// 그룹 리더(사용자) 프로필 조회 엔드포인트
+// ── 그룹 리더(사용자) 프로필 조회 ──
 router.get("/profile/:uuid", verifyToken, groupController.getUserProfile);
 
 // 그룹 초대 응답 라우트

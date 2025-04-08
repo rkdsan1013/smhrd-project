@@ -3,6 +3,7 @@ const groupQueries = require("./groupQueries");
 const groupTransactions = require("./groupTransactions");
 const friendModel = require("./friendModel");
 
+// 그룹 단건 조회: uuid 를 기준으로 그룹 정보를 조회합니다.
 const getGroupByUuid = async (groupUuid) => {
   const [rows] = await pool.query(groupQueries.SELECT_GROUP_BY_UUID, [groupUuid]);
   return rows[0];
@@ -104,6 +105,8 @@ const sendGroupInvite = async (groupUuid, inviterUuid, invitedUserUuid) => {
   return rows[0].uuid;
 };
 
+// 그룹 생성 트랜잭션 (DB에서 자동 생성된 uuid를 사용함)
+// 매개변수: name, description, visibility, groupLeaderUuid, groupIconUrl, groupPictureUrl
 const createGroup = async (
   name,
   description,
@@ -123,6 +126,12 @@ const createGroup = async (
   );
 };
 
+// 그룹 멤버 조회: group_members와 user_profiles 테이블을 조인하여 멤버 정보를 반환합니다.
+const getGroupMembers = async (groupUuid) => {
+  const [rows] = await pool.query(groupQueries.SELECT_GROUP_MEMBERS, [groupUuid]);
+  return rows;
+};
+
 module.exports = {
   getGroupByUuid,
   updateGroupImages,
@@ -131,4 +140,5 @@ module.exports = {
   searchGroups,
   respondToGroupInvite,
   sendGroupInvite,
+  getGroupMembers, // 새로 추가한 함수
 };

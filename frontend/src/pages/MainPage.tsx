@@ -6,22 +6,33 @@ import Footer from "../components/Footer";
 import Home from "../components/Home";
 import GroupSearch from "../components/GroupSearch";
 import GroupRoom from "../components/GroupRoom";
+import { useUser } from "../contexts/UserContext";
 import { UserProfileProvider } from "../contexts/UserProfileContext";
+import { FriendProvider } from "../contexts/FriendContext";
 import { AnimatePresence, motion } from "framer-motion";
 
+// 메인 내용 전환에 사용할 view 타입 정의
 type MainView = "home" | "groupSearch" | "groupRoom";
 
+// 그룹명도 필요하다면 포함할 수 있음
 interface MainContentState {
   view: MainView;
   groupUuid?: string;
+  groupName?: string;
 }
 
-const MainPage: React.FC = () => {
+const MainContent: React.FC = () => {
+  // App.tsx 등 상위에서 UserProvider를 사용하여 실제 사용자 UUID가 설정되어 있다고 가정합니다.
+  // 따라서 useUser() 훅을 통해 상위 Provider의 값을 그대로 불러옵니다.
+  const { userUuid } = useUser();
+
   const [mainContent, setMainContent] = useState<MainContentState>({ view: "home" });
 
   const handleHomeSelect = () => setMainContent({ view: "home" });
   const handleGroupSearchSelect = () => setMainContent({ view: "groupSearch" });
-  const handleGroupSelect = (groupUuid: string) => setMainContent({ view: "groupRoom", groupUuid });
+  // Sidebar에서 그룹 선택 시 그룹의 UUID와 그룹 이름을 받아 상태를 업데이트합니다.
+  const handleGroupSelect = (groupUuid: string, groupName: string) =>
+    setMainContent({ view: "groupRoom", groupUuid, groupName });
 
   const renderMainContent = () => {
     switch (mainContent.view) {
@@ -30,8 +41,13 @@ const MainPage: React.FC = () => {
       case "groupSearch":
         return <GroupSearch />;
       case "groupRoom":
-        return mainContent.groupUuid ? (
-          <GroupRoom groupUuid={mainContent.groupUuid} />
+        return mainContent.groupUuid && mainContent.groupName ? (
+          // GroupRoom 컴포넌트에 실제 사용자 UUID가 전달되어 joinGroup 요청 시 올바른 값이 사용됩니다.
+          <GroupRoom
+            groupUuid={mainContent.groupUuid}
+            groupName={mainContent.groupName}
+            currentUserUuid={userUuid}
+          />
         ) : (
           <div>그룹 정보가 없습니다.</div>
         );
@@ -48,41 +64,44 @@ const MainPage: React.FC = () => {
   };
 
   return (
-    <UserProfileProvider>
-      {/* 전체 화면 높이 */}
-      <div className="h-screen p-4">
-        {/* 최상위 Flex 컨테이너는 min-h-0 적용 */}
-        <div className="h-full flex flex-col md:flex-row gap-5 min-h-0">
-          <Sidebar
-            onHomeSelect={handleHomeSelect}
-            onGroupSearchSelect={handleGroupSearchSelect}
-            onGroupSelect={handleGroupSelect}
-          />
-          {/* 메인 컨텐츠+푸터 영역 */}
-          <div className="flex-1 flex flex-col gap-5 min-h-0">
-            {/* <main> 영역은 flex-1, min-h-0, overflow-y-auto로 스크롤 처리 */}
-            <main className="flex-1 bg-white rounded-lg shadow-lg p-6 overflow-y-auto no-scrollbar min-h-0 relative">
-              {/* 모바일: h-auto / 데스크톱: lg:h-full */}
-              <div className="h-auto lg:h-full">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={`${mainContent.view}-${mainContent.groupUuid || ""}`}
-                    className="h-auto lg:h-full"
-                    variants={motionVariants}
-                    initial="initial"
-                    animate="animate"
-                    exit="exit"
-                    transition={{ duration: 0.3 }}
-                  >
-                    {renderMainContent()}
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-            </main>
-            <Footer />
-          </div>
+    <div className="h-screen p-4">
+      <div className="h-full flex flex-col md:flex-row gap-5 min-h-0">
+        <Sidebar
+          onHomeSelect={handleHomeSelect}
+          onGroupSearchSelect={handleGroupSearchSelect}
+          onGroupSelect={handleGroupSelect}
+        />
+        <div className="flex-1 flex flex-col gap-5 min-h-0">
+          <main className="flex-1 bg-white rounded-lg shadow-lg p-6 overflow-y-auto no-scrollbar min-h-0 relative">
+            <div className="h-auto lg:h-full">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={`${mainContent.view}-${mainContent.groupUuid || ""}`}
+                  className="h-auto lg:h-full"
+                  variants={motionVariants}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  transition={{ duration: 0.3 }}
+                >
+                  {renderMainContent()}
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </main>
+          <Footer />
         </div>
       </div>
+    </div>
+  );
+};
+
+const MainPage: React.FC = () => {
+  return (
+    <UserProfileProvider>
+      <FriendProvider>
+        <MainContent />
+      </FriendProvider>
     </UserProfileProvider>
   );
 };

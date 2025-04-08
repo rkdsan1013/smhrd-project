@@ -20,6 +20,16 @@ export interface GroupInfo {
   updated_at: string;
 }
 
+export interface Member {
+  uuid: string;
+  name: string;
+  profilePicture?: string;
+}
+
+export interface GroupMembersResponse {
+  members: Member[];
+}
+
 export const createGroup = async (payload: CreateGroupPayload): Promise<GroupInfo> => {
   const formData = new FormData();
   formData.append("name", payload.name);
@@ -57,3 +67,8 @@ export const respondToGroupInvite = async (
 };
 
 // joinGroup는 소켓 이벤트로 처리하므로 여기서는 별도 HTTP API 함수를 사용하지 않습니다.
+export const getGroupMembers = async (groupUuid: string): Promise<GroupMembersResponse> => {
+  return get<GroupMembersResponse>(`/groups/${groupUuid}/members`);
+};
+
+// joinGroup는 소켓 이벤트로 처리하므로 이 파일에서는 별도로 HTTP API 함수를 사용하지 않습니다.
