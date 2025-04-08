@@ -1,12 +1,9 @@
 // /backend/src/models/friendQueries.js
+// 친구 관련 쿼리 모음
+// 테이블: friendships (user1_uuid, user2_uuid, requester_uuid, status, created_at)
+// 주의: 두 UUID는 LEAST/GREATEST를 사용하여 항상 정렬된 순서(즉, user1_uuid < user2_uuid)로 저장됨
 
-/*
-  업데이트된 친구 관련 쿼리들.
-  테이블: friendships (user1_uuid, user2_uuid, requester_uuid, status, created_at)
-  주의: 두 UUID는 LEAST/GREATEST를 이용하여 항상 정렬된 순서(즉, user1_uuid < user2_uuid)로 저장됩니다.
-*/
-
-// 1. 특정 사용자의 (수락된) 친구 목록 조회
+// 특정 사용자의 수락된 친구 목록 조회
 const GET_ACCEPTED_FRIEND_UUIDS = `
   SELECT 
     CASE WHEN user1_uuid = ? THEN user2_uuid ELSE user1_uuid END AS uuid
@@ -15,7 +12,7 @@ const GET_ACCEPTED_FRIEND_UUIDS = `
     AND status = 'accepted'
 `;
 
-// 2. 소켓용 친구 목록 조회 (위와 동일)
+// 소켓 통신용 수락된 친구 목록 조회 (위와 동일)
 const GET_ACCEPTED_FRIEND_UUIDS_FOR_SOCKET = `
   SELECT 
     CASE WHEN user1_uuid = ? THEN user2_uuid ELSE user1_uuid END AS uuid
@@ -24,7 +21,7 @@ const GET_ACCEPTED_FRIEND_UUIDS_FOR_SOCKET = `
     AND status = 'accepted'
 `;
 
-// 3. 사용자 프로필 조회 (users와 user_profiles 조인)
+// 사용자 프로필 조회 (users와 user_profiles 조인)
 const GET_FRIEND_PROFILE_BY_UUID = `
   SELECT u.uuid, u.email, up.name, up.profile_picture AS profilePicture
   FROM users u
@@ -32,8 +29,8 @@ const GET_FRIEND_PROFILE_BY_UUID = `
   WHERE u.uuid = ?
 `;
 
-// 4. 사용자 검색: 이메일 또는 이름에 키워드 포함, 본인 제외 및 친구 요청 상태 포함
-//    JOIN 조건은 두 사용자 간의 친구 관계가 존재하는지 (정렬된 key 사용) 확인합니다.
+// 이메일 또는 이름 기반 사용자 검색 (본인 제외, 친구 요청 상태 포함)
+// JOIN을 통해 두 사용자 간의 친구 관계 존재 여부 확인 (정렬된 키 사용)
 const SEARCH_USERS_BY_KEYWORD = `
   SELECT 
     u.uuid,
@@ -52,7 +49,7 @@ const SEARCH_USERS_BY_KEYWORD = `
   LIMIT 20
 `;
 
-// 5. 두 사용자 간 친구 상태 확인 (반드시 동일한 정렬 순서로 비교)
+// 두 사용자 간의 친구 상태 확인 (정렬된 순서로 비교)
 const CHECK_FRIEND_STATUS = `
   SELECT *
   FROM friendships
@@ -60,15 +57,15 @@ const CHECK_FRIEND_STATUS = `
   LIMIT 1
 `;
 
-// 6. 친구 요청 생성 (pending 상태)
-//    첫 두 파라미터: 사용자와 대상 UUID를 LEAST/GREATEST로 정렬하고, 세 번째는 요청자(여기서는 요청을 보낸 사용자)
+// 친구 요청 생성 (pending 상태)
+// 첫 두 파라미터: 두 UUID (LEAST와 GREATEST로 정렬), 세 번째: 요청자 (요청 보낸 사용자)
 const CREATE_FRIEND_REQUEST = `
   INSERT INTO friendships (user1_uuid, user2_uuid, requester_uuid, status)
   VALUES (LEAST(?, ?), GREATEST(?, ?), ?, 'pending')
 `;
 
-// 7. 친구 요청 거절 (pending 상태인 친구 요청 삭제)
-//    여기서 receiver는 요청을 받은 사용자이며, requester는 친구 요청을 보낸 사용자입니다.
+// 친구 요청 거절 (pending 상태인 요청 삭제)
+// receiver: 요청 받은 사용자, requester: 친구 요청을 보낸 사용자
 const DECLINE_FRIEND_REQUEST = `
   DELETE FROM friendships
   WHERE user1_uuid = LEAST(?, ?) AND user2_uuid = GREATEST(?, ?)
@@ -76,7 +73,7 @@ const DECLINE_FRIEND_REQUEST = `
     AND requester_uuid = ?
 `;
 
-// 8. 받은 친구 요청 조회 (내게 온 요청: 내 UUID가 포함되고, 요청 보낸 사람이 나와 다른 경우)
+// 받은 친구 요청 조회 (내게 온 요청: 내 UUID 포함, 요청자와 다름)
 const GET_RECEIVED_FRIEND_REQUESTS = `
   SELECT u.uuid, u.email, up.name, up.profile_picture AS profilePicture
   FROM friendships f
@@ -87,13 +84,13 @@ const GET_RECEIVED_FRIEND_REQUESTS = `
     AND f.requester_uuid <> ?
 `;
 
-// 9. 친구 삭제 (두 사용자 간의 친구 관계 삭제)
+// 친구 삭제 (두 사용자 간의 친구 관계 삭제)
 const DELETE_FRIEND = `
   DELETE FROM friendships
   WHERE user1_uuid = LEAST(?, ?) AND user2_uuid = GREATEST(?, ?)
 `;
 
-// 10. 보낸 친구 요청 취소 (pending 상태 삭제; 요청자 본인인 경우)
+// 보낸 친구 요청 취소 (pending 상태 삭제; 요청자 본인)
 const CANCEL_FRIEND_REQUEST = `
   DELETE FROM friendships
   WHERE user1_uuid = LEAST(?, ?) AND user2_uuid = GREATEST(?, ?)

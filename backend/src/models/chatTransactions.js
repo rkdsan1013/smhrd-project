@@ -1,12 +1,11 @@
-const db = require("../config/db");
-const chatQueries = require("./chatQueries");
+// /backend/src/models/chatTransactions.js
+
+const db = require("../config/db"); // DB 연결
+const chatQueries = require("./chatQueries"); // 채팅 SQL 쿼리
 const { v4: uuidv4 } = require("uuid");
 
-/**
- * 그룹 채팅방 생성 트랜잭션
- * - chat_rooms 테이블에 그룹 채팅방을 생성 (type: 'group', group_uuid를 지정)
- * - chat_room_members 테이블에 그룹 리더(생성자)를 기본 회원으로 추가합니다.
- */
+// 그룹 채팅방 생성 트랜잭션
+// chat_rooms에 그룹 채팅방 생성 후, chat_room_members에 그룹 리더 추가
 exports.createGroupRoomWithLeader = async (groupUuid, leaderUuid) => {
   const conn = await db.getConnection();
   try {
@@ -27,11 +26,8 @@ exports.createGroupRoomWithLeader = async (groupUuid, leaderUuid) => {
   }
 };
 
-/**
- * DM 채팅방 생성 트랜잭션
- * - chat_rooms 테이블에 DM 채팅방을 생성
- * - chat_room_members 테이블에 두 사용자를 모두 추가합니다.
- */
+// DM 채팅방 생성 트랜잭션
+// chat_rooms에 DM 채팅방 생성 후, chat_room_members에 두 사용자 추가
 exports.createDMRoomWithMembers = async (uuid1, uuid2) => {
   const conn = await db.getConnection();
   try {
@@ -50,10 +46,8 @@ exports.createDMRoomWithMembers = async (uuid1, uuid2) => {
   }
 };
 
-/**
- * 회원 탈퇴나 기타 사유로 인해 DM 채팅방에 단 한 명만 남은 경우,
- * 해당 채팅방을 삭제하는 함수입니다.
- */
+// DM 채팅방 정리 트랜잭션
+// 1인 남은 DM 채팅방 삭제
 exports.deleteLonelyDMRooms = async () => {
   const conn = await db.getConnection();
   try {

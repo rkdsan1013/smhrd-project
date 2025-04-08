@@ -61,7 +61,7 @@ const signUpUser = async (email, hashedPassword, name, gender, birthdate, parado
   );
 };
 
-// 🔹 상대방 프로필 + 친구 상태 포함 조회
+// 상대방 프로필 + 친구 상태 포함 조회
 const getProfileWithFriendStatus = async (currentUuid, targetUuid) => {
   const [rows] = await pool.query(userQueries.SELECT_PROFILE_WITH_FRIEND_STATUS, [
     currentUuid,

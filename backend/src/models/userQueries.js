@@ -1,4 +1,5 @@
 // /backend/src/models/userQueries.js
+// 사용자 관련 SQL 쿼리 모음
 
 // 사용자 INSERT 쿼리
 const INSERT_USER = "INSERT INTO users (email, password) VALUES (?, ?)";
@@ -29,7 +30,7 @@ const SELECT_PROFILE_BY_UUID = `
 // 프로필 사진 업데이트 쿼리
 const UPDATE_USER_PROFILE_PICTURE = "UPDATE user_profiles SET profile_picture = ? WHERE uuid = ?";
 
-// 🔹 친구 상태 포함된 프로필 조회 쿼리
+// 친구 상태 포함된 프로필 조회 쿼리
 const SELECT_PROFILE_WITH_FRIEND_STATUS = `
   SELECT 
     u.uuid,
