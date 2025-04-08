@@ -1,4 +1,5 @@
 // /frontend/src/components/GroupRoom.tsx
+
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import GroupChat from "./GroupChat";
@@ -24,9 +25,7 @@ const motionVariants = {
 };
 
 const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, groupName }) => {
-  // 기본 탭은 채팅으로 설정합니다.
   const [selectedTab, setSelectedTab] = useState<TabType>("chat");
-  // 백엔드에서 받아온 채팅방 UUID
   const [chatRoomUuid, setChatRoomUuid] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -34,10 +33,9 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
     const fetchChatRoomUuid = async () => {
       try {
         const data = await getGroupChatRoomUuid(groupUuid);
-        // 응답 예시: { chat_room_uuid: "..." }
         setChatRoomUuid(data.chat_room_uuid);
       } catch (error) {
-        console.error("채팅방 정보를 가져오는데 실패했습니다.", error);
+        console.error("채팅방 정보를 가져오지 못했습니다.", error);
       } finally {
         setLoading(false);
       }
@@ -48,10 +46,44 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
 
   return (
     <div className="h-full flex flex-col p-4">
-      <main className="flex flex-1 overflow-hidden">
-        {/* 좌측 메뉴 영역 */}
-        <aside className="w-64 border-r border-gray-300 p-4 flex flex-col">
-          {/* 상단 그룹: 공지사항, 일정 */}
+      {/* 모바일 상단 네비게이션: md 미만에서만 표시 */}
+      <div className="block md:hidden mb-4 border-b border-gray-300 pb-2">
+        <div className="flex items-center justify-around">
+          <button
+            onClick={() => setSelectedTab("announcement")}
+            className="flex flex-col items-center hover:text-blue-600"
+          >
+            <Icons name="bell" className="w-6 h-6" />
+            <span className="text-xs">공지사항</span>
+          </button>
+          <button
+            onClick={() => setSelectedTab("calendar")}
+            className="flex flex-col items-center hover:text-blue-600"
+          >
+            <Icons name="calendar" className="w-6 h-6" />
+            <span className="text-xs">일정</span>
+          </button>
+          <button
+            onClick={() => setSelectedTab("chat")}
+            className="flex flex-col items-center hover:text-blue-600"
+          >
+            <Icons name="chat" className="w-6 h-6" />
+            <span className="text-xs">채팅</span>
+          </button>
+          <button
+            onClick={() => setSelectedTab("settings")}
+            className="flex flex-col items-center hover:text-blue-600"
+          >
+            <Icons name="cog" className="w-6 h-6" />
+            <span className="text-xs">설정</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 메인 콘텐츠 영역: 모바일과 데스크탑 모두 flex-1로 남은 공간 채움 */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* 데스크탑 좌측 메뉴 (md 이상) */}
+        <aside className="hidden md:flex md:flex-col md:w-64 border-r border-gray-300 p-4">
           <ul className="space-y-4">
             <li>
               <button
@@ -71,13 +103,6 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
                 일정
               </button>
             </li>
-          </ul>
-
-          {/* 상단과 중간 구분선 */}
-          <div className="my-4 border-t border-gray-300" />
-
-          {/* 중간 그룹: 채팅 */}
-          <ul className="space-y-4">
             <li>
               <button
                 onClick={() => setSelectedTab("chat")}
@@ -88,14 +113,8 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
               </button>
             </li>
           </ul>
-
-          {/* 남은 공간 채우기 */}
           <div className="flex-grow" />
-
-          {/* 하단 구분선 */}
           <div className="mb-2 border-t border-gray-300" />
-
-          {/* 하단 그룹: 설정 */}
           <button
             onClick={() => setSelectedTab("settings")}
             className="w-full text-left flex items-center hover:bg-gray-100 px-4 py-3 rounded transition-transform duration-200 hover:scale-105 active:scale-95"
@@ -106,13 +125,12 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
         </aside>
 
         {/* 중앙 콘텐츠 영역 */}
-        {/* no-scrollbar 클래스를 추가하여 스크롤바를 숨깁니다 */}
-        <section className="flex-1 p-4 overflow-y-auto no-scrollbar">
+        <section className="flex-1 overflow-hidden p-4">
           <AnimatePresence mode="wait">
             {selectedTab === "announcement" && (
               <motion.div
                 key={`announcement-${groupUuid}`}
-                className="h-auto lg:h-full"
+                className="h-full"
                 variants={motionVariants}
                 initial="initial"
                 animate="animate"
@@ -125,7 +143,7 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
             {selectedTab === "calendar" && (
               <motion.div
                 key={`calendar-${groupUuid}`}
-                className="h-auto lg:h-full"
+                className="h-full"
                 variants={motionVariants}
                 initial="initial"
                 animate="animate"
@@ -138,7 +156,7 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
             {selectedTab === "chat" && (
               <motion.div
                 key={`chat-${groupUuid}`}
-                className="h-auto lg:h-full"
+                className="h-full"
                 variants={motionVariants}
                 initial="initial"
                 animate="animate"
@@ -160,24 +178,36 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
             {selectedTab === "settings" && (
               <motion.div
                 key={`settings-${groupUuid}`}
-                className="h-auto lg:h-full"
+                className="h-full"
                 variants={motionVariants}
                 initial="initial"
                 animate="animate"
                 exit="exit"
                 transition={{ duration: 0.3 }}
               >
-                <GroupSettings />
+                <GroupSettings
+                  group={{
+                    uuid: groupUuid,
+                    name: groupName,
+                    description: "",
+                    group_icon: "",
+                    group_picture: "",
+                    visibility: "public",
+                    group_leader_uuid: "",
+                    created_at: "",
+                    updated_at: "",
+                  }}
+                />
               </motion.div>
             )}
           </AnimatePresence>
         </section>
 
-        {/* 우측 멤버 리스트 영역 */}
-        <aside className="w-80 border-l border-gray-300 p-4 flex flex-col">
+        {/* 데스크탑 우측 멤버 리스트 (md 이상) */}
+        <aside className="hidden md:flex md:w-80 border-l border-gray-300 p-4 flex-col">
           <GroupMemberList groupUuid={groupUuid} />
         </aside>
-      </main>
+      </div>
     </div>
   );
 };

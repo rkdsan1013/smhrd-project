@@ -1,4 +1,5 @@
 // /frontend/src/components/GroupChat.tsx
+
 import React, { useEffect, useLayoutEffect, useRef, useState, KeyboardEvent } from "react";
 import {
   sendMessageSocket,
@@ -51,7 +52,7 @@ const GroupChat: React.FC<GroupChatProps> = ({ roomUuid, currentUserUuid, roomNa
     }
   }, [roomUuid, socket]);
 
-  // useLayoutEffect로 렌더링 직후 스크롤 위치를 최하단으로 이동
+  // 렌더링 직후 메시지 영역의 스크롤을 최하단으로 이동
   useLayoutEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "auto" });
   }, [messages]);
@@ -76,17 +77,17 @@ const GroupChat: React.FC<GroupChatProps> = ({ roomUuid, currentUserUuid, roomNa
         <h2 className="text-lg font-semibold">{roomName}</h2>
       </div>
 
-      {/* 메시지 영역 */}
+      {/* 메시지 영역: 남은 공간을 채우며 내부에서만 스크롤 */}
       <div className="flex-1 p-6 overflow-y-auto bg-white">
         {messages.map((msg, idx) =>
           msg.sender_uuid === currentUserUuid ? (
-            <div key={msg.uuid ?? idx} className="flex justify-end pl-1 mb-2">
+            <div key={msg.uuid || idx} className="flex justify-end pl-1 mb-2">
               <div className="bg-blue-500 text-white px-3 py-2 rounded-lg max-w-[70%] break-words">
                 {msg.message}
               </div>
             </div>
           ) : (
-            <div key={msg.uuid ?? idx} className="flex items-start space-x-2 mb-2">
+            <div key={msg.uuid || idx} className="flex items-start space-x-2 mb-2">
               {msg.sender_picture ? (
                 <img
                   src={msg.sender_picture}
@@ -106,7 +107,7 @@ const GroupChat: React.FC<GroupChatProps> = ({ roomUuid, currentUserUuid, roomNa
         <div ref={scrollRef} />
       </div>
 
-      {/* 입력 영역 */}
+      {/* 입력 영역: 채팅 입력 폼은 고정 상태 */}
       <div className="p-4 border-t border-gray-200">
         <div className="flex gap-2 items-end">
           <div className="relative flex-1">
