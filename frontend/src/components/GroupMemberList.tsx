@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { getGroupMembers, Member, GroupMembersResponse } from "../services/groupService";
 import { fetchFriendList, Friend } from "../services/friendService";
 import UserProfileCard from "./UserProfileCard";
+import ProfileCard from "./ProfileCard"; // 자신의 프로필일 때 열릴 ProfileCard
 import { useUser } from "../contexts/UserContext";
 import Icons from "./Icons";
 
@@ -101,7 +102,7 @@ const GroupMemberList: React.FC<GroupMemberListProps> = ({ groupUuid }) => {
     <div className="flex flex-col h-full">
       <h2 className="text-xl font-semibold mb-4">{inviteMode ? "초대" : "멤버 리스트"}</h2>
       {/*
-          각 리스트 아이템은 화면이 작을 때(예: lg 미만)에는 내부 내용이 가운데 정렬되도록 
+          각 리스트 아이템은 화면이 작을 때(예: lg 미만)에는 내부 내용이 가운데 정렬되도록  
           'justify-center lg:justify-between' 클래스를 사용합니다.
           스크롤은 숨기되 가능하도록 no-scrollbar 클래스도 적용했습니다.
       */}
@@ -126,7 +127,9 @@ const GroupMemberList: React.FC<GroupMemberListProps> = ({ groupUuid }) => {
                       <div className="w-10 h-10 bg-gray-200 rounded-full" />
                     )}
                   </div>
-                  {/* 이름: lg 이상에서만 표시하고, max-width 제거하여 가용 공간에 따라 자동 축소 */}
+                  {/*
+                    이름: lg 이상에서만 표시하고, max-width 제거하여 가용 공간에 따라 자동 축소
+                  */}
                   <span className="hidden lg:block truncate whitespace-nowrap">{member.name}</span>
                 </div>
                 <button
@@ -170,9 +173,12 @@ const GroupMemberList: React.FC<GroupMemberListProps> = ({ groupUuid }) => {
           {inviteMode ? "취소" : "초대"}
         </button>
       </div>
-      {selectedMemberUuid && (
-        <UserProfileCard targetUuid={selectedMemberUuid} onClose={handleClose} />
-      )}
+      {selectedMemberUuid &&
+        (selectedMemberUuid === userUuid ? (
+          <ProfileCard onClose={handleClose} />
+        ) : (
+          <UserProfileCard targetUuid={selectedMemberUuid} onClose={handleClose} />
+        ))}
     </div>
   );
 };

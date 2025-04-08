@@ -178,21 +178,32 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({ targetUuid, onClose }
         {/* Footer */}
         {!loading && !error && (
           <div className="p-4 border-t border-gray-200">
-            <button
-              onClick={handleAction}
-              disabled={isActionDisabled()}
-              className={`h-10 w-full rounded-lg transition-colors duration-300 ${
-                profile?.friendStatus === "accepted"
-                  ? "bg-red-500 hover:bg-red-600 text-white"
-                  : profile?.friendStatus === "pending" && profile?.friendRequester === userUuid
-                  ? "bg-gray-300 hover:bg-gray-400 text-gray-800"
-                  : profile?.friendStatus === "pending"
-                  ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                  : "bg-green-500 hover:bg-green-600 text-white"
-              }`}
-            >
-              {getActionLabel()}
-            </button>
+            {profile?.friendStatus === "accepted" ? (
+              // 친구 삭제 버튼: 좌측 정렬, 아이콘 크기에 맞춘 정사각형 버튼
+              <div className="flex justify-start">
+                <button
+                  onClick={handleAction}
+                  className="h-10 w-10 rounded-lg transition-colors duration-300 bg-red-500 hover:bg-red-600 text-white flex items-center justify-center"
+                >
+                  <Icons name="userRemove" className="w-6 h-6" />
+                </button>
+              </div>
+            ) : (
+              // 그 외는 기존의 전체 너비 버튼
+              <button
+                onClick={handleAction}
+                disabled={isActionDisabled()}
+                className={`h-10 w-full rounded-lg transition-colors duration-300 ${
+                  profile?.friendStatus === "pending" && profile?.friendRequester === userUuid
+                    ? "bg-gray-300 hover:bg-gray-400 text-gray-800"
+                    : profile?.friendStatus === "pending"
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : "bg-green-500 hover:bg-green-600 text-white"
+                }`}
+              >
+                {getActionLabel()}
+              </button>
+            )}
           </div>
         )}
       </div>
