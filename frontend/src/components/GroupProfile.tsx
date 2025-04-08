@@ -18,15 +18,19 @@ interface GroupProfileProps {
 const GroupProfile: React.FC<GroupProfileProps> = ({ onClose, group }) => {
   const [groupLeader, setGroupLeader] = useState<any>(null);
   const [isMember, setIsMember] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
   const { userUuid } = useUser();
+
+  // fade‑in 효과 적용
+  useEffect(() => {
+    setIsVisible(true);
+  }, []);
 
   // 그룹 리더 프로필 조회
   useEffect(() => {
     if (group.group_leader_uuid) {
       getUserProfileWithStatus(group.group_leader_uuid)
-        .then((profile) => {
-          setGroupLeader(profile);
-        })
+        .then((profile) => setGroupLeader(profile))
         .catch((error) => {
           console.error("그룹장 프로필 조회 실패:", error);
         });
@@ -38,19 +42,22 @@ const GroupProfile: React.FC<GroupProfileProps> = ({ onClose, group }) => {
     getMyGroups()
       .then((groups) => {
         const member = groups.some((g) => g.uuid === group.uuid);
-        if (member) {
-          setIsMember(true);
-        }
+        if (member) setIsMember(true);
       })
       .catch((error) => {
         console.error("멤버십 상태 확인 실패:", error);
       });
   }, [group.uuid]);
 
+  // 모달 닫기: fade‑out 후 onClose 호출
   const handleModalClose = () => {
-    onClose();
+    setIsVisible(false);
+    setTimeout(() => {
+      onClose();
+    }, 300);
   };
 
+  // 그룹 참여 처리 (실시간 소켓 이벤트)
   const handleJoinGroup = () => {
     socket.emit("joinGroup", { groupUuid: group.uuid, userUuid }, (response: any) => {
       console.log("joinGroup 응답:", response);
@@ -66,55 +73,70 @@ const GroupProfile: React.FC<GroupProfileProps> = ({ onClose, group }) => {
   };
 
   return ReactDOM.createPortal(
-    <div className="fixed inset-0 flex items-center justify-center z-50">
-      {/* 배경 오버레이 */}
-      <div className="absolute inset-0 bg-black/60" onClick={handleModalClose}></div>
+    <div className="fixed inset-0 flex items-center justify-center z-[9999]">
+      {/* Background Overlay */}
+      <div
+        className={`absolute inset-0 bg-black/60 transition-opacity duration-300 ${
+          isVisible ? "opacity-100" : "opacity-0"
+        }`}
+      ></div>
 
-      {/* 모달 컨테이너 */}
-      <div className="relative bg-white rounded-lg shadow-xl w-96 overflow-hidden">
-        {/* 헤더 - 그룹 아이콘 배경, 그룹명 좌측 하단, 닫기 버튼 우측 상단 */}
-        <div className="relative h-60">
-          {group.group_icon ? (
-            <div
-              style={{ backgroundImage: `url(${group.group_icon})` }}
-              className="absolute inset-0 bg-cover bg-center"
-            />
-          ) : (
-            <div className="absolute inset-0 bg-gray-300" />
-          )}
+      {/* Modal Container with fade‑in/out 효과 */}
+      <div
+        className={`relative bg-white rounded-lg shadow-xl w-96 overflow-hidden transition-opacity duration-300 ${
+          isVisible ? "opacity-100" : "opacity-0"
+        }`}
+      >
+        {/* Header */}
+        <div className="flex justify-between items-center p-4 border-b border-gray-200">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl font-bold truncate whitespace-nowrap">{group.name}</h2>
+          </div>
           <button
             onClick={handleModalClose}
-            className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-300"
+            className="ml-4 w-10 h-10 flex items-center justify-center rounded-full bg-transparent hover:bg-gray-200 transition-colors duration-300"
           >
-            <Icons name="close" className="w-6 h-6 text-white" />
+            <Icons name="close" className="w-6 h-6 text-gray-600" />
           </button>
-          <h2 className="absolute bottom-4 left-4 text-xl font-bold text-white">{group.name}</h2>
         </div>
 
-        {/* 콘텐츠 - 그룹장 프로필 사진, 이름 좌측 배치; 그룹 설명 중앙 배치 */}
+        {/* 배경 이미지 영역 */}
+        <div className="h-60">
+          {group.group_picture ? (
+            <img
+              src={group.group_picture}
+              alt={group.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gray-300" />
+          )}
+        </div>
+
+        {/* 콘텐츠 영역 - 그룹장 정보 및 그룹 설명 */}
         <div className="p-6">
           <div className="flex items-center gap-3">
             {groupLeader && groupLeader.profilePicture ? (
               <img
                 src={groupLeader.profilePicture}
                 alt={groupLeader.name}
-                className="w-16 h-16 rounded-full object-cover"
+                className="w-12 h-12 rounded-full object-cover"
               />
             ) : (
-              <div className="w-16 h-16 bg-gray-300 rounded-full" />
+              <div className="w-12 h-12 bg-gray-300 rounded-full" />
             )}
-            <p className="text-lg font-semibold">
+            <p className="text-lg font-semibold truncate">
               {groupLeader ? groupLeader.name : "그룹장 정보를 불러오는 중..."}
             </p>
           </div>
-          <div className="mt-6 text-center">
+          <div className="mt-6 text-left">
             <p className="text-base text-gray-700">
               {group.description ? group.description : "그룹 설명이 없습니다."}
             </p>
           </div>
         </div>
 
-        {/* 푸터 - 그룹 참여 버튼 (실시간 소켓 처리) */}
+        {/* Footer 영역 - 그룹 참여 버튼 */}
         <div className="p-4 border-t border-gray-200">
           <button
             onClick={!isMember ? handleJoinGroup : undefined}

@@ -95,17 +95,28 @@ const GroupMemberList: React.FC<GroupMemberListProps> = ({ groupUuid }) => {
     alert("초대장이 전송되었습니다.");
   };
 
-  if (loading) return <div>로딩중...</div>;
+  // 로딩 상태: 스피너 아이콘을 w-8 h-8 text-gray-300 fill-blue-600 animate-spin 클래스와 함께 가운데 정렬하여 표시
+  if (loading)
+    return (
+      <div className="flex justify-center items-center h-full">
+        <Icons name="spinner" className="w-8 h-8 text-gray-300 fill-blue-600 animate-spin" />
+      </div>
+    );
   if (error) return <div>{error}</div>;
 
   return (
     <div className="flex flex-col h-full">
-      <h2 className="text-xl font-semibold mb-4">{inviteMode ? "초대" : "멤버 리스트"}</h2>
-      {/*
-          각 리스트 아이템은 화면이 작을 때(예: lg 미만)에는 내부 내용이 가운데 정렬되도록  
-          'justify-center lg:justify-between' 클래스를 사용합니다.
-          스크롤은 숨기되 가능하도록 no-scrollbar 클래스도 적용했습니다.
-      */}
+      {inviteMode ? (
+        <h2 className="text-xl font-semibold mb-2">초대</h2>
+      ) : (
+        <div className="flex items-center gap-2 mb-2">
+          <Icons name="userGroup" className="w-6 h-6" />
+          <span className="text-xl font-semibold">{members.length}</span>
+        </div>
+      )}
+      {/* 제목 영역 아래에 구분선 추가 */}
+      <div className="border-b border-gray-300 mb-4"></div>
+
       <ul className="space-y-3 flex-grow overflow-y-auto no-scrollbar">
         {members.map((member) => (
           <li
@@ -127,9 +138,7 @@ const GroupMemberList: React.FC<GroupMemberListProps> = ({ groupUuid }) => {
                       <div className="w-10 h-10 bg-gray-200 rounded-full" />
                     )}
                   </div>
-                  {/*
-                    이름: lg 이상에서만 표시하고, max-width 제거하여 가용 공간에 따라 자동 축소
-                  */}
+                  {/* 이름: lg 이상에서만 표시하며, 가용 공간에 따라 자동 축소 */}
                   <span className="hidden lg:block truncate whitespace-nowrap">{member.name}</span>
                 </div>
                 <button
@@ -165,10 +174,11 @@ const GroupMemberList: React.FC<GroupMemberListProps> = ({ groupUuid }) => {
           </li>
         ))}
       </ul>
-      <div className="mt-4">
+      {/* 하단 버튼 영역 */}
+      <div className="mt-4 border-t border-gray-300 pt-4">
         <button
           onClick={handleToggleInviteMode}
-          className="w-full bg-blue-500 text-white rounded-lg px-4 py-2 hover:bg-blue-600 transition-all duration-300"
+          className="w-full inline-flex justify-center items-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition-colors duration-300"
         >
           {inviteMode ? "취소" : "초대"}
         </button>

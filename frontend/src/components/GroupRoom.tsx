@@ -46,55 +46,51 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
 
   return (
     <div className="h-full flex flex-col">
-      {/* 모바일 상단 네비게이션 (md 미만) */}
+      {/* 모바일 상단 네비게이션 (md 미만): 텍스트 제거하고 아이콘만 표시 */}
       <div className="block md:hidden mb-4 border-b border-gray-300 py-2">
         <div className="flex items-center justify-around">
           <button
             onClick={() => setSelectedTab("announcement")}
-            className="flex flex-col items-center hover:text-blue-600 transition-transform duration-200 hover:scale-105 active:scale-95"
+            className="flex flex-col items-center p-2 rounded hover:text-blue-600 transition-all duration-200 active:scale-95"
           >
             <Icons name="bell" className="w-6 h-6" />
-            <span className="text-xs">공지사항</span>
           </button>
           <button
             onClick={() => setSelectedTab("calendar")}
-            className="flex flex-col items-center hover:text-blue-600 transition-transform duration-200 hover:scale-105 active:scale-95"
+            className="flex flex-col items-center p-2 rounded hover:text-blue-600 transition-all duration-200 active:scale-95"
           >
             <Icons name="calendar" className="w-6 h-6" />
-            <span className="text-xs">일정</span>
           </button>
           <button
             onClick={() => setSelectedTab("chat")}
-            className="flex flex-col items-center hover:text-blue-600 transition-transform duration-200 hover:scale-105 active:scale-95"
+            className="flex flex-col items-center p-2 rounded hover:text-blue-600 transition-all duration-200 active:scale-95"
           >
             <Icons name="chat" className="w-6 h-6" />
-            <span className="text-xs">채팅</span>
           </button>
           <button
             onClick={() => setSelectedTab("settings")}
-            className="flex flex-col items-center hover:text-blue-600 transition-transform duration-200 hover:scale-105 active:scale-95"
+            className="flex flex-col items-center p-2 rounded hover:text-blue-600 transition-all duration-200 active:scale-95"
           >
             <Icons name="cog" className="w-6 h-6" />
-            <span className="text-xs">설정</span>
           </button>
         </div>
       </div>
 
       {/* 메인 콘텐츠 영역: 좌측 메뉴, 중앙 콘텐츠, 우측 멤버 리스트 */}
       <div className="flex flex-1 overflow-hidden gap-4">
-        {/* 좌측 사이드바: md 이하에서는 아이콘만, lg 이상에서는 메뉴 텍스트를 함께 보여줌 */}
+        {/* 좌측 사이드바: md 이하에서는 아이콘만, lg 이상에서는 메뉴 텍스트도 함께 표시 */}
         <aside className="hidden md:flex flex-col md:w-24 lg:w-52 flex-shrink-0 border-r border-gray-300 p-4">
           <div className="space-y-4">
             <button
               onClick={() => setSelectedTab("announcement")}
-              className="w-full flex items-center justify-center lg:justify-start lg:text-left hover:bg-gray-100 p-2 rounded transition-transform duration-200 hover:scale-105 active:scale-95"
+              className="w-full flex items-center justify-center lg:justify-start lg:text-left p-2 rounded hover:bg-gray-100 transition-all duration-200 active:scale-95"
             >
               <Icons name="bell" className="w-6 h-6" />
-              <span className="hidden lg:inline ml-2">공지사항</span>
+              <span className="hidden lg:inline ml-2">공지</span>
             </button>
             <button
               onClick={() => setSelectedTab("calendar")}
-              className="w-full flex items-center justify-center lg:justify-start lg:text-left hover:bg-gray-100 p-2 rounded transition-transform duration-200 hover:scale-105 active:scale-95"
+              className="w-full flex items-center justify-center lg:justify-start lg:text-left p-2 rounded hover:bg-gray-100 transition-all duration-200 active:scale-95"
             >
               <Icons name="calendar" className="w-6 h-6" />
               <span className="hidden lg:inline ml-2">일정</span>
@@ -104,7 +100,7 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
           <div className="space-y-4">
             <button
               onClick={() => setSelectedTab("chat")}
-              className="w-full flex items-center justify-center lg:justify-start lg:text-left hover:bg-gray-100 p-2 rounded transition-transform duration-200 hover:scale-105 active:scale-95"
+              className="w-full flex items-center justify-center lg:justify-start lg:text-left p-2 rounded hover:bg-gray-100 transition-all duration-200 active:scale-95"
             >
               <Icons name="chat" className="w-6 h-6" />
               <span className="hidden lg:inline ml-2">채팅</span>
@@ -114,7 +110,7 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
           <div className="my-2 border-t border-gray-300" />
           <button
             onClick={() => setSelectedTab("settings")}
-            className="w-full flex items-center justify-center lg:justify-start lg:text-left hover:bg-gray-100 p-2 rounded transition-transform duration-200 hover:scale-105 active:scale-95"
+            className="w-full flex items-center justify-center lg:justify-start lg:text-left p-2 rounded hover:bg-gray-100 transition-all duration-200 active:scale-95"
           >
             <Icons name="cog" className="w-6 h-6" />
             <span className="hidden lg:inline ml-2">설정</span>
@@ -132,7 +128,7 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
                 initial="initial"
                 animate="animate"
                 exit="exit"
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.2 }}
               >
                 <GroupAnnouncement />
               </motion.div>
@@ -145,7 +141,7 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
                 initial="initial"
                 animate="animate"
                 exit="exit"
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.2 }}
               >
                 <GroupCalendar />
               </motion.div>
@@ -158,7 +154,7 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
                 initial="initial"
                 animate="animate"
                 exit="exit"
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.2 }}
               >
                 {loading && <div>채팅방을 불러오는 중...</div>}
                 {!loading && chatRoomUuid ? (
@@ -180,7 +176,7 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
                 initial="initial"
                 animate="animate"
                 exit="exit"
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.2 }}
               >
                 <GroupSettings
                   group={{

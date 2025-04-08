@@ -151,14 +151,14 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
     }
   };
 
-  // 새로운 DM 창 생성: friendName도 함께 저장하고, 고정 offset { bottom: "1rem", right: "1rem" } 사용
+  // 새로운 DM 창 생성: friendName도 함께 저장하고, 고정 offset 사용
   const handleMessageClick = async (friendUuid: string, friendName: string, e: MouseEvent) => {
     e.stopPropagation();
     try {
       const roomUuid = await openOrCreateDMRoom(friendUuid);
       setDmRooms((prev) => {
         if (prev.find((dm) => dm.roomUuid === roomUuid)) return prev;
-        const newOffset = { bottom: "1rem", right: "1rem" }; // 고정 오프셋
+        const newOffset = { bottom: "1rem", right: "1rem" };
         return [...prev, { friendUuid, roomUuid, friendName, positionOffset: newOffset }];
       });
     } catch (err) {
@@ -173,7 +173,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
     }, 300);
   };
 
-  // DM 창 닫기: 해당 roomUuid 제거 (나머지는 그대로 유지)
+  // DM 창 닫기: 해당 roomUuid 제거
   const handleCloseDM = (roomUuid: string) => {
     setDmRooms((prev) => prev.filter((dm) => dm.roomUuid !== roomUuid));
   };
@@ -202,7 +202,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
           </h2>
           <button
             onClick={handleModalClose}
-            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-300 transition-colors duration-300"
+            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-300 transition-colors duration-300 active:scale-95"
           >
             <Icons name="close" className="w-6 h-6 text-gray-600" />
           </button>
@@ -218,7 +218,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                       setActiveTab("list");
                       setIsAdding(false);
                     }}
-                    className={`flex-1 text-sm py-2 transition-all duration-300 ${
+                    className={`flex-1 text-sm py-2 transition-all duration-300 active:scale-95 ${
                       activeTab === "list" ? "font-semibold text-blue-600" : "text-gray-500"
                     }`}
                   >
@@ -230,7 +230,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                       setActiveTab("requests");
                       setIsAdding(false);
                     }}
-                    className={`flex-1 text-sm py-2 transition-all duration-300 ${
+                    className={`flex-1 text-sm py-2 transition-all duration-300 active:scale-95 ${
                       activeTab === "requests" ? "font-semibold text-blue-600" : "text-gray-500"
                     }`}
                   >
@@ -272,7 +272,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                           </div>
                           <button
                             onClick={handleSearch}
-                            className="flex items-center justify-center p-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
+                            className="flex items-center justify-center p-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition active:scale-95"
                           >
                             <Icons name="search" className="w-6 h-6" />
                           </button>
@@ -332,7 +332,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                                       (user.friendStatus === "pending" &&
                                         user.friendRequester !== userUuid)
                                     }
-                                    className={`px-2 py-1 text-sm rounded whitespace-nowrap ${
+                                    className={`px-2 py-1 text-sm rounded whitespace-nowrap transition active:scale-95 ${
                                       user.friendStatus === "accepted"
                                         ? "text-gray-400 cursor-not-allowed"
                                         : user.friendStatus === "pending"
@@ -415,7 +415,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                               <button
                                 onClick={(e) => handleMessageClick(friend.uuid, friend.name, e)}
                                 title="채팅하기"
-                                className="p-1"
+                                className="p-1 active:scale-95"
                                 onMouseDown={(e) => e.stopPropagation()}
                               >
                                 <Icons
@@ -464,7 +464,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                                 e.stopPropagation();
                                 handleAccept(req.uuid);
                               }}
-                              className="p-1 text-green-500 hover:text-green-600 transition"
+                              className="p-1 text-green-500 hover:text-green-600 transition active:scale-95"
                             >
                               <Icons name="check" className="w-6 h-6" />
                             </button>
@@ -473,7 +473,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
                                 e.stopPropagation();
                                 handleDecline(req.uuid);
                               }}
-                              className="p-1 text-red-500 hover:text-red-600 transition"
+                              className="p-1 text-red-500 hover:text-red-600 transition active:scale-95"
                             >
                               <Icons name="close" className="w-6 h-6" />
                             </button>
@@ -494,7 +494,7 @@ const FriendList: React.FC<FriendListProps> = ({ onClose }) => {
               setActiveTab("list");
               handleToggleMode();
             }}
-            className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+            className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition active:scale-95"
           >
             {isAdding ? (
               <>
