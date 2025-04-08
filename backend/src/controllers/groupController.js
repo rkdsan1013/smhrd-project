@@ -1,9 +1,22 @@
+// /backend/src/controllers/groupController.js
+
 const groupModel = require("../models/groupModel");
 const { saveGroupIcon, saveGroupPicture } = require("../utils/imageHelper");
 const { formatImageUrl } = require("../utils/imageUrlHelper");
 const { validateName, validateDescription } = require("../utils/validators");
 const userModel = require("../models/userModel");
 const pool = require("../config/db");
+
+/**
+ * 프로필 객체 내에 profilePicture가 존재하면,
+ * 서버 주소가 붙은 이미지 URL로 변환합니다.
+ */
+const formatProfile = (profile) => {
+  if (profile.profilePicture) {
+    profile.profilePicture = formatImageUrl(profile.profilePicture);
+  }
+  return profile;
+};
 
 const createGroup = async (req, res, next) => {
   try {
@@ -24,6 +37,7 @@ const createGroup = async (req, res, next) => {
       return res.status(400).json({ message: "유효한 공개 상태를 선택해 주세요." });
     }
 
+    // 그룹 생성 및 생성된 그룹 정보 획득
     let createdGroup = await groupModel.createGroup(
       name,
       description,
@@ -34,6 +48,7 @@ const createGroup = async (req, res, next) => {
     );
     const groupUuid = createdGroup.uuid;
 
+    // 파일이 업로드되었으면 해당 파일들을 처리
     let groupIconFile = null;
     let groupPictureFile = null;
     if (req.files) {
@@ -54,6 +69,7 @@ const createGroup = async (req, res, next) => {
       groupPictureUrl = await saveGroupPicture(groupUuid, groupPictureFile);
     }
 
+    // 이미지가 변경되었으면 DB상의 그룹 이미지 정보 업데이트
     if (
       groupIconUrl !== createdGroup.group_icon ||
       groupPictureUrl !== createdGroup.group_picture
@@ -62,6 +78,7 @@ const createGroup = async (req, res, next) => {
       createdGroup = await groupModel.getGroupByUuid(groupUuid);
     }
 
+    // 클라이언트에 반환하기 전에 이미지 URL에 서버 주소를 붙임
     createdGroup.group_icon = formatImageUrl(createdGroup.group_icon);
     createdGroup.group_picture = formatImageUrl(createdGroup.group_picture);
 
@@ -105,8 +122,6 @@ const searchGroups = async (req, res, next) => {
 };
 
 /* 그룹 참여 기능 */
-// 현재 사용자가 그룹의 멤버인지 SELECT_GROUPS_FOR_MEMBER 쿼리를 통해 확인한 후,
-// 멤버가 아니라면 INSERT 문을 사용하여 group_members 테이블에 등록합니다.
 const joinGroup = async (req, res, next) => {
   try {
     const { groupUuid } = req.body;
@@ -115,7 +130,7 @@ const joinGroup = async (req, res, next) => {
       return res.status(400).json({ message: "그룹 UUID가 필요합니다." });
     }
 
-    // 이미 그룹 멤버인지 확인 (SELECT_GROUPS_FOR_MEMBER 사용)
+    // 이미 그룹의 멤버인지 확인 (내가 가입한 그룹 목록 조회)
     const myGroups = await groupModel.getMyGroups(userUuid);
     const isMember = myGroups.some((group) => group.uuid === groupUuid);
     if (isMember) {
@@ -147,10 +162,30 @@ const getUserProfile = async (req, res, next) => {
   }
 };
 
+const getGroupMembers = async (req, res, next) => {
+  try {
+    const { groupUuid } = req.params;
+    let members = await groupModel.getGroupMembers(groupUuid);
+
+    // 각 멤버의 프로필 사진에 서버 주소를 붙여 포매팅 적용
+    members = members.map((member) => {
+      if (member.profilePicture) {
+        member.profilePicture = formatImageUrl(member.profilePicture);
+      }
+      return member;
+    });
+
+    res.status(200).json({ members });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createGroup,
   getMyGroups,
   searchGroups,
   joinGroup,
   getUserProfile,
+  getGroupMembers,
 };

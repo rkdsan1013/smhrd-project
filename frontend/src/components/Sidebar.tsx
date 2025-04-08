@@ -1,5 +1,4 @@
 // /frontend/src/components/Sidebar.tsx
-
 import React, { useState, useEffect, useRef, MouseEvent } from "react";
 import ReactDOM from "react-dom";
 import Icons from "./Icons";
@@ -63,7 +62,8 @@ const calcTooltipStyle = (rect: DOMRect, isDesktop: boolean): React.CSSPropertie
 interface SidebarProps {
   onHomeSelect: () => void;
   onGroupSearchSelect: () => void;
-  onGroupSelect: (groupUuid: string) => void;
+  // 수정된 타입: 그룹 UUID와 그룹 이름 두 개의 인자를 받음.
+  onGroupSelect: (groupUuid: string, groupName: string) => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ onHomeSelect, onGroupSearchSelect, onGroupSelect }) => {
@@ -89,9 +89,9 @@ const Sidebar: React.FC<SidebarProps> = ({ onHomeSelect, onGroupSearchSelect, on
     fetchGroups();
   }, []);
 
-  // 그룹 목록에서 그룹 클릭 시 해당 그룹의 UUID를 부모에게 전달
-  const navigateTo = (groupUuid: string) => {
-    onGroupSelect(groupUuid);
+  // 그룹 버튼 클릭 시, 그룹의 UUID와 이름을 부모에게 전달
+  const navigateTo = (groupUuid: string, groupName: string) => {
+    onGroupSelect(groupUuid, groupName);
   };
 
   const addTooltip = (target: HTMLElement, text: string): number => {
@@ -187,7 +187,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onHomeSelect, onGroupSearchSelect, on
               {groups.map((group) => (
                 <div key={group.uuid} className="relative flex-shrink-0">
                   <button
-                    onClick={() => navigateTo(group.uuid)}
+                    onClick={() => navigateTo(group.uuid, group.name)}
                     onMouseEnter={(e) => handleMouseEnter(e, group.name)}
                     onMouseLeave={handleMouseLeave}
                     className="flex items-center justify-center rounded-full overflow-hidden hover:opacity-80 hover:scale-105 hover:shadow-lg transition-transform duration-200 transform focus:outline-none"
