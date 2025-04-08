@@ -29,11 +29,14 @@ const Footer: React.FC = () => {
       )}
 
       <footer className="bg-white rounded-lg border-t border-gray-200 shadow-lg p-4">
-        <div className="flex items-center justify-between">
+        {/* 외부 컨테이너는 flex items-center로 구성하고,
+            프로필 카드 영역은 최대 너비를 지정하여 내용에 따라 줄어들도록 하고,
+            친구 목록 버튼은 ml-auto로 오른쪽에 배치 */}
+        <div className="flex items-center">
           {/* 프로필 카드 영역 */}
           <div
             onClick={handleProfileClick}
-            className="flex items-center space-x-4 p-3 rounded-xl bg-gradient-to-r from-gray-100 to-gray-50 cursor-pointer transition-all duration-200 hover:shadow-xl"
+            className="flex items-center space-x-4 p-3 rounded-xl bg-gradient-to-r from-gray-100 to-gray-50 cursor-pointer transition-all duration-200 hover:shadow-xl overflow-hidden max-w-[300px]"
           >
             {loading ? (
               <Icons
@@ -53,9 +56,14 @@ const Footer: React.FC = () => {
                 ) : (
                   <div className="w-12 h-12 rounded-full bg-gray-300" />
                 )}
-                <div className="flex flex-col">
-                  <span className="font-semibold text-gray-800">{profile.name}</span>
-                  <span className="text-xs text-gray-500">{profile.email}</span>
+                {/* 텍스트 영역: flex-1 min-w-0 적용 */}
+                <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+                  <span className="font-semibold text-gray-800 truncate whitespace-nowrap">
+                    {profile.name}
+                  </span>
+                  <span className="text-xs text-gray-500 truncate whitespace-nowrap">
+                    {profile.email}
+                  </span>
                 </div>
               </>
             ) : (
@@ -64,15 +72,16 @@ const Footer: React.FC = () => {
           </div>
 
           {/* 친구 목록 버튼 */}
-          <div className="relative">
+          <div className="relative flex-shrink-0 ml-auto">
             <button
               onClick={handleFriendListClick}
               title="친구 목록"
-              className="flex items-center justify-center md:justify-start px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 hover:shadow-md active:scale-95 transition-all duration-200 focus:outline-none"
+              className="flex items-center justify-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 hover:shadow-md active:scale-95 transition-all duration-200 focus:outline-none overflow-hidden min-w-0 max-w-full flex-shrink"
             >
               <Icons name="users" className="w-6 h-6 text-white" />
-              {/* md 이상일 때만 텍스트가 보이며, ml-2를 통해 아이콘과의 간격을 줌 */}
-              <span className="hidden md:inline-block ml-2 font-medium">친구 목록</span>
+              <span className="hidden md:inline-block ml-2 font-medium truncate whitespace-nowrap max-w-[120px]">
+                친구 목록
+              </span>
             </button>
             {friendRequests.length > 0 && (
               <span className="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-md">

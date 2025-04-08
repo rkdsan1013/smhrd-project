@@ -14,7 +14,10 @@ const Home: React.FC = () => {
 
       {/* 대시보드 영역 */}
       <div className="flex-1 bg-white rounded-lg shadow p-4 flex flex-col min-h-[25rem] md:min-h-0 md:h-full">
-        <div className="grid grid-cols-2 gap-4 flex-1">
+        {/* 기본(default): grid-cols-2 → 2x2 그리드 (항목 4개면 자동 2행)
+            md 이상에서는 grid-cols-1 (세로 배치)로 변경
+            lg 이상에서는 grid-cols-2로 다시 2x2 그리드 */}
+        <div className="grid grid-cols-2 md:grid-cols-1 lg:grid-cols-2 gap-4 flex-1">
           <div className="bg-gray-50 rounded flex items-center justify-center">현재 일정</div>
           <div className="bg-gray-50 rounded flex items-center justify-center">다음 일정</div>
           <div className="bg-gray-50 rounded flex items-center justify-center">인기 여행지</div>

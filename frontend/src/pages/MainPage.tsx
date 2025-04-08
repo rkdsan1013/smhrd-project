@@ -76,7 +76,7 @@ const MainContent: React.FC = () => {
         <div className="flex-1 flex flex-col gap-5 min-h-0">
           {/* main 영역: 모바일에서는 h-auto, 데스크톱에서는 md:h-full */}
           <main
-            className={`flex-1 bg-white rounded-lg shadow-lg p-6 relative min-h-0 ${
+            className={`flex-1 bg-white rounded-lg shadow-lg relative min-h-0 ${
               isGroupRoomView
                 ? "flex flex-col overflow-hidden h-full"
                 : "overflow-y-auto no-scrollbar h-auto md:h-full"
