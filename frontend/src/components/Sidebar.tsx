@@ -166,7 +166,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onHomeSelect, onGroupSearchSelect, on
               onClick={onHomeSelect}
               onMouseEnter={(e) => handleMouseEnter(e, "메인 화면")}
               onMouseLeave={handleMouseLeave}
-              className="flex items-center justify-center focus:outline-none"
+              className="flex items-center justify-center focus:outline-none hover:scale-105 active:scale-95 transition-transform duration-200"
             >
               <Icons
                 name="home"
@@ -190,7 +190,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onHomeSelect, onGroupSearchSelect, on
                     onClick={() => navigateTo(group.uuid, group.name)}
                     onMouseEnter={(e) => handleMouseEnter(e, group.name)}
                     onMouseLeave={handleMouseLeave}
-                    className="flex items-center justify-center rounded-full overflow-hidden hover:opacity-80 hover:scale-105 hover:shadow-lg transition-transform duration-200 transform focus:outline-none"
+                    className="flex items-center justify-center rounded-full overflow-hidden hover:opacity-80 hover:scale-105 active:scale-95 hover:shadow-lg transition-transform duration-200 transform focus:outline-none"
                   >
                     {group.image ? (
                       <img
@@ -226,7 +226,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onHomeSelect, onGroupSearchSelect, on
                 onClick={() => setIsGroupCreationModalOpen(true)}
                 onMouseEnter={(e) => handleMouseEnter(e, "그룹 생성")}
                 onMouseLeave={handleMouseLeave}
-                className="flex items-center justify-center focus:outline-none"
+                className="flex items-center justify-center focus:outline-none hover:scale-105 active:scale-95 transition-transform duration-200"
               >
                 <Icons
                   name="plus"
@@ -239,7 +239,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onHomeSelect, onGroupSearchSelect, on
                 onClick={onGroupSearchSelect}
                 onMouseEnter={(e) => handleMouseEnter(e, "그룹 검색")}
                 onMouseLeave={handleMouseLeave}
-                className="flex items-center justify-center focus:outline-none"
+                className="flex items-center justify-center focus:outline-none hover:scale-105 active:scale-95 transition-transform duration-200"
               >
                 <Icons
                   name="search"

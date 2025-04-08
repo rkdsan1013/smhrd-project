@@ -56,18 +56,18 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
             <li>
               <button
                 onClick={() => setSelectedTab("announcement")}
-                className="w-full text-left flex items-center hover:bg-gray-100 px-2 py-1 rounded transition-all duration-300"
+                className="w-full text-left flex items-center hover:bg-gray-100 px-4 py-3 rounded transition-transform duration-200 hover:scale-105 active:scale-95"
               >
-                <Icons name="bell" className="w-5 h-5 mr-2" />
+                <Icons name="bell" className="w-6 h-6 mr-2" />
                 공지사항
               </button>
             </li>
             <li>
               <button
                 onClick={() => setSelectedTab("calendar")}
-                className="w-full text-left flex items-center hover:bg-gray-100 px-2 py-1 rounded transition-all duration-300"
+                className="w-full text-left flex items-center hover:bg-gray-100 px-4 py-3 rounded transition-transform duration-200 hover:scale-105 active:scale-95"
               >
-                <Icons name="calendar" className="w-5 h-5 mr-2" />
+                <Icons name="calendar" className="w-6 h-6 mr-2" />
                 일정
               </button>
             </li>
@@ -81,9 +81,9 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
             <li>
               <button
                 onClick={() => setSelectedTab("chat")}
-                className="w-full text-left flex items-center hover:bg-gray-100 px-2 py-1 rounded transition-all duration-300"
+                className="w-full text-left flex items-center hover:bg-gray-100 px-4 py-3 rounded transition-transform duration-200 hover:scale-105 active:scale-95"
               >
-                <Icons name="chat" className="w-5 h-5 mr-2" />
+                <Icons name="chat" className="w-6 h-6 mr-2" />
                 채팅
               </button>
             </li>
@@ -98,9 +98,9 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
           {/* 하단 그룹: 설정 */}
           <button
             onClick={() => setSelectedTab("settings")}
-            className="w-full text-left flex items-center hover:bg-gray-100 px-2 py-1 rounded transition-all duration-300"
+            className="w-full text-left flex items-center hover:bg-gray-100 px-4 py-3 rounded transition-transform duration-200 hover:scale-105 active:scale-95"
           >
-            <Icons name="cog" className="w-5 h-5 mr-2" />
+            <Icons name="cog" className="w-6 h-6 mr-2" />
             설정
           </button>
         </aside>
