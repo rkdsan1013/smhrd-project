@@ -272,6 +272,22 @@ const Icons: React.FC<IconProps> = ({ name, className }) => {
         <path d="M8.95 19.7c.7.8 1.7 1.3 2.8 1.3 1.6 0 2.9-1.1 3.3-2.5l-6.1 1.2Z" />
       </svg>
     ),
+    send: (
+      <svg
+        style={{ transform: "rotate(90deg)" }}
+        className={defaultClass || "w-6 h-6 text-gray-800 dark:text-white"}
+        aria-hidden="true"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          fillRule="evenodd"
+          d="M12 2a1 1 0 0 1 .932.638l7 18a1 1 0 0 1-1.326 1.281L13 19.517V13a1 1 0 1 0-2 0v6.517l-5.606 2.402a1 1 0 0 1-1.326-1.281l7-18A1 1 0 0 1 12 2Z"
+          clipRule="evenodd"
+        />
+      </svg>
+    ),
   };
 
   if (!iconMap[name]) {

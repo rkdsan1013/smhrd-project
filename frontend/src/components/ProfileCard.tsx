@@ -1,6 +1,7 @@
 // /frontend/src/components/ProfileCard.tsx
 
 import React, { useState, useEffect, useLayoutEffect, useRef, ChangeEvent } from "react";
+import ReactDOM from "react-dom";
 import { logout, changePassword, withdrawAccount } from "../services/authService";
 import { updateUserProfile } from "../services/userService";
 import { validatePassword, validateUpdateProfile } from "../utils/validators";
@@ -654,8 +655,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
   }
   if (!profile) return null;
 
-  return (
-    <div className="fixed inset-0 flex items-center justify-center">
+  return ReactDOM.createPortal(
+    <div className="fixed inset-0 flex items-center justify-center z-9999">
       <div
         className={`absolute inset-0 bg-black/60 transition-opacity duration-300 ${
           isVisible ? "opacity-100" : "opacity-0"
@@ -691,7 +692,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onClose }) => {
           {mode === "view" ? <ProfileInfoFooter /> : <FormActionFooter />}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
 
