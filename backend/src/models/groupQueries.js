@@ -104,6 +104,26 @@ const SELECT_GROUP_MEMBERS = `
   WHERE gm.group_uuid = ?
 `;
 
+const SELECT_SENT_GROUP_INVITES = `
+  SELECT uuid AS inviteUuid, invited_user_uuid AS invitedUserUuid
+  FROM group_invites
+  WHERE group_uuid = ? AND invited_by_uuid = ?
+`;
+
+const SELECT_RECEIVED_GROUP_INVITES = `
+  SELECT
+  gi.uuid AS inviteUuid,
+  gi.group_uuid AS groupUuid,
+  gi.invited_by_uuid AS inviterUuid,
+  up.name AS inviterName,
+  g.name AS groupName
+FROM group_invites gi
+JOIN user_profiles up ON gi.invited_by_uuid = up.uuid
+JOIN group_info g ON gi.group_uuid = g.uuid
+WHERE gi.invited_user_uuid = ?
+
+`;
+
 module.exports = {
   INSERT_GROUP_INFO,
   INSERT_GROUP_MEMBER,
@@ -121,4 +141,6 @@ module.exports = {
   CHECK_DUPLICATE_INVITE,
   CHECK_IS_GROUP_MEMBER,
   SELECT_GROUP_MEMBERS,
+  SELECT_SENT_GROUP_INVITES,
+  SELECT_RECEIVED_GROUP_INVITES,
 };

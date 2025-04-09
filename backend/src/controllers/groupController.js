@@ -164,22 +164,6 @@ const getUserProfile = async (req, res, next) => {
   }
 };
 
-// 그룹 초대 응답
-const respondToGroupInvite = async (req, res) => {
-  const { inviteUuid, action } = req.body;
-  const userUuid = req.user?.uuid;
-  if (!userUuid || !inviteUuid || !action) {
-    return res.status(400).json({ success: false, message: "필수 정보가 누락되었습니다." });
-  }
-  try {
-    const result = await groupModel.respondToGroupInvite(inviteUuid, userUuid, action);
-    res.status(200).json(result);
-  } catch (err) {
-    console.error("초대 응답 실패:", err);
-    res.status(500).json({ success: false, message: err.message });
-  }
-};
-
 // 그룹 멤버 조회
 const getGroupMembers = async (req, res, next) => {
   try {
@@ -211,13 +195,35 @@ const getGroupChatRoom = async (req, res, next) => {
   }
 };
 
+const getSentGroupInvites = async (req, res, next) => {
+  try {
+    const groupUuid = req.params.groupUuid;
+    const invitedByUuid = req.user.uuid;
+    const invites = await groupModel.getSentInvitesByGroupAndSender(groupUuid, invitedByUuid);
+    res.status(200).json(invites);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getReceivedGroupInvites = async (req, res, next) => {
+  try {
+    const userUuid = req.user.uuid;
+    const invites = await groupModel.getReceivedInvitesByUserUuid(userUuid);
+    res.status(200).json(invites);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createGroup,
   getMyGroups,
   searchGroups,
   joinGroup,
   getUserProfile,
-  respondToGroupInvite,
   getGroupMembers,
   getGroupChatRoom,
+  getSentGroupInvites,
+  getReceivedGroupInvites,
 };

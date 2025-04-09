@@ -1,13 +1,13 @@
-// /frontend/src/contexts/NotificationContext.tsx
+// File: /frontend/src/contexts/NotificationContext.tsx
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useSocket } from "./SocketContext";
+import { getReceivedGroupInvites } from "../services/groupService";
 
-// 여러 종류의 알림을 discriminated union 타입으로 정의합니다.
 export type Notification =
   | {
       type: "groupInvite";
-      id: number;
+      id: string;
       sender: string;
       groupName: string;
     }
@@ -26,9 +26,9 @@ export type Notification =
 
 interface NotificationContextType {
   notifications: Notification[];
-  acceptNotification: (id: number, type: Notification["type"]) => void;
-  declineNotification: (id: number, type: Notification["type"]) => void;
-  removeNotification: (id: number) => void;
+  acceptNotification: (id: string | number, type: Notification["type"]) => void;
+  declineNotification: (id: string | number, type: Notification["type"]) => void;
+  removeNotification: (id: string | number) => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -43,49 +43,83 @@ export const useNotificationContext = (): NotificationContextType => {
 
 export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { socket } = useSocket();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  const [notifications, setNotifications] = useState<Notification[]>([
-    // 초기 예시 데이터 – 실제 서비스에서는 서버로부터 받은 데이터로 대체합니다.
-    { type: "groupInvite", id: 1, sender: "Alice", groupName: "Study Group" },
-    { type: "chatMessage", id: 2, sender: "Bob", message: "Hello!", chatId: 101 },
-    { type: "friendRequest", id: 3, sender: "Charlie" },
-  ]);
+  useEffect(() => {
+    const loadInitialGroupInvites = async () => {
+      try {
+        const invites = await getReceivedGroupInvites();
 
-  // 소켓을 통해 실시간 알림 수신
+        setNotifications((prev) => {
+          const combined = [...prev];
+          for (const invite of invites) {
+            const exists = combined.some(
+              (n) => n.type === "groupInvite" && n.id === invite.inviteUuid,
+            );
+            if (!exists) {
+              combined.push({
+                type: "groupInvite",
+                id: invite.inviteUuid,
+                sender: invite.inviterName,
+                groupName: invite.groupName,
+              });
+            }
+          }
+          return combined;
+        });
+      } catch (err) {
+        console.error("초기 그룹 초대 알림 로딩 실패:", err);
+      }
+    };
+
+    loadInitialGroupInvites();
+  }, []);
+
   useEffect(() => {
     if (!socket) return;
 
     const handleNotification = (notification: Notification) => {
-      console.log("Received notification via socket:", notification);
-      setNotifications((prev) => [...prev, notification]);
+      setNotifications((prev) => {
+        const exists = prev.some((n) => n.type === notification.type && n.id === notification.id);
+        return exists ? prev : [...prev, notification];
+      });
+    };
+
+    const handleInviteCancelled = ({ inviteUuid }: { inviteUuid: string }) => {
+      setNotifications((prev) =>
+        prev.filter(
+          (notification) =>
+            !(notification.type === "groupInvite" && notification.id === inviteUuid),
+        ),
+      );
     };
 
     socket.on("notification", handleNotification);
+    socket.on("group-invite", handleNotification); // 소켓 실시간 알림
+    socket.on("groupInviteCancelled", handleInviteCancelled);
 
     return () => {
       socket.off("notification", handleNotification);
+      socket.off("group-invite", handleNotification);
+      socket.off("groupInviteCancelled", handleInviteCancelled);
     };
   }, [socket]);
 
-  // 알림 응답(수락/거절) 시 서버로 응답 전송 후 상태 갱신
-  const acceptNotification = (id: number, type: Notification["type"]) => {
+  const acceptNotification = (id: string | number, type: Notification["type"]) => {
     if (type === "groupInvite" || type === "friendRequest") {
-      console.log(`Accepted ${type} with id: ${id}`);
       socket?.emit("notificationResponse", { id, type, response: "accepted" });
     }
     setNotifications((prev) => prev.filter((notification) => notification.id !== id));
   };
 
-  const declineNotification = (id: number, type: Notification["type"]) => {
+  const declineNotification = (id: string | number, type: Notification["type"]) => {
     if (type === "groupInvite" || type === "friendRequest") {
-      console.log(`Declined ${type} with id: ${id}`);
       socket?.emit("notificationResponse", { id, type, response: "declined" });
     }
     setNotifications((prev) => prev.filter((notification) => notification.id !== id));
   };
 
-  // 예를 들어, chatMessage 알림은 단순히 제거 처리
-  const removeNotification = (id: number) => {
+  const removeNotification = (id: string | number) => {
     setNotifications((prev) => prev.filter((notification) => notification.id !== id));
   };
 

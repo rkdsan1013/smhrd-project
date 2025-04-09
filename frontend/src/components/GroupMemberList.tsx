@@ -1,19 +1,25 @@
-// /frontend/src/components/GroupMemberList.tsx
+// File: /frontend/src/components/GroupMemberList.tsx
 
 import React, { useEffect, useState } from "react";
-import { getGroupMembers, Member, GroupMembersResponse } from "../services/groupService";
+import {
+  getGroupMembers,
+  Member,
+  GroupMembersResponse,
+  getSentGroupInvites, // ✅ 필수로 추가됨
+} from "../services/groupService";
 import { fetchFriendList, Friend } from "../services/friendService";
 import UserProfileCard from "./UserProfileCard";
-import ProfileCard from "./ProfileCard"; // 자신의 프로필일 때 열릴 ProfileCard
+import ProfileCard from "./ProfileCard";
 import { useUser } from "../contexts/UserContext";
 import Icons from "./Icons";
+import { useSocket } from "../contexts/SocketContext";
+import { useGroup } from "../contexts/GroupContext";
 
 interface GroupMemberListProps {
   groupUuid: string;
 }
 
 const GroupMemberList: React.FC<GroupMemberListProps> = ({ groupUuid }) => {
-  // inviteMode가 false이면 그룹 멤버 리스트, true이면 초대(내 친구) 리스트를 표시
   const [inviteMode, setInviteMode] = useState<boolean>(false);
   const [members, setMembers] = useState<Member[]>([]);
   const [groupMemberUuids, setGroupMemberUuids] = useState<string[]>([]);
@@ -21,10 +27,28 @@ const GroupMemberList: React.FC<GroupMemberListProps> = ({ groupUuid }) => {
   const [error, setError] = useState<string | null>(null);
   const [selectedMemberUuid, setSelectedMemberUuid] = useState<string | null>(null);
 
-  // 현재 로그인한 사용자의 uuid (UserContext)
   const { userUuid } = useUser();
+  const { socket } = useSocket();
 
-  // 그룹에 이미 가입한 멤버들의 UUID 불러오기 (초대 모드에서 친구 목록 필터링용)
+  const { pendingInvites, addPendingInvite, removePendingInvite, acceptedUserUuids } = useGroup();
+
+  // ✅ 새로고침 후에도 초대 상태 유지
+  useEffect(() => {
+    const fetchSentInvites = async () => {
+      try {
+        const invites = await getSentGroupInvites(groupUuid);
+        invites.forEach((invite) => {
+          addPendingInvite(invite.invitedUserUuid, invite.inviteUuid);
+        });
+      } catch (err) {
+        console.error("보낸 초대 불러오기 실패:", err);
+      }
+    };
+
+    fetchSentInvites();
+  }, [groupUuid]);
+
+  // 그룹 멤버 UUID 불러오기
   useEffect(() => {
     const fetchGroupMemberUuids = async () => {
       try {
@@ -38,21 +62,23 @@ const GroupMemberList: React.FC<GroupMemberListProps> = ({ groupUuid }) => {
     fetchGroupMemberUuids();
   }, [groupUuid]);
 
-  // 데이터 불러오기 및 정렬
+  // 멤버 or 친구 목록 불러오기
   useEffect(() => {
     const fetchMembers = async () => {
       setLoading(true);
       try {
         if (inviteMode) {
-          // 초대 모드: 내 친구 목록 중 이미 그룹에 속한 친구 제외 후 이름순 정렬
           const friendList: Friend[] = await fetchFriendList();
-          const filteredFriends = friendList.filter(
-            (friend) => !groupMemberUuids.includes(friend.uuid),
-          );
+
+          const filteredFriends = friendList.filter((friend) => {
+            const isMember = groupMemberUuids.includes(friend.uuid);
+            const isAccepted = acceptedUserUuids.includes(friend.uuid);
+            return !isMember && !isAccepted;
+          });
+
           const sortedFriends = filteredFriends.sort((a, b) => a.name.localeCompare(b.name));
           setMembers(sortedFriends);
         } else {
-          // 기본 모드: 그룹 멤버 목록 불러오고 이름순 정렬, 현재 사용자가 있다면 최상단에 배치
           const data: GroupMembersResponse = await getGroupMembers(groupUuid);
           let sortedMembers = data.members.sort((a, b) => a.name.localeCompare(b.name));
           if (userUuid) {
@@ -72,30 +98,42 @@ const GroupMemberList: React.FC<GroupMemberListProps> = ({ groupUuid }) => {
       }
     };
     fetchMembers();
-  }, [groupUuid, inviteMode, groupMemberUuids, userUuid]);
+  }, [groupUuid, inviteMode, groupMemberUuids, userUuid, acceptedUserUuids]);
 
-  // 리스트 항목 클릭 시 프로필 카드 표시
-  const handleMemberClick = (memberUuid: string) => {
-    setSelectedMemberUuid(memberUuid);
+  // 초대 or 취소
+  const handleInviteAction = (friendUuid: string) => {
+    if (!socket) return;
+    if (pendingInvites[friendUuid]) {
+      socket.emit(
+        "cancelGroupInvite",
+        {
+          inviteUuid: pendingInvites[friendUuid],
+          groupUuid,
+          invitedUserUuid: friendUuid,
+        },
+        (response: any) => {
+          if (response.success) {
+            removePendingInvite(friendUuid);
+          } else {
+            console.error("초대 취소 실패:", response.message);
+          }
+        },
+      );
+    } else {
+      socket.emit("inviteToGroup", { groupUuid, invitedUserUuid: friendUuid }, (response: any) => {
+        if (response.success) {
+          addPendingInvite(friendUuid, response.inviteUuid);
+        } else {
+          console.error("초대 실패:", response.message);
+        }
+      });
+    }
   };
 
-  // 프로필 카드 닫기
-  const handleClose = () => {
-    setSelectedMemberUuid(null);
-  };
+  const handleMemberClick = (memberUuid: string) => setSelectedMemberUuid(memberUuid);
+  const handleClose = () => setSelectedMemberUuid(null);
+  const handleToggleInviteMode = () => setInviteMode((prev) => !prev);
 
-  // 초대 모드 토글
-  const handleToggleInviteMode = () => {
-    setInviteMode((prev) => !prev);
-  };
-
-  // 초대장 보내기 (추후 API 연동)
-  const handleInvite = (friendUuid: string) => {
-    console.log(`${friendUuid} 에게 초대장을 보냈습니다.`);
-    alert("초대장이 전송되었습니다.");
-  };
-
-  // 로딩 상태: 스피너 아이콘을 w-8 h-8 text-gray-300 fill-blue-600 animate-spin 클래스와 함께 가운데 정렬하여 표시
   if (loading)
     return (
       <div className="flex justify-center items-center h-full">
@@ -114,20 +152,54 @@ const GroupMemberList: React.FC<GroupMemberListProps> = ({ groupUuid }) => {
           <span className="text-xl font-semibold">{members.length}</span>
         </div>
       )}
-      {/* 제목 영역 아래에 구분선 추가 */}
       <div className="border-b border-gray-300 mb-4"></div>
-
       <ul className="space-y-3 flex-grow overflow-y-auto no-scrollbar">
-        {members.map((member) => (
-          <li
-            key={member.uuid}
-            className="flex items-center justify-center lg:justify-between cursor-pointer hover:bg-gray-100 transition-colors duration-300 p-2 rounded"
-          >
-            {inviteMode ? (
-              // 초대 모드: 프로필 사진, 이름, 초대 버튼을 하나의 그룹으로 묶어 가운데 정렬
-              <div className="flex items-center justify-center w-full gap-2">
-                <div className="flex items-center gap-2 flex-1 min-w-0 justify-center lg:justify-start">
-                  <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+        {members.map((member) => {
+          const isInvited = pendingInvites[member.uuid];
+          const isAccepted = acceptedUserUuids.includes(member.uuid);
+          const isMember = groupMemberUuids.includes(member.uuid);
+
+          if (inviteMode && (isAccepted || isMember)) return null;
+
+          return (
+            <li
+              key={member.uuid}
+              className="flex items-center justify-center lg:justify-between cursor-pointer hover:bg-gray-100 transition-colors duration-300 p-2 rounded"
+            >
+              {inviteMode ? (
+                <div className="flex items-center justify-center w-full gap-2">
+                  <div className="flex items-center gap-2 flex-1 min-w-0 justify-center lg:justify-start">
+                    <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                      {member.profilePicture ? (
+                        <img
+                          src={member.profilePicture}
+                          alt={`${member.name}의 프로필`}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 bg-gray-200 rounded-full" />
+                      )}
+                    </div>
+                    <span className="hidden lg:block truncate whitespace-nowrap">
+                      {member.name}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => handleInviteAction(member.uuid)}
+                    className="w-10 h-10 bg-transparent rounded flex items-center justify-center transition-all duration-300"
+                  >
+                    <Icons
+                      name={isInvited ? "close" : "userAdd"}
+                      className="w-6 h-6 text-gray-400 hover:text-blue-400 duration-300"
+                    />
+                  </button>
+                </div>
+              ) : (
+                <div
+                  className="flex items-center justify-center lg:justify-start w-full min-w-0"
+                  onClick={() => handleMemberClick(member.uuid)}
+                >
+                  <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 mr-0 lg:mr-3">
                     {member.profilePicture ? (
                       <img
                         src={member.profilePicture}
@@ -138,43 +210,13 @@ const GroupMemberList: React.FC<GroupMemberListProps> = ({ groupUuid }) => {
                       <div className="w-10 h-10 bg-gray-200 rounded-full" />
                     )}
                   </div>
-                  {/* 이름: lg 이상에서만 표시하며, 가용 공간에 따라 자동 축소 */}
                   <span className="hidden lg:block truncate whitespace-nowrap">{member.name}</span>
                 </div>
-                <button
-                  onClick={() => handleInvite(member.uuid)}
-                  className="w-10 h-10 bg-transparent rounded flex items-center justify-center transition-all duration-300"
-                >
-                  <Icons
-                    name="userAdd"
-                    className="w-6 h-6 text-gray-400 hover:text-blue-400 duration-300"
-                  />
-                </button>
-              </div>
-            ) : (
-              // 기본 모드: 프로필 사진과 멤버 이름 (이름은 lg 이상에서만 보임)
-              <div
-                className="flex items-center justify-center lg:justify-start w-full min-w-0"
-                onClick={() => handleMemberClick(member.uuid)}
-              >
-                <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 mr-0 lg:mr-3">
-                  {member.profilePicture ? (
-                    <img
-                      src={member.profilePicture}
-                      alt={`${member.name}의 프로필`}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 bg-gray-200 rounded-full" />
-                  )}
-                </div>
-                <span className="hidden lg:block truncate whitespace-nowrap">{member.name}</span>
-              </div>
-            )}
-          </li>
-        ))}
+              )}
+            </li>
+          );
+        })}
       </ul>
-      {/* 하단 버튼 영역 */}
       <div className="mt-4 border-t border-gray-300 pt-4">
         <button
           onClick={handleToggleInviteMode}
