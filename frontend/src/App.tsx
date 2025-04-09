@@ -1,4 +1,5 @@
 // /frontend/src/App.tsx
+
 import React, { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { get, post } from "./services/apiClient";
@@ -88,14 +89,14 @@ const AppContent: React.FC = () => {
 
   if (!isAuthChecked) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Icons name="spinner" className="animate-spin w-12 h-12 text-gray-200 fill-blue-600" />
+      <div className="h-screen bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+        <Icons name="spinner" className="animate-spin w-12 h-12 text-gray-300 fill-blue-600" />
       </div>
     );
   }
 
   return (
-    <div className="h-screen bg-gray-100 overflow-hidden">
+    <div className="h-screen bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
       <AnimatePresence mode="wait">
         {isLoggedIn ? (
           <motion.div
