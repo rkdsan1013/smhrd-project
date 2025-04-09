@@ -86,6 +86,19 @@ const sendGroupInvite = async (groupUuid, inviterUuid, invitedUserUuid) => {
   return rows[0].uuid;
 };
 
+const getSentInvitesByGroupAndSender = async (groupUuid, invitedByUuid) => {
+  const [rows] = await pool.query(groupQueries.SELECT_SENT_GROUP_INVITES, [
+    groupUuid,
+    invitedByUuid,
+  ]);
+  return rows;
+};
+
+const getReceivedInvitesByUserUuid = async (userUuid) => {
+  const [rows] = await pool.query(groupQueries.SELECT_RECEIVED_GROUP_INVITES, [userUuid]);
+  return rows;
+};
+
 module.exports = {
   getGroupByUuid,
   updateGroupImages,
@@ -94,4 +107,6 @@ module.exports = {
   searchGroups,
   getGroupMembers,
   sendGroupInvite, // 수정된 함수 내보내기
+  getSentInvitesByGroupAndSender,
+  getReceivedInvitesByUserUuid,
 };

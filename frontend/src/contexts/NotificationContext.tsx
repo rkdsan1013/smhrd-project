@@ -2,11 +2,12 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useSocket } from "./SocketContext";
+import { getReceivedGroupInvites } from "../services/groupService";
 
 export type Notification =
   | {
       type: "groupInvite";
-      id: string; // 그룹 초대의 id (UUID 문자열)
+      id: string;
       sender: string;
       groupName: string;
     }
@@ -45,22 +46,62 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
+    const loadInitialGroupInvites = async () => {
+      try {
+        const invites = await getReceivedGroupInvites();
+
+        setNotifications((prev) => {
+          const combined = [...prev];
+          for (const invite of invites) {
+            const exists = combined.some(
+              (n) => n.type === "groupInvite" && n.id === invite.inviteUuid,
+            );
+            if (!exists) {
+              combined.push({
+                type: "groupInvite",
+                id: invite.inviteUuid,
+                sender: invite.inviterName,
+                groupName: invite.groupName,
+              });
+            }
+          }
+          return combined;
+        });
+      } catch (err) {
+        console.error("초기 그룹 초대 알림 로딩 실패:", err);
+      }
+    };
+
+    loadInitialGroupInvites();
+  }, []);
+
+  useEffect(() => {
     if (!socket) return;
 
     const handleNotification = (notification: Notification) => {
-      console.log("Received notification via socket:", notification);
-      setNotifications((prev) => [...prev, notification]);
+      setNotifications((prev) => {
+        const exists = prev.some((n) => n.type === notification.type && n.id === notification.id);
+        return exists ? prev : [...prev, notification];
+      });
+    };
+
+    const handleInviteCancelled = ({ inviteUuid }: { inviteUuid: string }) => {
+      setNotifications((prev) =>
+        prev.filter(
+          (notification) =>
+            !(notification.type === "groupInvite" && notification.id === inviteUuid),
+        ),
+      );
     };
 
     socket.on("notification", handleNotification);
-    socket.on("group-invite", handleNotification); // 추가: group-invite 이벤트도 수신
-
-    // 기존 groupInviteCancelled 이벤트 등록 등 ...
+    socket.on("group-invite", handleNotification); // 소켓 실시간 알림
+    socket.on("groupInviteCancelled", handleInviteCancelled);
 
     return () => {
       socket.off("notification", handleNotification);
       socket.off("group-invite", handleNotification);
-      // 나머지 이벤트 제거
+      socket.off("groupInviteCancelled", handleInviteCancelled);
     };
   }, [socket]);
 

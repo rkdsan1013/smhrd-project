@@ -1,13 +1,19 @@
 // File: /frontend/src/components/GroupMemberList.tsx
 
 import React, { useEffect, useState } from "react";
-import { getGroupMembers, Member, GroupMembersResponse } from "../services/groupService";
+import {
+  getGroupMembers,
+  Member,
+  GroupMembersResponse,
+  getSentGroupInvites, // ✅ 필수로 추가됨
+} from "../services/groupService";
 import { fetchFriendList, Friend } from "../services/friendService";
 import UserProfileCard from "./UserProfileCard";
 import ProfileCard from "./ProfileCard";
 import { useUser } from "../contexts/UserContext";
 import Icons from "./Icons";
 import { useSocket } from "../contexts/SocketContext";
+import { useGroup } from "../contexts/GroupContext";
 
 interface GroupMemberListProps {
   groupUuid: string;
@@ -20,13 +26,29 @@ const GroupMemberList: React.FC<GroupMemberListProps> = ({ groupUuid }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedMemberUuid, setSelectedMemberUuid] = useState<string | null>(null);
-  // pendingInvites: key는 친구 uuid, value는 해당 초대의 inviteUuid
-  const [pendingInvites, setPendingInvites] = useState<Record<string, string>>({});
 
   const { userUuid } = useUser();
   const { socket } = useSocket();
 
-  // 그룹 멤버 UUID 로드 (초대 가능 여부 확인)
+  const { pendingInvites, addPendingInvite, removePendingInvite, acceptedUserUuids } = useGroup();
+
+  // ✅ 새로고침 후에도 초대 상태 유지
+  useEffect(() => {
+    const fetchSentInvites = async () => {
+      try {
+        const invites = await getSentGroupInvites(groupUuid);
+        invites.forEach((invite) => {
+          addPendingInvite(invite.invitedUserUuid, invite.inviteUuid);
+        });
+      } catch (err) {
+        console.error("보낸 초대 불러오기 실패:", err);
+      }
+    };
+
+    fetchSentInvites();
+  }, [groupUuid]);
+
+  // 그룹 멤버 UUID 불러오기
   useEffect(() => {
     const fetchGroupMemberUuids = async () => {
       try {
@@ -40,16 +62,20 @@ const GroupMemberList: React.FC<GroupMemberListProps> = ({ groupUuid }) => {
     fetchGroupMemberUuids();
   }, [groupUuid]);
 
-  // 초대 모드일 경우 친구 목록, 아니면 그룹 멤버 목록 로드
+  // 멤버 or 친구 목록 불러오기
   useEffect(() => {
     const fetchMembers = async () => {
       setLoading(true);
       try {
         if (inviteMode) {
           const friendList: Friend[] = await fetchFriendList();
-          const filteredFriends = friendList.filter(
-            (friend) => !groupMemberUuids.includes(friend.uuid),
-          );
+
+          const filteredFriends = friendList.filter((friend) => {
+            const isMember = groupMemberUuids.includes(friend.uuid);
+            const isAccepted = acceptedUserUuids.includes(friend.uuid);
+            return !isMember && !isAccepted;
+          });
+
           const sortedFriends = filteredFriends.sort((a, b) => a.name.localeCompare(b.name));
           setMembers(sortedFriends);
         } else {
@@ -72,39 +98,31 @@ const GroupMemberList: React.FC<GroupMemberListProps> = ({ groupUuid }) => {
       }
     };
     fetchMembers();
-  }, [groupUuid, inviteMode, groupMemberUuids, userUuid]);
+  }, [groupUuid, inviteMode, groupMemberUuids, userUuid, acceptedUserUuids]);
 
-  // 그룹 초대 또는 취소 이벤트 처리 함수
+  // 초대 or 취소
   const handleInviteAction = (friendUuid: string) => {
-    if (!socket) {
-      console.error("Socket is not connected");
-      return;
-    }
-    // 이미 초대한 경우 취소
+    if (!socket) return;
     if (pendingInvites[friendUuid]) {
       socket.emit(
         "cancelGroupInvite",
-        { inviteUuid: pendingInvites[friendUuid], groupUuid, invitedUserUuid: friendUuid },
+        {
+          inviteUuid: pendingInvites[friendUuid],
+          groupUuid,
+          invitedUserUuid: friendUuid,
+        },
         (response: any) => {
           if (response.success) {
-            setPendingInvites((prev) => {
-              const newState = { ...prev };
-              delete newState[friendUuid];
-              return newState;
-            });
+            removePendingInvite(friendUuid);
           } else {
             console.error("초대 취소 실패:", response.message);
           }
         },
       );
     } else {
-      // 초대 진행
       socket.emit("inviteToGroup", { groupUuid, invitedUserUuid: friendUuid }, (response: any) => {
         if (response.success) {
-          setPendingInvites((prev) => ({
-            ...prev,
-            [friendUuid]: response.inviteUuid,
-          }));
+          addPendingInvite(friendUuid, response.inviteUuid);
         } else {
           console.error("초대 실패:", response.message);
         }
@@ -112,17 +130,9 @@ const GroupMemberList: React.FC<GroupMemberListProps> = ({ groupUuid }) => {
     }
   };
 
-  const handleMemberClick = (memberUuid: string) => {
-    setSelectedMemberUuid(memberUuid);
-  };
-
-  const handleClose = () => {
-    setSelectedMemberUuid(null);
-  };
-
-  const handleToggleInviteMode = () => {
-    setInviteMode((prev) => !prev);
-  };
+  const handleMemberClick = (memberUuid: string) => setSelectedMemberUuid(memberUuid);
+  const handleClose = () => setSelectedMemberUuid(null);
+  const handleToggleInviteMode = () => setInviteMode((prev) => !prev);
 
   if (loading)
     return (
@@ -144,15 +154,52 @@ const GroupMemberList: React.FC<GroupMemberListProps> = ({ groupUuid }) => {
       )}
       <div className="border-b border-gray-300 mb-4"></div>
       <ul className="space-y-3 flex-grow overflow-y-auto no-scrollbar">
-        {members.map((member) => (
-          <li
-            key={member.uuid}
-            className="flex items-center justify-center lg:justify-between cursor-pointer hover:bg-gray-100 transition-colors duration-300 p-2 rounded"
-          >
-            {inviteMode ? (
-              <div className="flex items-center justify-center w-full gap-2">
-                <div className="flex items-center gap-2 flex-1 min-w-0 justify-center lg:justify-start">
-                  <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+        {members.map((member) => {
+          const isInvited = pendingInvites[member.uuid];
+          const isAccepted = acceptedUserUuids.includes(member.uuid);
+          const isMember = groupMemberUuids.includes(member.uuid);
+
+          if (inviteMode && (isAccepted || isMember)) return null;
+
+          return (
+            <li
+              key={member.uuid}
+              className="flex items-center justify-center lg:justify-between cursor-pointer hover:bg-gray-100 transition-colors duration-300 p-2 rounded"
+            >
+              {inviteMode ? (
+                <div className="flex items-center justify-center w-full gap-2">
+                  <div className="flex items-center gap-2 flex-1 min-w-0 justify-center lg:justify-start">
+                    <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                      {member.profilePicture ? (
+                        <img
+                          src={member.profilePicture}
+                          alt={`${member.name}의 프로필`}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 bg-gray-200 rounded-full" />
+                      )}
+                    </div>
+                    <span className="hidden lg:block truncate whitespace-nowrap">
+                      {member.name}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => handleInviteAction(member.uuid)}
+                    className="w-10 h-10 bg-transparent rounded flex items-center justify-center transition-all duration-300"
+                  >
+                    <Icons
+                      name={isInvited ? "close" : "userAdd"}
+                      className="w-6 h-6 text-gray-400 hover:text-blue-400 duration-300"
+                    />
+                  </button>
+                </div>
+              ) : (
+                <div
+                  className="flex items-center justify-center lg:justify-start w-full min-w-0"
+                  onClick={() => handleMemberClick(member.uuid)}
+                >
+                  <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 mr-0 lg:mr-3">
                     {member.profilePicture ? (
                       <img
                         src={member.profilePicture}
@@ -165,37 +212,10 @@ const GroupMemberList: React.FC<GroupMemberListProps> = ({ groupUuid }) => {
                   </div>
                   <span className="hidden lg:block truncate whitespace-nowrap">{member.name}</span>
                 </div>
-                <button
-                  onClick={() => handleInviteAction(member.uuid)}
-                  className="w-10 h-10 bg-transparent rounded flex items-center justify-center transition-all duration-300"
-                >
-                  <Icons
-                    name={pendingInvites[member.uuid] ? "close" : "userAdd"}
-                    className="w-6 h-6 text-gray-400 hover:text-blue-400 duration-300"
-                  />
-                </button>
-              </div>
-            ) : (
-              <div
-                className="flex items-center justify-center lg:justify-start w-full min-w-0"
-                onClick={() => handleMemberClick(member.uuid)}
-              >
-                <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 mr-0 lg:mr-3">
-                  {member.profilePicture ? (
-                    <img
-                      src={member.profilePicture}
-                      alt={`${member.name}의 프로필`}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 bg-gray-200 rounded-full" />
-                  )}
-                </div>
-                <span className="hidden lg:block truncate whitespace-nowrap">{member.name}</span>
-              </div>
-            )}
-          </li>
-        ))}
+              )}
+            </li>
+          );
+        })}
       </ul>
       <div className="mt-4 border-t border-gray-300 pt-4">
         <button

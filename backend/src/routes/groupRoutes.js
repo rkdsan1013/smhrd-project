@@ -31,4 +31,8 @@ router.get("/:groupUuid/chatroom", verifyToken, groupController.getGroupChatRoom
 // 그룹 리더(사용자) 프로필 조회
 router.get("/profile/:uuid", verifyToken, groupController.getUserProfile);
 
+router.get("/:groupUuid/invites/sent", verifyToken, groupController.getSentGroupInvites);
+
+router.get("/invites/received", verifyToken, groupController.getReceivedGroupInvites);
+
 module.exports = router;

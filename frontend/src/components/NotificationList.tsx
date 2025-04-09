@@ -112,7 +112,10 @@ const NotificationList: React.FC<NotificationListProps> = ({ onClose }) => {
           {notifications.length > 0 ? (
             <ul className="space-y-4">
               {notifications.map((notification) => (
-                <li key={notification.id} className="p-3 rounded-lg bg-gray-100">
+                <li
+                  key={`${notification.type}-${notification.id}`}
+                  className="p-3 rounded-lg bg-gray-100"
+                >
                   {renderNotificationItem(notification)}
                 </li>
               ))}

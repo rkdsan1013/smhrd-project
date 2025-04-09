@@ -195,6 +195,27 @@ const getGroupChatRoom = async (req, res, next) => {
   }
 };
 
+const getSentGroupInvites = async (req, res, next) => {
+  try {
+    const groupUuid = req.params.groupUuid;
+    const invitedByUuid = req.user.uuid;
+    const invites = await groupModel.getSentInvitesByGroupAndSender(groupUuid, invitedByUuid);
+    res.status(200).json(invites);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getReceivedGroupInvites = async (req, res, next) => {
+  try {
+    const userUuid = req.user.uuid;
+    const invites = await groupModel.getReceivedInvitesByUserUuid(userUuid);
+    res.status(200).json(invites);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createGroup,
   getMyGroups,
@@ -203,4 +224,6 @@ module.exports = {
   getUserProfile,
   getGroupMembers,
   getGroupChatRoom,
+  getSentGroupInvites,
+  getReceivedGroupInvites,
 };

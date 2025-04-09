@@ -108,3 +108,23 @@ export const getGroupChatRoomUuid = async (
 ): Promise<{ chat_room_uuid: string }> => {
   return get<{ chat_room_uuid: string }>(`/groups/${groupUuid}/chatroom`);
 };
+
+// 내가 보낸 그룹 초대 목록 불러오기
+export const getSentGroupInvites = async (
+  groupUuid: string,
+): Promise<{ invitedUserUuid: string; inviteUuid: string }[]> => {
+  return get(`/groups/${groupUuid}/invites/sent`);
+};
+
+// 내가 받은 초대 목록 조회
+export const getReceivedGroupInvites = async (): Promise<
+  {
+    inviteUuid: string;
+    groupUuid: string;
+    inviterUuid: string;
+    inviterName: string;
+    groupName: string;
+  }[]
+> => {
+  return get("/groups/invites/received");
+};

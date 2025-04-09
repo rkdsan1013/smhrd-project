@@ -88,7 +88,7 @@ const initSocketIO = (server) => {
           );
         }
 
-        // 수정된 알림 페이로드: 클라이언트 Notification 타입에 맞춤
+        // 알림 페이로드 수정: 클라이언트 Notification 타입에 맞춤
         io.to(invitedUserUuid).emit("group-invite", {
           type: "groupInvite",
           id: inviteUuid,
@@ -108,18 +108,16 @@ const initSocketIO = (server) => {
 
     // 알림 응답 이벤트: 초대 수락/거절 처리
     socket.on("notificationResponse", async ({ id, type, response }, callback) => {
-      // 기본 callback 함수 할당 (없으면 빈 함수 사용)
       if (typeof callback !== "function") {
         callback = () => {};
       }
-
       if (type === "groupInvite") {
         try {
           const [rows] = await pool.query("SELECT * FROM group_invites WHERE uuid = ?", [id]);
           if (rows.length === 0) {
             return callback({ success: false, message: "초대장이 존재하지 않습니다." });
           }
-          const invite = rows[0];
+          const invite = rows[0]; // invite 객체에 invited_by_uuid, group_uuid, invited_user_uuid 있음.
           const groupUuid = invite.group_uuid;
           if (response === "accepted") {
             await pool.query(
@@ -129,9 +127,21 @@ const initSocketIO = (server) => {
             await pool.query("DELETE FROM group_invites WHERE uuid = ?", [id]);
             socket.join(groupUuid);
             io.to(groupUuid).emit("groupMemberJoined", { userUuid: socket.user.uuid });
+            // 초대 수락 시, 초대한 측에게 이벤트 전달하여 초대 리스트에서 제거
+            io.to(invite.invited_by_uuid).emit("groupInviteAccepted", {
+              inviteUuid: id,
+              invitedUserUuid: socket.user.uuid,
+              groupUuid,
+            });
             callback({ success: true, message: "그룹에 참여했습니다." });
           } else if (response === "declined") {
             await pool.query("DELETE FROM group_invites WHERE uuid = ?", [id]);
+            // 초대 거절 시, 초대한 측에 이벤트 전달하여 취소 버튼을 초기화
+            io.to(invite.invited_by_uuid).emit("groupInviteRejected", {
+              inviteUuid: id,
+              invitedUserUuid: socket.user.uuid,
+              groupUuid,
+            });
             callback({ success: true, message: "초대를 거절했습니다." });
           }
         } catch (error) {
@@ -143,16 +153,20 @@ const initSocketIO = (server) => {
 
     // 그룹 초대 취소 이벤트 처리
     socket.on("cancelGroupInvite", async ({ inviteUuid, groupUuid, invitedUserUuid }, callback) => {
-      if (typeof callback !== "function") {
-        callback = () => {};
-      }
       try {
         await pool.query("DELETE FROM group_invites WHERE uuid = ?", [inviteUuid]);
-        io.to(invitedUserUuid).emit("groupInviteCancelled", { groupUuid });
-        callback({ success: true, message: "초대가 취소되었습니다." });
-      } catch (error) {
-        console.error("cancelGroupInvite error:", error);
-        callback({ success: false, message: "초대 취소에 실패했습니다." });
+
+        // ✅ 핵심: 초대받은 사람에게 정확한 초대 UUID로 제거 요청
+        io.to(invitedUserUuid).emit("groupInviteCancelled", {
+          inviteUuid, // 이게 핵심
+          groupUuid,
+          inviterUuid: socket.user?.uuid,
+        });
+
+        callback({ success: true });
+      } catch (err) {
+        console.error("cancelGroupInvite error:", err);
+        callback({ success: false });
       }
     });
 
