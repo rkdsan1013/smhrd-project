@@ -11,6 +11,15 @@ import "moment/locale/ko";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import Icons from "./Icons";
 
+// Framer Motion 관련 import 및 수정된 motionVariants (전환 duration: 300ms)
+import { motion, AnimatePresence } from "framer-motion";
+
+const motionVariants = {
+  initial: { opacity: 0, x: 50, transition: { duration: 0.3 } },
+  animate: { opacity: 1, x: 0, transition: { duration: 0.3 } },
+  exit: { opacity: 0, x: -50, transition: { duration: 0.3 } },
+};
+
 moment.locale("ko");
 const localizer = momentLocalizer(moment);
 const DnDCalendar = withDragAndDrop(RBCalendar);
@@ -192,6 +201,7 @@ const CalendarBase: React.FC<CalendarBaseProps> = ({ initialDate, onlyView }) =>
     };
   };
 
+  // scrollToTime 로직은 그대로 두되, 여기서는 key로 currentView를 사용합니다.
   const scrollToTime = useMemo(() => {
     if (currentView === "week" || currentView === "day") {
       const start =
@@ -288,7 +298,7 @@ const CalendarBase: React.FC<CalendarBaseProps> = ({ initialDate, onlyView }) =>
                 </>
               )}
             </div>
-            {/* 모바일 (md 미만): 드롭다운 */}
+            {/* 모바일 (md 미만): 원래 스타일의 드롭다운 */}
             <div className="flex md:hidden items-center">
               <select
                 className="bg-white text-indigo-600 rounded-full shadow px-3 py-1 focus:outline-none"
@@ -304,46 +314,58 @@ const CalendarBase: React.FC<CalendarBaseProps> = ({ initialDate, onlyView }) =>
           </div>
         </div>
       </header>
-      {/* 캘린더 컨텐츠 영역 */}
-      <div className="flex-1 p-4 bg-white overflow-y-auto">
-        <DndProvider backend={HTML5Backend}>
-          <DnDCalendar
-            localizer={localizer}
-            events={events}
-            startAccessor={(event: any) => (event as CalendarEvent).start}
-            endAccessor={(event: any) => (event as CalendarEvent).end}
-            date={currentDate}
-            view={currentView}
-            onNavigate={(date, _view, _action) => setCurrentDate(date)}
-            onView={(view) => {
-              if (!onlyView) setCurrentView(view as View);
-            }}
-            views={["month", "week", "day", "agenda"]}
-            defaultDate={new Date()}
-            toolbar={false}
-            style={{ height: "100%" }}
-            eventPropGetter={eventStyleGetter}
-            messages={messages}
-            formats={formats}
-            className="text-gray-700"
-            scrollToTime={["week", "day"].includes(currentView) ? scrollToTime : undefined}
-            key={["week", "day"].includes(currentView) ? scrollToTime.toISOString() : currentView}
-            selectable
-            resizable
-            onSelectSlot={handleSelectSlot}
-            onEventDrop={handleEventDrop}
-            onEventResize={handleEventResize}
-            components={{
-              month: {
-                header: (props: any) => <CustomHeader {...props} isWeekView={false} />,
-                dateHeader: (props: any) => <CustomHeader {...props} isWeekView={false} />,
-              },
-              week: {
-                header: (props: any) => <CustomHeader {...props} isWeekView={true} />,
-              },
-            }}
-          />
-        </DndProvider>
+      {/* 캘린더 컨텐츠 영역 (패딩 제거 및 스크롤 숨김) */}
+      <div className="flex-1 bg-white overflow-hidden relative">
+        <div className="relative h-full">
+          <DndProvider backend={HTML5Backend}>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentView}
+                variants={motionVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                className="absolute inset-0"
+              >
+                <DnDCalendar
+                  localizer={localizer}
+                  events={events}
+                  startAccessor={(event: any) => (event as CalendarEvent).start}
+                  endAccessor={(event: any) => (event as CalendarEvent).end}
+                  date={currentDate}
+                  view={currentView}
+                  onNavigate={(date, _view, _action) => setCurrentDate(date)}
+                  onView={(view) => {
+                    if (!onlyView) setCurrentView(view as View);
+                  }}
+                  views={["month", "week", "day", "agenda"]}
+                  defaultDate={new Date()}
+                  toolbar={false}
+                  style={{ height: "100%" }}
+                  eventPropGetter={eventStyleGetter}
+                  messages={messages}
+                  formats={formats}
+                  className="text-gray-700"
+                  scrollToTime={["week", "day"].includes(currentView) ? scrollToTime : undefined}
+                  selectable
+                  resizable
+                  onSelectSlot={handleSelectSlot}
+                  onEventDrop={handleEventDrop}
+                  onEventResize={handleEventResize}
+                  components={{
+                    month: {
+                      header: (props: any) => <CustomHeader {...props} isWeekView={false} />,
+                      dateHeader: (props: any) => <CustomHeader {...props} isWeekView={false} />,
+                    },
+                    week: {
+                      header: (props: any) => <CustomHeader {...props} isWeekView={true} />,
+                    },
+                  }}
+                />
+              </motion.div>
+            </AnimatePresence>
+          </DndProvider>
+        </div>
       </div>
     </div>
   );
