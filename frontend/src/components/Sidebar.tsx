@@ -165,11 +165,12 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   return (
-    <>
-      <aside className="w-full h-20 md:w-20 md:h-full bg-white rounded-lg shadow-lg p-2">
-        <div className="flex flex-row md:flex-col h-full">
-          {/* 메인 버튼 */}
-          <div className="flex-shrink-0 flex items-center justify-center relative">
+    <aside className="w-full h-20 md:w-20 md:h-full bg-white rounded-lg shadow-lg p-2">
+      {/* outer container에서 mobile은 가로(arrange row), 데스크탑에서는 세로(arrange col) */}
+      <div className="flex flex-row md:flex-col h-full">
+        {/* 상단 버튼 그룹: 메인 화면과 달력 버튼 (모바일에서는 가로 배치) */}
+        <div className="flex flex-row md:flex-col flex-shrink-0 p-1 justify-evenly items-center gap-2">
+          <div className="relative flex items-center justify-center">
             <button
               onClick={onHomeSelect}
               onMouseEnter={(e) => handleMouseEnter(e, "메인 화면")}
@@ -182,8 +183,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               />
             </button>
           </div>
-          {/* 달력 버튼 - 모바일 레이아웃에서는 가운데 정렬되도록 수정 (md:mt-2) */}
-          <div className="flex-shrink-0 flex items-center justify-center relative md:mt-2">
+          <div className="relative flex items-center justify-center">
             <button
               onClick={onCalendarSelect}
               onMouseEnter={(e) => handleMouseEnter(e, "달력")}
@@ -196,78 +196,82 @@ const Sidebar: React.FC<SidebarProps> = ({
               />
             </button>
           </div>
-          {/* 구분선 */}
-          <div className="flex items-center">
-            <div className="block md:hidden h-full border-l border-gray-300 mx-2" />
-            <div className="hidden md:block w-full border-t border-gray-300 my-2" />
+        </div>
+
+        {/* 구분선 */}
+        <div className="flex items-center">
+          <div className="block md:hidden h-full border-l border-gray-300 mx-2" />
+          <div className="hidden md:block w-full border-t border-gray-300 my-2" />
+        </div>
+
+        {/* 그룹 목록 */}
+        <div className="relative flex-1 overflow-auto mx-2 md:mx-0 my-1 md:my-2">
+          <div className="no-scrollbar flex flex-row md:flex-col gap-3 overflow-auto w-full h-full px-4 md:px-0 md:py-4 items-center justify-start">
+            {groups.map((group) => (
+              <div key={group.uuid} className="relative flex-shrink-0">
+                <button
+                  onClick={() => navigateTo(group.uuid, group.name)}
+                  onMouseEnter={(e) => handleMouseEnter(e, group.name)}
+                  onMouseLeave={handleMouseLeave}
+                  className="flex items-center justify-center rounded-full overflow-hidden hover:opacity-80 hover:scale-105 active:scale-95 transition-transform duration-200 transform focus:outline-none"
+                >
+                  {group.image ? (
+                    <img
+                      src={group.image}
+                      alt={group.name}
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-gray-300" />
+                  )}
+                </button>
+              </div>
+            ))}
           </div>
-          {/* 그룹 목록 */}
-          <div className="relative flex-1 overflow-auto mx-2 md:mx-0 my-1 md:my-2">
-            <div className="no-scrollbar flex flex-row md:flex-col gap-3 overflow-auto w-full h-full px-4 md:px-0 md:py-4 items-center justify-start">
-              {groups.map((group) => (
-                <div key={group.uuid} className="relative flex-shrink-0">
-                  <button
-                    onClick={() => navigateTo(group.uuid, group.name)}
-                    onMouseEnter={(e) => handleMouseEnter(e, group.name)}
-                    onMouseLeave={handleMouseLeave}
-                    className="flex items-center justify-center rounded-full overflow-hidden hover:opacity-80 hover:scale-105 active:scale-95 transition-transform duration-200 transform focus:outline-none"
-                  >
-                    {group.image ? (
-                      <img
-                        src={group.image}
-                        alt={group.name}
-                        className="w-12 h-12 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-full bg-gray-300" />
-                    )}
-                  </button>
-                </div>
-              ))}
-            </div>
-            {/* 모바일 그라데이션 */}
-            <div className="block md:hidden pointer-events-none absolute inset-y-0 left-0 w-4 z-0 bg-gradient-to-r from-white to-transparent" />
-            <div className="block md:hidden pointer-events-none absolute inset-y-0 right-0 w-4 z-0 bg-gradient-to-l from-white to-transparent" />
-            {/* 데스크탑 그라데이션 */}
-            <div className="hidden md:block pointer-events-none absolute inset-x-0 top-0 h-4 z-0 bg-gradient-to-b from-white to-transparent" />
-            <div className="hidden md:block pointer-events-none absolute inset-x-0 bottom-0 h-4 z-0 bg-gradient-to-t from-white to-transparent" />
+          {/* 모바일 그라데이션 */}
+          <div className="block md:hidden pointer-events-none absolute inset-y-0 left-0 w-4 z-0 bg-gradient-to-r from-white to-transparent" />
+          <div className="block md:hidden pointer-events-none absolute inset-y-0 right-0 w-4 z-0 bg-gradient-to-l from-white to-transparent" />
+          {/* 데스크탑 그라데이션 */}
+          <div className="hidden md:block pointer-events-none absolute inset-x-0 top-0 h-4 z-0 bg-gradient-to-b from-white to-transparent" />
+          <div className="hidden md:block pointer-events-none absolute inset-x-0 bottom-0 h-4 z-0 bg-gradient-to-t from-white to-transparent" />
+        </div>
+
+        {/* 구분선 */}
+        <div className="flex items-center">
+          <div className="block md:hidden h-full border-l border-gray-300 mx-2" />
+          <div className="hidden md:block w-full border-t border-gray-300 my-2" />
+        </div>
+
+        {/* 하단 버튼 그룹: 그룹 생성과 그룹 검색 버튼 (모바일에서는 가로 배치) */}
+        <div className="flex flex-row md:flex-col flex-shrink-0 p-1 justify-evenly items-center gap-2">
+          <div className="relative flex items-center justify-center">
+            <button
+              onClick={() => setIsGroupCreationModalOpen(true)}
+              onMouseEnter={(e) => handleMouseEnter(e, "그룹 생성")}
+              onMouseLeave={handleMouseLeave}
+              className="flex items-center justify-center focus:outline-none hover:scale-105 active:scale-95 transition-transform duration-200"
+            >
+              <Icons
+                name="plus"
+                className="w-8 h-8 text-gray-700 hover:text-blue-600 duration-300"
+              />
+            </button>
           </div>
-          {/* 구분선 */}
-          <div className="flex items-center">
-            <div className="block md:hidden h-full border-l border-gray-300 mx-2" />
-            <div className="hidden md:block w-full border-t border-gray-300 my-2" />
-          </div>
-          {/* 추가 버튼들 - 하단의 그룹 생성, 그룹 검색 버튼처럼 동일한 간격으로 배치 */}
-          <div className="flex flex-row md:flex-col flex-shrink-0 p-1 justify-evenly items-center gap-2">
-            <div className="relative flex items-center justify-center">
-              <button
-                onClick={() => setIsGroupCreationModalOpen(true)}
-                onMouseEnter={(e) => handleMouseEnter(e, "그룹 생성")}
-                onMouseLeave={handleMouseLeave}
-                className="flex items-center justify-center focus:outline-none hover:scale-105 active:scale-95 transition-transform duration-200"
-              >
-                <Icons
-                  name="plus"
-                  className="w-8 h-8 text-gray-700 hover:text-blue-600 duration-300"
-                />
-              </button>
-            </div>
-            <div className="relative flex items-center justify-center">
-              <button
-                onClick={onGroupSearchSelect}
-                onMouseEnter={(e) => handleMouseEnter(e, "그룹 검색")}
-                onMouseLeave={handleMouseLeave}
-                className="flex items-center justify-center focus:outline-none hover:scale-105 active:scale-95 transition-transform duration-200"
-              >
-                <Icons
-                  name="search"
-                  className="w-8 h-8 text-gray-700 hover:text-blue-600 duration-300"
-                />
-              </button>
-            </div>
+          <div className="relative flex items-center justify-center">
+            <button
+              onClick={onGroupSearchSelect}
+              onMouseEnter={(e) => handleMouseEnter(e, "그룹 검색")}
+              onMouseLeave={handleMouseLeave}
+              className="flex items-center justify-center focus:outline-none hover:scale-105 active:scale-95 transition-transform duration-200"
+            >
+              <Icons
+                name="search"
+                className="w-8 h-8 text-gray-700 hover:text-blue-600 duration-300"
+              />
+            </button>
           </div>
         </div>
-      </aside>
+      </div>
 
       {tooltips.map((tt) => (
         <Tooltip key={tt.id} text={tt.text} style={tt.style} placement={tt.placement} />
@@ -279,7 +283,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           onCreate={handleGroupCreated}
         />
       )}
-    </>
+    </aside>
   );
 };
 
