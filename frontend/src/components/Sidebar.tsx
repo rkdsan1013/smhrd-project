@@ -1,4 +1,5 @@
 // /frontend/src/components/Sidebar.tsx
+
 import React, { useState, useEffect, useRef, MouseEvent } from "react";
 import ReactDOM from "react-dom";
 import Icons from "./Icons";
@@ -62,11 +63,18 @@ const calcTooltipStyle = (rect: DOMRect, isDesktop: boolean): React.CSSPropertie
 interface SidebarProps {
   onHomeSelect: () => void;
   onGroupSearchSelect: () => void;
-  // 수정된 타입: 그룹 UUID와 그룹 이름 두 개의 인자를 받음.
+  // 그룹 UUID와 그룹 이름 두 개의 인자를 받음.
   onGroupSelect: (groupUuid: string, groupName: string) => void;
+  // 달력 버튼 클릭 시 호출될 콜백 함수
+  onCalendarSelect: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ onHomeSelect, onGroupSearchSelect, onGroupSelect }) => {
+const Sidebar: React.FC<SidebarProps> = ({
+  onHomeSelect,
+  onGroupSearchSelect,
+  onGroupSelect,
+  onCalendarSelect,
+}) => {
   const [groups, setGroups] = useState<Group[]>([]);
   const [tooltips, setTooltips] = useState<TooltipState[]>([]);
   const tooltipIdCounter = useRef(0);
@@ -174,13 +182,25 @@ const Sidebar: React.FC<SidebarProps> = ({ onHomeSelect, onGroupSearchSelect, on
               />
             </button>
           </div>
-
+          {/* 달력 */}
+          <div className="flex-shrink-0 flex items-center justify-center relative mt-2">
+            <button
+              onClick={onCalendarSelect}
+              onMouseEnter={(e) => handleMouseEnter(e, "달력")}
+              onMouseLeave={handleMouseLeave}
+              className="flex items-center justify-center focus:outline-none hover:scale-105 active:scale-95 transition-transform duration-200"
+            >
+              <Icons
+                name="calendar"
+                className="w-8 h-8 text-gray-700 hover:text-blue-600 duration-300"
+              />
+            </button>
+          </div>
           {/* 구분선 */}
           <div className="flex items-center">
             <div className="block md:hidden h-full border-l border-gray-300 mx-2" />
             <div className="hidden md:block w-full border-t border-gray-300 my-2" />
           </div>
-
           {/* 그룹 목록 */}
           <div className="relative flex-1 overflow-auto mx-2 md:mx-0 my-1 md:my-2">
             <div className="no-scrollbar flex flex-row md:flex-col gap-3 overflow-auto w-full h-full px-4 md:px-0 md:py-4 items-center justify-start">
@@ -212,13 +232,11 @@ const Sidebar: React.FC<SidebarProps> = ({ onHomeSelect, onGroupSearchSelect, on
             <div className="hidden md:block pointer-events-none absolute inset-x-0 top-0 h-4 z-0 bg-gradient-to-b from-white to-transparent" />
             <div className="hidden md:block pointer-events-none absolute inset-x-0 bottom-0 h-4 z-0 bg-gradient-to-t from-white to-transparent" />
           </div>
-
           {/* 구분선 */}
           <div className="flex items-center">
             <div className="block md:hidden h-full border-l border-gray-300 mx-2" />
             <div className="hidden md:block w-full border-t border-gray-300 my-2" />
           </div>
-
           {/* 추가 버튼들 */}
           <div className="flex flex-row md:flex-col flex-shrink-0 p-1 gap-2">
             <div className="relative flex items-center justify-center">

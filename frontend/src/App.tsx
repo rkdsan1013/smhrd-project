@@ -1,26 +1,21 @@
 // /frontend/src/App.tsx
-
 import React, { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-
 import { get, post } from "./services/apiClient";
 import LandingPage from "./pages/LandingPage";
 import MainPage from "./pages/MainPage";
-import { UserProvider, useUser } from "./contexts/UserContext";
 import startTokenRefreshPolling from "./utils/tokenManager";
 import Icons from "./components/Icons";
-import { SocketProvider } from "./contexts/SocketContext";
-import { FriendProvider } from "./contexts/FriendContext";
-import { GroupProvider } from "./contexts/GroupContext";
-import { NotificationProvider } from "./contexts/NotificationContext";
+import AppProviders from "./contexts/AppProviders";
+import { useUser } from "./contexts/UserContext";
 
 const MOTION_TRANSITION = { duration: 0.5, ease: "easeInOut" };
 const REFRESH_INTERVAL_MS = 30000;
 
 const AppContent: React.FC = () => {
   const { setUserUuid } = useUser();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isAuthChecked, setIsAuthChecked] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const [isAuthChecked, setIsAuthChecked] = useState<boolean>(false);
 
   const fetchCurrentUser = async () => {
     try {
@@ -111,16 +106,7 @@ const AppContent: React.FC = () => {
             transition={MOTION_TRANSITION}
             className="h-full"
           >
-            <SocketProvider>
-              <FriendProvider>
-                <GroupProvider>
-                  {/* 로그인 시에만 NotificationProvider로 감싸서 알림 Context 활성화 */}
-                  <NotificationProvider>
-                    <MainPage />
-                  </NotificationProvider>
-                </GroupProvider>
-              </FriendProvider>
-            </SocketProvider>
+            <MainPage />
           </motion.div>
         ) : (
           <motion.div
@@ -140,9 +126,9 @@ const AppContent: React.FC = () => {
 };
 
 const App: React.FC = () => (
-  <UserProvider>
+  <AppProviders>
     <AppContent />
-  </UserProvider>
+  </AppProviders>
 );
 
 export default App;
