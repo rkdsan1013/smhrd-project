@@ -182,8 +182,8 @@ const Sidebar: React.FC<SidebarProps> = ({
               />
             </button>
           </div>
-          {/* 달력 */}
-          <div className="flex-shrink-0 flex items-center justify-center relative mt-2">
+          {/* 달력 버튼 - 모바일 레이아웃에서는 가운데 정렬되도록 수정 (md:mt-2) */}
+          <div className="flex-shrink-0 flex items-center justify-center relative md:mt-2">
             <button
               onClick={onCalendarSelect}
               onMouseEnter={(e) => handleMouseEnter(e, "달력")}
@@ -210,7 +210,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     onClick={() => navigateTo(group.uuid, group.name)}
                     onMouseEnter={(e) => handleMouseEnter(e, group.name)}
                     onMouseLeave={handleMouseLeave}
-                    className="flex items-center justify-center rounded-full overflow-hidden hover:opacity-80 hover:scale-105 active:scale-95 hover:shadow-lg transition-transform duration-200 transform focus:outline-none"
+                    className="flex items-center justify-center rounded-full overflow-hidden hover:opacity-80 hover:scale-105 active:scale-95 transition-transform duration-200 transform focus:outline-none"
                   >
                     {group.image ? (
                       <img
@@ -237,8 +237,8 @@ const Sidebar: React.FC<SidebarProps> = ({
             <div className="block md:hidden h-full border-l border-gray-300 mx-2" />
             <div className="hidden md:block w-full border-t border-gray-300 my-2" />
           </div>
-          {/* 추가 버튼들 */}
-          <div className="flex flex-row md:flex-col flex-shrink-0 p-1 gap-2">
+          {/* 추가 버튼들 - 하단의 그룹 생성, 그룹 검색 버튼처럼 동일한 간격으로 배치 */}
+          <div className="flex flex-row md:flex-col flex-shrink-0 p-1 justify-evenly items-center gap-2">
             <div className="relative flex items-center justify-center">
               <button
                 onClick={() => setIsGroupCreationModalOpen(true)}
