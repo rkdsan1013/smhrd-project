@@ -1,4 +1,4 @@
-// File: /backend/src/socket.js
+// /backend/src/socket.js
 
 const { Server } = require("socket.io");
 const { jwtVerify, secretKey } = require("./utils/jwtUtils");
@@ -10,7 +10,9 @@ const pool = require("./config/db");
 
 const onlineUsers = new Map();
 
+// 소켓 초기화 함수
 const initSocketIO = (server) => {
+  // 소켓 서버 생성 및 CORS 설정
   const io = new Server(server, {
     cors: {
       origin: process.env.FRONTEND_URL || "http://localhost:5173",
@@ -170,7 +172,67 @@ const initSocketIO = (server) => {
       }
     });
 
-    // 기타 기존 이벤트 처리...
+    // 룸 참여 이벤트
+    socket.on("joinRoom", (roomUuid) => {
+      socket.join(roomUuid);
+    });
+
+    // 메시지 전송 이벤트 (DB 저장 후 전파)
+    socket.on("sendMessage", async ({ roomUuid, message }) => {
+      try {
+        const senderUuid = socket.user.uuid;
+        const savedMessage = await chatModel.saveMessage(roomUuid, senderUuid, message);
+        io.to(roomUuid).emit("receiveMessage", savedMessage);
+      } catch (err) {
+        console.error("메시지 저장 오류:", err);
+      }
+    });
+
+    // 그룹 참여 이벤트
+    socket.on("joinGroup", async (data, callback) => {
+      const { groupUuid, userUuid } = data;
+      console.log("joinGroup 요청 수신:", data);
+      try {
+        const myGroups = await groupModel.getMyGroups(userUuid);
+        const isMember = myGroups.some((group) => group.uuid === groupUuid);
+        if (isMember) {
+          return callback({ success: false, message: "이미 그룹의 멤버입니다." });
+        }
+        await pool.query(
+          "INSERT INTO group_members (group_uuid, user_uuid, role) VALUES (?, ?, 'member')",
+          [groupUuid, userUuid],
+        );
+        callback({ success: true, message: "그룹 참여 완료" });
+        socket.join(groupUuid);
+        io.to(groupUuid).emit("groupMemberJoined", { userUuid });
+      } catch (error) {
+        console.error("joinGroup 에러:", error);
+        callback({ success: false, message: "그룹 참여 실패", error: error.message });
+      }
+    });
+
+    // 친구 온라인 상태 조회 요청
+    socket.on("getFriendsOnlineStatus", async () => {
+      const userUuid = socket.user?.uuid;
+      if (!userUuid) return;
+      try {
+        const friends = await friendModel.getAcceptedFriendUuidsForSocket(userUuid);
+        const statusList = friends.map((f) => ({
+          uuid: f.uuid,
+          online: onlineUsers.has(f.uuid) && onlineUsers.get(f.uuid).length > 0,
+        }));
+        io.to(socket.id).emit("friendsOnlineStatus", statusList);
+      } catch (err) {
+        console.error("친구 온라인 상태 조회 실패:", err);
+      }
+    });
+
+    // 친구 요청 전송 이벤트
+    socket.on("sendFriendRequest", ({ from, to }) => {
+      console.log("📨 친구 요청:", from, "->", to);
+      socket.to(to).emit("friendRequestSent", { from, to });
+    });
+
     socket.on("disconnect", () => {
       console.log("Socket disconnected:", socket.id);
       const userUuid = socket.user?.uuid;
