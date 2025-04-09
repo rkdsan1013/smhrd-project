@@ -1,4 +1,4 @@
-// /frontend/src/components/NotificationList.tsx
+// File: /frontend/src/components/NotificationList.tsx
 
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
@@ -99,7 +99,6 @@ const NotificationList: React.FC<NotificationListProps> = ({ onClose }) => {
           isVisible ? "opacity-100" : "opacity-0"
         }`}
       >
-        {/* Header */}
         <div className="flex justify-between items-center p-4 border-b border-gray-200">
           <h2 className="text-xl font-bold">알림</h2>
           <button
@@ -109,7 +108,6 @@ const NotificationList: React.FC<NotificationListProps> = ({ onClose }) => {
             <Icons name="close" className="w-6 h-6 text-gray-600" />
           </button>
         </div>
-        {/* Content */}
         <div className="p-6 max-h-80 overflow-y-auto no-scrollbar">
           {notifications.length > 0 ? (
             <ul className="space-y-4">
