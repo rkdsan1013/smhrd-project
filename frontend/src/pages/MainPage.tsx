@@ -8,7 +8,7 @@ import Footer from "../components/Footer";
 import Home from "../components/Home";
 import GroupSearch from "../components/GroupSearch";
 import GroupRoom from "../components/GroupRoom";
-import Calendar from "../components/Calendar";
+import CalendarBase from "../components/CalendarBase";
 
 import { useUser } from "../contexts/UserContext";
 
@@ -56,7 +56,7 @@ const MainContent: React.FC = () => {
           <div>그룹 정보가 없습니다.</div>
         );
       case "calendar":
-        return <Calendar />;
+        return <CalendarBase />;
       default:
         return <Home />;
     }
