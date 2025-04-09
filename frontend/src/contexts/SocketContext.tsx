@@ -1,6 +1,5 @@
 // /frontend/src/contexts/SocketContext.tsx
-
-import React, { createContext, useContext, useEffect, useState, useMemo, ReactNode } from "react";
+import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo } from "react";
 import { io, Socket } from "socket.io-client";
 
 interface SocketContextValue {
@@ -23,8 +22,10 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
 
   useEffect(() => {
     const SOCKET_SERVER_URL = import.meta.env.VITE_SOCKET_URL as string;
+    // 새로운 소켓 인스턴스 생성
     const newSocket = io(SOCKET_SERVER_URL, { withCredentials: true });
 
+    // 기본 이벤트 핸들러 등록
     newSocket.on("connect", () => {
       console.log("Socket connected, Socket ID:", newSocket.id);
       setIsConnected(true);
@@ -35,15 +36,22 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       setIsConnected(false);
     });
 
+    newSocket.on("connect_error", (error) => {
+      console.error("Socket connection error:", error);
+    });
+
+    // 필요에 따라 추가 이벤트 처리도 이곳에 구현할 수 있습니다.
+    // 예: newSocket.on("message", (data) => { ... });
+
     setSocket(newSocket);
 
-    // 컴포넌트 언마운트 시 소켓 연결 종료
+    // cleanup 함수: 컴포넌트 언마운트 또는 재실행 시 소켓 연결 종료
     return () => {
       newSocket.disconnect();
+      setSocket(null);
     };
-  }, []);
+  }, []); // 빈 의존성 배열로 앱 실행 시 한 번만 실행
 
-  // 컨텍스트 값을 메모이제이션하여 불필요한 리렌더링 방지
   const contextValue = useMemo(() => ({ socket, isConnected }), [socket, isConnected]);
 
   return <SocketContext.Provider value={contextValue}>{children}</SocketContext.Provider>;

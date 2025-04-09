@@ -6,9 +6,7 @@ import Icons from "./Icons";
 import { getUserProfileWithStatus } from "../services/userService";
 import { GroupInfo, getMyGroups } from "../services/groupService";
 import { useUser } from "../contexts/UserContext";
-import { initializeSocket } from "../services/socket";
-
-const socket = initializeSocket();
+import { useSocket } from "../contexts/SocketContext";
 
 interface GroupProfileProps {
   onClose: () => void;
@@ -16,6 +14,9 @@ interface GroupProfileProps {
 }
 
 const GroupProfile: React.FC<GroupProfileProps> = ({ onClose, group }) => {
+  // SocketContext에서 소켓 인스턴스를 가져옵니다.
+  const { socket } = useSocket();
+
   const [groupLeader, setGroupLeader] = useState<any>(null);
   const [isMember, setIsMember] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
@@ -59,17 +60,21 @@ const GroupProfile: React.FC<GroupProfileProps> = ({ onClose, group }) => {
 
   // 그룹 참여 처리 (실시간 소켓 이벤트)
   const handleJoinGroup = () => {
-    socket.emit("joinGroup", { groupUuid: group.uuid, userUuid }, (response: any) => {
-      console.log("joinGroup 응답:", response);
-      if (response.success) {
-        setIsMember(true);
-      } else {
-        console.error("그룹 참여 실패:", response.message);
-        if (response.message === "이미 그룹의 멤버입니다.") {
+    if (socket) {
+      socket.emit("joinGroup", { groupUuid: group.uuid, userUuid }, (response: any) => {
+        console.log("joinGroup 응답:", response);
+        if (response.success) {
           setIsMember(true);
+        } else {
+          console.error("그룹 참여 실패:", response.message);
+          if (response.message === "이미 그룹의 멤버입니다.") {
+            setIsMember(true);
+          }
         }
-      }
-    });
+      });
+    } else {
+      console.error("Socket 인스턴스를 찾을 수 없습니다.");
+    }
   };
 
   return ReactDOM.createPortal(
