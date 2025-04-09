@@ -7,7 +7,7 @@ import MainPage from "./pages/MainPage";
 import startTokenRefreshPolling from "./utils/tokenManager";
 import Icons from "./components/Icons";
 import AppProviders from "./contexts/AppProviders";
-import { useUser } from "./contexts/UserContext";
+import { UserProvider, useUser } from "./contexts/UserContext";
 
 const MOTION_TRANSITION = { duration: 0.5, ease: "easeInOut" };
 const REFRESH_INTERVAL_MS = 30000;
@@ -106,7 +106,9 @@ const AppContent: React.FC = () => {
             transition={MOTION_TRANSITION}
             className="h-full"
           >
-            <MainPage />
+            <AppProviders>
+              <MainPage />
+            </AppProviders>
           </motion.div>
         ) : (
           <motion.div
@@ -126,9 +128,9 @@ const AppContent: React.FC = () => {
 };
 
 const App: React.FC = () => (
-  <AppProviders>
+  <UserProvider>
     <AppContent />
-  </AppProviders>
+  </UserProvider>
 );
 
 export default App;
