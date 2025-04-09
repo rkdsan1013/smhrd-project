@@ -9,6 +9,7 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import { v4 as uuidv4 } from "uuid";
 import "moment/locale/ko";
 import "react-big-calendar/lib/css/react-big-calendar.css";
+import Icons from "./Icons";
 
 moment.locale("ko");
 const localizer = momentLocalizer(moment);
@@ -75,26 +76,27 @@ interface CustomHeaderProps {
   isWeekView?: boolean;
 }
 
-const CustomHeader: React.FC<CustomHeaderProps> = ({ date, label, isWeekView = false }) => {
+/*
+  CustomHeader:
+  오늘 날짜일 경우 동그라미 대신 단순히 텍스트 색상만 변경하여 강조.
+  isWeekView prop는 받아오지만 사용하지 않으므로 _isWeekView로 처리하여 경고를 피함.
+*/
+const CustomHeader: React.FC<CustomHeaderProps> = ({
+  date,
+  label,
+  isWeekView: _isWeekView = false,
+}) => {
   const isToday = moment(date).isSame(new Date(), "day");
-  const baseClasses = "text-center font-bold text-gray-700";
-
-  if (!isWeekView && isToday) {
-    return (
-      <div className={baseClasses}>
-        <div className="w-8 h-8 inline-flex items-center justify-center bg-blue-500 text-white rounded-full mx-auto">
-          {label || moment(date).format("D")}
-        </div>
-      </div>
-    );
-  }
-  return <div className={baseClasses}>{label || moment(date).format("D")}</div>;
+  const textClass = isToday ? "text-indigo-500" : "text-gray-700";
+  return (
+    <div className={`text-center font-bold ${textClass}`}>{label || moment(date).format("D")}</div>
+  );
 };
 
 export interface CalendarBaseProps {
   initialDate?: Date;
   /**
-   * onlyView가 지정되면 해당 뷰로 고정되고 뷰 전환 버튼은 숨깁니다.
+   * onlyView가 지정되면 해당 뷰로 고정되고 뷰 전환 버튼은 숨김
    * 예: "month", "week", "day", "agenda"
    */
   onlyView?: View;
@@ -102,7 +104,6 @@ export interface CalendarBaseProps {
 
 const CalendarBase: React.FC<CalendarBaseProps> = ({ initialDate, onlyView }) => {
   const [currentDate, setCurrentDate] = useState(initialDate || new Date());
-  // onlyView가 있으면 초기 뷰 설정 후 변경없이 사용
   const [currentView, setCurrentView] = useState<View>(onlyView || "month");
 
   const [events, setEvents] = useState<CalendarEvent[]>([
@@ -138,12 +139,9 @@ const CalendarBase: React.FC<CalendarBaseProps> = ({ initialDate, onlyView }) =>
     }
   };
 
-  const viewButtonClass = (active: boolean) =>
-    `px-4 py-1 rounded-md transition-colors ${
-      active
-        ? "bg-blue-500 text-white"
-        : "bg-white border border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white"
-    }`;
+  // 이전/다음 버튼: focus:ring 제거, Tailwind 유틸리티 클래스로 스타일 적용
+  const iconButtonClass =
+    "flex items-center justify-center w-10 h-10 bg-indigo-600 text-white rounded-full shadow hover:bg-indigo-500 transition duration-300 focus:outline-none";
 
   const handlePrev = () => setCurrentDate(shiftDate(currentDate, currentView, "prev"));
   const handleNext = () => setCurrentDate(shiftDate(currentDate, currentView, "next"));
@@ -186,7 +184,7 @@ const CalendarBase: React.FC<CalendarBaseProps> = ({ initialDate, onlyView }) =>
       style: {
         backgroundColor,
         borderRadius: "0.375rem",
-        opacity: 0.85,
+        opacity: 0.9,
         color: "white",
         border: "none",
         display: "block",
@@ -220,68 +218,94 @@ const CalendarBase: React.FC<CalendarBaseProps> = ({ initialDate, onlyView }) =>
   }, [currentView, currentDate, events]);
 
   return (
-    <div className="w-full h-full flex flex-col bg-white rounded-lg shadow-md">
+    <div className="w-full h-full flex flex-col bg-gray-50">
       {/* 헤더 영역 */}
-      <header className="px-4 py-3 border-b border-gray-200">
-        <p className="text-2xl font-bold text-center">
-          {["month", "week"].includes(currentView)
-            ? moment(currentDate).format("YYYY년 MM월")
-            : moment(currentDate).format("YYYY년 MM월 DD일")}
-        </p>
-        <div className="mt-2 flex flex-col sm:flex-row sm:justify-between items-center">
-          <div className="flex space-x-2">
-            <button
-              onClick={handlePrev}
-              className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
-            >
-              이전
+      <header className="bg-indigo-600 text-white px-6 py-4 shadow-lg">
+        <div className="flex w-full items-center justify-between">
+          {/* 좌측 영역: 이전 버튼, 날짜 텍스트 (클릭 시 오늘 이동), 다음 버튼 */}
+          <div className="flex items-center space-x-2">
+            <button onClick={handlePrev} className={iconButtonClass}>
+              <Icons name="angleLeft" className="w-5 h-5 text-white" />
             </button>
             <button
               onClick={handleToday}
-              className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+              className="text-xl font-extrabold cursor-pointer px-3 py-1 rounded-full hover:bg-indigo-500 transition duration-300"
             >
-              오늘
+              {["month", "week"].includes(currentView)
+                ? moment(currentDate).format("YYYY년 MM월")
+                : moment(currentDate).format("YYYY년 MM월 DD일")}
             </button>
-            <button
-              onClick={handleNext}
-              className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
-            >
-              다음
+            <button onClick={handleNext} className={iconButtonClass}>
+              <Icons name="angleRight" className="w-5 h-5 text-white" />
             </button>
           </div>
-          {/* onlyView가 없으면 뷰 전환 버튼 표시 */}
-          {!onlyView && (
-            <div className="mt-2 sm:mt-0 flex space-x-2">
-              <button
-                onClick={() => setCurrentView("month")}
-                className={viewButtonClass(currentView === "month")}
-              >
-                월별
-              </button>
-              <button
-                onClick={() => setCurrentView("week")}
-                className={viewButtonClass(currentView === "week")}
-              >
-                주별
-              </button>
-              <button
-                onClick={() => setCurrentView("day")}
-                className={viewButtonClass(currentView === "day")}
-              >
-                일별
-              </button>
-              <button
-                onClick={() => setCurrentView("agenda")}
-                className={viewButtonClass(currentView === "agenda")}
-              >
-                일정
-              </button>
+          {/* 우측 영역 */}
+          <div className="flex items-center">
+            {/* 데스크탑 (md 이상): 보기 전환 버튼 그룹, space-x-2 적용 */}
+            <div className="hidden md:flex items-center space-x-2">
+              {!onlyView && (
+                <>
+                  <button
+                    onClick={() => setCurrentView("month")}
+                    className={`px-4 py-1 rounded-full transition duration-300 font-medium ${
+                      currentView === "month"
+                        ? "bg-white text-indigo-600 shadow"
+                        : "bg-transparent text-white hover:bg-white hover:text-indigo-600"
+                    }`}
+                  >
+                    월별
+                  </button>
+                  <button
+                    onClick={() => setCurrentView("week")}
+                    className={`px-4 py-1 rounded-full transition duration-300 font-medium ${
+                      currentView === "week"
+                        ? "bg-white text-indigo-600 shadow"
+                        : "bg-transparent text-white hover:bg-white hover:text-indigo-600"
+                    }`}
+                  >
+                    주별
+                  </button>
+                  <button
+                    onClick={() => setCurrentView("day")}
+                    className={`px-4 py-1 rounded-full transition duration-300 font-medium ${
+                      currentView === "day"
+                        ? "bg-white text-indigo-600 shadow"
+                        : "bg-transparent text-white hover:bg-white hover:text-indigo-600"
+                    }`}
+                  >
+                    일별
+                  </button>
+                  <button
+                    onClick={() => setCurrentView("agenda")}
+                    className={`px-4 py-1 rounded-full transition duration-300 font-medium ${
+                      currentView === "agenda"
+                        ? "bg-white text-indigo-600 shadow"
+                        : "bg-transparent text-white hover:bg-white hover:text-indigo-600"
+                    }`}
+                  >
+                    일정
+                  </button>
+                </>
+              )}
             </div>
-          )}
+            {/* 모바일 (md 미만): 드롭다운 */}
+            <div className="flex md:hidden items-center">
+              <select
+                className="bg-white text-indigo-600 rounded-full shadow px-3 py-1 focus:outline-none"
+                value={currentView}
+                onChange={(e) => setCurrentView(e.target.value as View)}
+              >
+                <option value="month">월별</option>
+                <option value="week">주별</option>
+                <option value="day">일별</option>
+                <option value="agenda">일정</option>
+              </select>
+            </div>
+          </div>
         </div>
       </header>
       {/* 캘린더 컨텐츠 영역 */}
-      <div className="flex-1 p-4 overflow-y-auto">
+      <div className="flex-1 p-4 bg-white overflow-y-auto">
         <DndProvider backend={HTML5Backend}>
           <DnDCalendar
             localizer={localizer}
