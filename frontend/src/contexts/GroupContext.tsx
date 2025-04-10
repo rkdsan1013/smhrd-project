@@ -1,4 +1,4 @@
-// File: /frontend/src/contexts/GroupContext.tsx
+// /frontend/src/contexts/GroupContext.tsx
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
 import { useSocket } from "./SocketContext";
@@ -19,25 +19,21 @@ export interface GroupContextValue {
   clearInvitesFromGroup: (groupUuid: string) => void;
   acceptedUserUuids: string[];
   rejectedUserUuids: string[];
-  removePendingInvite: (uuid: string) => void;
-  addPendingInvite: (uuid: string, inviteUuid: string) => void;
-  pendingInvites: Record<string, string>;
+  removePendingInvite: (groupUuid: string, userUuid: string) => void;
+  addPendingInvite: (groupUuid: string, userUuid: string, inviteUuid: string) => void;
+  pendingInvites: Record<string, Record<string, string>>; // groupUuid → { userUuid: inviteUuid }
 }
 
 const GroupContext = createContext<GroupContextValue | undefined>(undefined);
 
-interface GroupProviderProps {
-  children: React.ReactNode;
-}
-
-export const GroupProvider: React.FC<GroupProviderProps> = ({ children }) => {
+export const GroupProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { socket } = useSocket();
   const { userUuid } = useUser();
 
   const [groupInvites, setGroupInvites] = useState<GroupInvite[]>([]);
   const [acceptedUserUuids, setAcceptedUserUuids] = useState<string[]>([]);
   const [rejectedUserUuids, setRejectedUserUuids] = useState<string[]>([]);
-  const [pendingInvites, setPendingInvites] = useState<Record<string, string>>({});
+  const [pendingInvites, setPendingInvites] = useState<Record<string, Record<string, string>>>({});
 
   useEffect(() => {
     const loadSentGroupInvites = async () => {
@@ -50,7 +46,7 @@ export const GroupProvider: React.FC<GroupProviderProps> = ({ children }) => {
           for (const item of sent) {
             map[item.invitedUserUuid] = item.inviteUuid;
           }
-          setPendingInvites((prev) => ({ ...prev, ...map }));
+          setPendingInvites((prev) => ({ ...prev, [groupUuid]: map }));
         }
       } catch (err) {
         console.error("보낸 그룹 초대 불러오기 실패:", err);
@@ -62,7 +58,7 @@ export const GroupProvider: React.FC<GroupProviderProps> = ({ children }) => {
   useEffect(() => {
     if (!socket) return;
 
-    const handleInvite = (invite: GroupInvite) => {
+    socket.on("group-invite", (invite: GroupInvite) => {
       setGroupInvites((prev) => {
         const isDuplicate = prev.some(
           (i) => i.groupUuid === invite.groupUuid && i.inviterUuid === invite.inviterUuid,
@@ -70,59 +66,42 @@ export const GroupProvider: React.FC<GroupProviderProps> = ({ children }) => {
         if (isDuplicate) return prev;
         return [...prev, invite];
       });
-    };
+    });
 
-    const handleInviteCancelled = ({ inviteUuid }: { inviteUuid: string }) => {
+    socket.on("groupInviteCancelled", ({ inviteUuid }: { inviteUuid: string }) => {
       setGroupInvites((prev) => prev.filter((invite) => invite.inviteUuid !== inviteUuid));
       setPendingInvites((prev) => {
         const updated = { ...prev };
-        for (const key in updated) {
-          if (updated[key] === inviteUuid) delete updated[key];
+        for (const group in updated) {
+          for (const user in updated[group]) {
+            if (updated[group][user] === inviteUuid) delete updated[group][user];
+          }
         }
         return updated;
       });
-    };
+    });
 
-    const handleInviteAccepted = ({
-      invitedUserUuid,
-    }: {
-      inviteUuid: string;
-      invitedUserUuid: string;
-      groupUuid: string;
-    }) => {
-      setAcceptedUserUuids((prev) => [...prev, invitedUserUuid]);
-      setPendingInvites((prev) => {
-        const copy = { ...prev };
-        delete copy[invitedUserUuid];
-        return copy;
-      });
-    };
+    socket.on(
+      "groupInviteAccepted",
+      ({ groupUuid, invitedUserUuid }: { groupUuid: string; invitedUserUuid: string }) => {
+        setAcceptedUserUuids((prev) => [...prev, invitedUserUuid]);
+        removePendingInvite(groupUuid, invitedUserUuid);
+      },
+    );
 
-    const handleInviteRejected = ({
-      invitedUserUuid,
-    }: {
-      inviteUuid: string;
-      invitedUserUuid: string;
-      groupUuid: string;
-    }) => {
-      setRejectedUserUuids((prev) => [...prev, invitedUserUuid]);
-      setPendingInvites((prev) => {
-        const copy = { ...prev };
-        delete copy[invitedUserUuid];
-        return copy;
-      });
-    };
-
-    socket.on("group-invite", handleInvite);
-    socket.on("groupInviteCancelled", handleInviteCancelled);
-    socket.on("groupInviteAccepted", handleInviteAccepted);
-    socket.on("groupInviteRejected", handleInviteRejected);
+    socket.on(
+      "groupInviteRejected",
+      ({ groupUuid, invitedUserUuid }: { groupUuid: string; invitedUserUuid: string }) => {
+        setRejectedUserUuids((prev) => [...prev, invitedUserUuid]);
+        removePendingInvite(groupUuid, invitedUserUuid);
+      },
+    );
 
     return () => {
-      socket.off("group-invite", handleInvite);
-      socket.off("groupInviteCancelled", handleInviteCancelled);
-      socket.off("groupInviteAccepted", handleInviteAccepted);
-      socket.off("groupInviteRejected", handleInviteRejected);
+      socket.off("group-invite");
+      socket.off("groupInviteCancelled");
+      socket.off("groupInviteAccepted");
+      socket.off("groupInviteRejected");
     };
   }, [socket]);
 
@@ -134,17 +113,29 @@ export const GroupProvider: React.FC<GroupProviderProps> = ({ children }) => {
     setGroupInvites((prev) => prev.filter((invite) => invite.groupUuid !== groupUuid));
   }, []);
 
-  const removePendingInvite = useCallback((uuid: string) => {
+  const removePendingInvite = useCallback((groupUuid: string, userUuid: string) => {
     setPendingInvites((prev) => {
       const copy = { ...prev };
-      delete copy[uuid];
+      if (copy[groupUuid]) {
+        delete copy[groupUuid][userUuid];
+        if (Object.keys(copy[groupUuid]).length === 0) delete copy[groupUuid];
+      }
       return copy;
     });
   }, []);
 
-  const addPendingInvite = useCallback((uuid: string, inviteUuid: string) => {
-    setPendingInvites((prev) => ({ ...prev, [uuid]: inviteUuid }));
-  }, []);
+  const addPendingInvite = useCallback(
+    (groupUuid: string, userUuid: string, inviteUuid: string) => {
+      setPendingInvites((prev) => ({
+        ...prev,
+        [groupUuid]: {
+          ...(prev[groupUuid] || {}),
+          [userUuid]: inviteUuid,
+        },
+      }));
+    },
+    [],
+  );
 
   const value = useMemo(
     () => ({
@@ -174,8 +165,6 @@ export const GroupProvider: React.FC<GroupProviderProps> = ({ children }) => {
 
 export const useGroup = (): GroupContextValue => {
   const context = useContext(GroupContext);
-  if (!context) {
-    throw new Error("useGroup must be used within a GroupProvider");
-  }
+  if (!context) throw new Error("useGroup must be used within a GroupProvider");
   return context;
 };

@@ -11,7 +11,6 @@ import ProfileCard from "./ProfileCard";
 import { useUser } from "../contexts/UserContext";
 import Icons from "./Icons";
 import { useSocket } from "../contexts/SocketContext";
-import { useGroup } from "../contexts/GroupContext";
 
 interface GroupMemberListProps {
   groupUuid: string;
@@ -24,45 +23,25 @@ const GroupMemberList: React.FC<GroupMemberListProps> = ({ groupUuid }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedMemberUuid, setSelectedMemberUuid] = useState<string | null>(null);
-  const [localPendingInvites, setLocalPendingInvites] = useState<Record<string, string>>({});
+  const [pendingInvites, setPendingInvites] = useState<Record<string, string>>({});
 
   const { userUuid } = useUser();
   const { socket } = useSocket();
-  const { pendingInvites, addPendingInvite, removePendingInvite } = useGroup();
 
-  // ✅ context의 pendingInvites가 바뀔 때마다 localPendingInvites에 반영
-  useEffect(() => {
-    setLocalPendingInvites(pendingInvites);
-  }, [pendingInvites]);
-
-  // ✅ 수락 시 멤버 목록 새로고침
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleAccepted = ({ groupUuid: acceptedGroupUuid }: { groupUuid: string }) => {
-      if (acceptedGroupUuid === groupUuid) {
-        fetchGroupMemberUuids(); // 최신 멤버 반영
-      }
-    };
-
-    socket.on("groupInviteAccepted", handleAccepted);
-    return () => {
-      socket.off("groupInviteAccepted", handleAccepted);
-    };
-  }, [socket, groupUuid]);
-
-  const fetchGroupMemberUuids = async () => {
-    try {
-      const data: GroupMembersResponse = await getGroupMembers(groupUuid);
-      const uuids = data.members.map((member) => member.uuid);
-      setGroupMemberUuids(uuids);
-    } catch (err) {
-      console.error("그룹 멤버 UUID 불러오기 실패:", err);
-    }
-  };
+  // ✅ 초대 수락된 사용자 목록 (이 그룹 기준)
+  const [acceptedUuids, setAcceptedUuids] = useState<string[]>([]);
 
   // 그룹 멤버 UUID 불러오기
   useEffect(() => {
+    const fetchGroupMemberUuids = async () => {
+      try {
+        const data: GroupMembersResponse = await getGroupMembers(groupUuid);
+        const uuids = data.members.map((member) => member.uuid);
+        setGroupMemberUuids(uuids);
+      } catch (err) {
+        console.error("그룹 멤버 UUID 불러오기 실패:", err);
+      }
+    };
     fetchGroupMemberUuids();
   }, [groupUuid]);
 
@@ -75,7 +54,7 @@ const GroupMemberList: React.FC<GroupMemberListProps> = ({ groupUuid }) => {
         for (const item of sent) {
           map[item.invitedUserUuid] = item.inviteUuid;
         }
-        setLocalPendingInvites(map);
+        setPendingInvites(map);
       } catch (err) {
         console.error("초대 목록 로딩 실패:", err);
       }
@@ -86,6 +65,33 @@ const GroupMemberList: React.FC<GroupMemberListProps> = ({ groupUuid }) => {
     }
   }, [inviteMode, groupUuid]);
 
+  // 초대 수락 소켓 수신 → 초대 리스트에서 제거
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleInviteAccepted = ({
+      groupUuid: acceptedGroupUuid,
+      invitedUserUuid,
+    }: {
+      groupUuid: string;
+      invitedUserUuid: string;
+      inviteUuid: string;
+    }) => {
+      if (acceptedGroupUuid !== groupUuid) return;
+      setAcceptedUuids((prev) => [...prev, invitedUserUuid]);
+      setPendingInvites((prev) => {
+        const updated = { ...prev };
+        delete updated[invitedUserUuid];
+        return updated;
+      });
+    };
+
+    socket.on("groupInviteAccepted", handleInviteAccepted);
+    return () => {
+      socket.off("groupInviteAccepted", handleInviteAccepted);
+    };
+  }, [socket, groupUuid]);
+
   // 멤버 or 친구 목록 불러오기
   useEffect(() => {
     const fetchMembers = async () => {
@@ -93,9 +99,11 @@ const GroupMemberList: React.FC<GroupMemberListProps> = ({ groupUuid }) => {
       try {
         if (inviteMode) {
           const friendList: Friend[] = await fetchFriendList();
-          const filteredFriends = friendList.filter(
-            (friend) => !groupMemberUuids.includes(friend.uuid),
-          );
+
+          const filteredFriends = friendList.filter((friend) => {
+            return !groupMemberUuids.includes(friend.uuid) && !acceptedUuids.includes(friend.uuid);
+          });
+
           const sortedFriends = filteredFriends.sort((a, b) => a.name.localeCompare(b.name));
           setMembers(sortedFriends);
         } else {
@@ -118,27 +126,24 @@ const GroupMemberList: React.FC<GroupMemberListProps> = ({ groupUuid }) => {
       }
     };
     fetchMembers();
-  }, [groupUuid, inviteMode, groupMemberUuids, userUuid]);
+  }, [groupUuid, inviteMode, groupMemberUuids, userUuid, acceptedUuids]);
 
-  // 초대 or 취소
   const handleInviteAction = (friendUuid: string) => {
     if (!socket) return;
-    const isInvited = localPendingInvites[friendUuid];
 
-    if (isInvited) {
+    if (pendingInvites[friendUuid]) {
       socket.emit(
         "cancelGroupInvite",
         {
-          inviteUuid: isInvited,
+          inviteUuid: pendingInvites[friendUuid],
           groupUuid,
           invitedUserUuid: friendUuid,
         },
         (response: any) => {
           if (response.success) {
-            const updated = { ...localPendingInvites };
+            const updated = { ...pendingInvites };
             delete updated[friendUuid];
-            setLocalPendingInvites(updated);
-            removePendingInvite(friendUuid);
+            setPendingInvites(updated);
           } else {
             console.error("초대 취소 실패:", response.message);
           }
@@ -147,12 +152,10 @@ const GroupMemberList: React.FC<GroupMemberListProps> = ({ groupUuid }) => {
     } else {
       socket.emit("inviteToGroup", { groupUuid, invitedUserUuid: friendUuid }, (response: any) => {
         if (response.success) {
-          const updated = {
-            ...localPendingInvites,
+          setPendingInvites((prev) => ({
+            ...prev,
             [friendUuid]: response.inviteUuid,
-          };
-          setLocalPendingInvites(updated);
-          addPendingInvite(friendUuid, response.inviteUuid);
+          }));
         } else {
           console.error("초대 실패:", response.message);
         }
@@ -185,8 +188,9 @@ const GroupMemberList: React.FC<GroupMemberListProps> = ({ groupUuid }) => {
       <div className="border-b border-gray-300 mb-4"></div>
       <ul className="space-y-3 flex-grow overflow-y-auto no-scrollbar">
         {members.map((member) => {
-          const isInvited = localPendingInvites[member.uuid];
+          const isInvited = pendingInvites[member.uuid];
           const isMember = groupMemberUuids.includes(member.uuid);
+
           if (inviteMode && isMember) return null;
 
           return (
