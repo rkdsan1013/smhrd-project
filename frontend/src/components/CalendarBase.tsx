@@ -135,7 +135,8 @@ const CalendarBase: React.FC<CalendarBaseProps> = ({ initialDate, onlyView }) =>
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrev}
-              className="w-10 h-10 bg-indigo-600 rounded-full shadow text-white"
+              // 가운데 정렬 및 호버 효과 추가
+              className="w-10 h-10 bg-indigo-600 rounded-full shadow text-white flex items-center justify-center transition-colors duration-300 hover:bg-indigo-500"
             >
               <Icons name="angleLeft" className="w-5 h-5" />
             </button>
@@ -149,7 +150,8 @@ const CalendarBase: React.FC<CalendarBaseProps> = ({ initialDate, onlyView }) =>
             </button>
             <button
               onClick={handleNext}
-              className="w-10 h-10 bg-indigo-600 rounded-full shadow text-white"
+              // 가운데 정렬 및 호버 효과 추가
+              className="w-10 h-10 bg-indigo-600 rounded-full shadow text-white flex items-center justify-center transition-colors duration-300 hover:bg-indigo-500"
             >
               <Icons name="angleRight" className="w-5 h-5" />
             </button>

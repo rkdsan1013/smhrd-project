@@ -1,4 +1,5 @@
 import React from "react";
+import CalendarMonthly from "./CalendarMonthly";
 
 const Home: React.FC = () => {
   return (
@@ -8,7 +9,7 @@ const Home: React.FC = () => {
       {/* 캘린더 영역 */}
       <div className="flex-1 bg-white rounded-lg shadow p-4 flex flex-col min-h-[25rem] md:min-h-0 md:h-full">
         <div className="flex-1 bg-gray-100 rounded flex items-center justify-center">
-          캘린더 컴포넌트 자리
+          <CalendarMonthly />
         </div>
       </div>
 
