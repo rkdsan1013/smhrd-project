@@ -1,4 +1,4 @@
-// /frontend/src/contexts/GroupContext.tsx
+// File: /frontend/src/contexts/GroupContext.tsx
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
 import { useSocket } from "./SocketContext";
@@ -39,7 +39,6 @@ export const GroupProvider: React.FC<GroupProviderProps> = ({ children }) => {
   const [rejectedUserUuids, setRejectedUserUuids] = useState<string[]>([]);
   const [pendingInvites, setPendingInvites] = useState<Record<string, string>>({});
 
-  // ✅ 새로고침 시, DB에서 내가 보낸 초대 불러오기
   useEffect(() => {
     const loadSentGroupInvites = async () => {
       if (!userUuid) return;
