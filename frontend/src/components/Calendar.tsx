@@ -1,4 +1,4 @@
-// /frontend/src/components/CalendarBase.tsx
+// /frontend/src/components/Calendar.tsx
 
 import React, { useState, useMemo } from "react";
 import { Calendar as RBCalendar, momentLocalizer, View, SlotInfo } from "react-big-calendar";
@@ -14,6 +14,7 @@ import ScheduleAllDayModal from "./ScheduleAllDayModal";
 import ScheduleDetailModal from "./ScheduleDetailModal";
 import { motion, AnimatePresence } from "framer-motion";
 
+// 애니메이션 설정
 const motionVariants = {
   initial: { opacity: 0, x: 50, transition: { duration: 0.3 } },
   animate: { opacity: 1, x: 0, transition: { duration: 0.3 } },
@@ -24,6 +25,21 @@ moment.locale("ko");
 const localizer = momentLocalizer(moment);
 const DnDCalendar = withDragAndDrop(RBCalendar);
 
+// 허용되는 뷰 목록 및 라벨
+const allowedViewKeys: Array<"month" | "week" | "day" | "agenda"> = [
+  "month",
+  "week",
+  "day",
+  "agenda",
+];
+const viewLabels: Record<"month" | "week" | "day" | "agenda", string> = {
+  month: "월별",
+  week: "주별",
+  day: "일별",
+  agenda: "일정",
+};
+
+// 캘린더 이벤트 인터페이스
 export interface CalendarEvent {
   uuid: string;
   title: string;
@@ -34,47 +50,90 @@ export interface CalendarEvent {
   location?: string;
 }
 
-const messages: Partial<Record<View, string>> = {
+// react-big-calendar용 메시지 객체
+const messages: any = {
+  allDay: "종일",
+  date: "날짜",
+  time: "시간",
+  event: "일정",
   month: "월별",
   week: "주별",
   day: "일별",
   agenda: "일정",
+  noEventsInRange: "일정이 없습니다.",
+  showMore: (total: number) => `+ ${total}개 일정 더 보기...`,
 };
 
+// 헬퍼 함수: 시간 포맷을 "A hh:mm" 형식으로 변환한 후 오전/오후를 한글로 치환 (예: "오전 05:30")
+const formatKoreanTime = (date: Date, formatStr: string = "A hh:mm") =>
+  moment(date).format(formatStr).replace(/AM/g, "오전").replace(/PM/g, "오후");
+
+// react-big-calendar의 날짜/시간 포맷 설정 객체
 const formats = {
   dateFormat: "D",
   dayFormat: "D일",
-  weekdayFormat: (date: Date): string => ["일", "월", "화", "수", "목", "금", "토"][date.getDay()],
+  weekdayFormat: (date: Date) => ["일", "월", "화", "수", "목", "금", "토"][date.getDay()],
   monthHeaderFormat: "YYYY년 MM월",
-  dayHeaderFormat: (date: Date): string =>
+  dayHeaderFormat: (date: Date) =>
     `${moment(date).format("YYYY년 MM월 DD일")} (${
       ["일", "월", "화", "수", "목", "금", "토"][date.getDay()]
     })`,
-  dayRangeHeaderFormat: ({ start, end }: { start: Date; end: Date }): string =>
+  dayRangeHeaderFormat: ({ start, end }: { start: Date; end: Date }) =>
     `${moment(start).format("YYYY.MM.DD")} ~ ${moment(end).format("YYYY.MM.DD")}`,
-  agendaDateFormat: "MM/DD (dd)",
-  agendaTimeFormat: "HH:mm",
-  timeGutterFormat: "HH:mm",
+  // Agenda: 날짜 포맷 (예: "04/10 (목)")
+  agendaDateFormat: (date: Date) => {
+    const formatted = moment(date).format("MM/DD");
+    const dayAbbr = ["일", "월", "화", "수", "목", "금", "토"][date.getDay()];
+    return `${formatted} (${dayAbbr})`;
+  },
+  // Agenda: 단일 시간 포맷 (예: "오전 05:30")
+  agendaTimeFormat: (date: Date) => formatKoreanTime(date),
+  // Agenda: 시간 범위 포맷 (예: "오전 05:30 - 오전 11:30")
+  agendaTimeRangeFormat: ({ start, end }: { start: Date; end: Date }) =>
+    `${formatKoreanTime(start)} - ${formatKoreanTime(end)}`,
+  // Agenda 헤더 (참고용)
+  agendaHeaderFormat: () => `날짜       시간       일정`,
+  // 월, 주, 일 뷰의 시간 포맷
+  timeGutterFormat: (date: Date) => formatKoreanTime(date),
+  slotLabelFormat: (date: Date) => formatKoreanTime(date),
+  // 이벤트 막대기 시간 범위 포맷
+  eventTimeRangeFormat: ({ start, end }: { start: Date; end: Date }) =>
+    `${formatKoreanTime(start)} - ${formatKoreanTime(end)}`,
+  // 선택 영역 시간 범위 포맷
+  selectRangeFormat: ({ start, end }: { start: Date; end: Date }) =>
+    `${formatKoreanTime(start)} ~ ${formatKoreanTime(end)}`,
 };
 
-export interface CalendarBaseProps {
+export interface CalendarProps {
   initialDate?: Date;
-  onlyView?: View;
+  view?: View | "all";
+  mode?: "read" | "edit";
 }
 
-const CalendarBase: React.FC<CalendarBaseProps> = ({ initialDate, onlyView }) => {
+const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "read" }) => {
+  // 기본 뷰: view prop이 "all"인 경우 "month", 그렇지 않으면 전달된 뷰 사용
+  const [currentView, setCurrentView] = useState<"month" | "week" | "day" | "agenda">(
+    view === "all" ? "month" : (view as "month" | "week" | "day" | "agenda"),
+  );
   const [currentDate, setCurrentDate] = useState(initialDate || new Date());
-  const [currentView, setCurrentView] = useState<View>(onlyView || "month");
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [filterType, setFilterType] = useState<"all" | "personal" | "group">("all");
   const [showAllDayModal, setShowAllDayModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<SlotInfo | null>(null);
 
-  const shiftDate = (date: Date, view: View, direction: "prev" | "next"): Date => {
+  const isEditable = mode === "edit";
+  const isFixedView = view !== "all";
+
+  // 날짜 이동 함수: 주 단위 이동은 Agenda 뷰 외 기본적으로 월/일/주 단위로 처리
+  const shiftDate = (
+    date: Date,
+    view: "month" | "week" | "day" | "agenda",
+    direction: "prev" | "next",
+  ): Date => {
     const amount = direction === "prev" ? -1 : 1;
-    return moment(date)
-      .add(amount, view === "month" ? "month" : view === "day" ? "day" : "week")
-      .toDate();
+    const unit = view === "month" ? "month" : view === "day" ? "day" : "week";
+    return moment(date).add(amount, unit).toDate();
   };
 
   const handlePrev = () => setCurrentDate(shiftDate(currentDate, currentView, "prev"));
@@ -82,6 +141,7 @@ const CalendarBase: React.FC<CalendarBaseProps> = ({ initialDate, onlyView }) =>
   const handleToday = () => setCurrentDate(new Date());
 
   const handleSelectSlot = (slotInfo: SlotInfo) => {
+    if (!isEditable) return;
     setSelectedSlot(slotInfo);
     const isMonthAllDay = currentView === "month";
     const isExplicitAllDay = (slotInfo as any)?.box?.className?.includes("rbc-allday-cell");
@@ -89,16 +149,14 @@ const CalendarBase: React.FC<CalendarBaseProps> = ({ initialDate, onlyView }) =>
       moment(slotInfo.start).hour() === 0 &&
       moment(slotInfo.end).hour() === 0 &&
       moment(slotInfo.end).diff(moment(slotInfo.start), "days") >= 1;
-    if (isMonthAllDay || isExplicitAllDay || isAllDayTimeRange) {
-      setShowAllDayModal(true);
-    } else {
-      setShowDetailModal(true);
-    }
+
+    isMonthAllDay || isExplicitAllDay || isAllDayTimeRange
+      ? setShowAllDayModal(true)
+      : setShowDetailModal(true);
   };
 
-  const updateEvent = (uuid: string, start: Date, end: Date) => {
+  const updateEvent = (uuid: string, start: Date, end: Date) =>
     setEvents((prev) => prev.map((e) => (e.uuid === uuid ? { ...e, start, end } : e)));
-  };
 
   const handleEventDrop = ({ event, start, end }: any) => updateEvent(event.uuid, start, end);
   const handleEventResize = ({ event, start, end }: any) => updateEvent(event.uuid, start, end);
@@ -128,6 +186,11 @@ const CalendarBase: React.FC<CalendarBaseProps> = ({ initialDate, onlyView }) =>
     return moment(currentDate).set({ hour: 9, minute: 0 }).toDate();
   }, [events, currentView, currentDate]);
 
+  const filteredEvents = useMemo(
+    () => (filterType === "all" ? events : events.filter((e) => e.type === filterType)),
+    [events, filterType],
+  );
+
   return (
     <div className="w-full h-full flex flex-col bg-gray-50">
       <header className="bg-indigo-600 text-white px-6 py-4 shadow-lg">
@@ -135,13 +198,13 @@ const CalendarBase: React.FC<CalendarBaseProps> = ({ initialDate, onlyView }) =>
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrev}
-              className="w-10 h-10 bg-indigo-600 rounded-full shadow text-white flex items-center justify-center transition-colors duration-300 hover:bg-indigo-500"
+              className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center transition-colors duration-300 hover:bg-indigo-500"
             >
               <Icons name="angleLeft" className="w-5 h-5" />
             </button>
             <button
               onClick={handleToday}
-              className="text-xl font-bold px-4 py-1 hover:bg-indigo-500 rounded-full"
+              className="text-xl font-bold px-4 py-1 bg-indigo-700 hover:bg-indigo-500 rounded-full transition duration-300"
             >
               {moment(currentDate).format(
                 currentView === "month" ? "YYYY년 MM월" : "YYYY년 MM월 DD일",
@@ -149,44 +212,60 @@ const CalendarBase: React.FC<CalendarBaseProps> = ({ initialDate, onlyView }) =>
             </button>
             <button
               onClick={handleNext}
-              className="w-10 h-10 bg-indigo-600 rounded-full shadow text-white flex items-center justify-center transition-colors duration-300 hover:bg-indigo-500"
+              className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center transition-colors duration-300 hover:bg-indigo-500"
             >
               <Icons name="angleRight" className="w-5 h-5" />
             </button>
           </div>
 
-          {!onlyView && (
-            <div className="flex gap-2 items-center">
-              <div className="hidden md:flex gap-2">
-                {(Object.keys(messages) as View[]).map((view) => (
-                  <button
-                    key={view}
-                    onClick={() => setCurrentView(view)}
-                    className={`px-4 py-1 rounded-full font-medium transition ${
-                      view === currentView
-                        ? "bg-white text-indigo-600 shadow"
-                        : "hover:bg-white hover:text-indigo-600"
-                    }`}
-                  >
-                    {messages[view] ?? view}
-                  </button>
-                ))}
-              </div>
-              <div className="md:hidden">
-                <select
-                  className="text-indigo-600 bg-white rounded-md py-1 px-2"
-                  value={currentView}
-                  onChange={(e) => setCurrentView(e.target.value as View)}
+          <div className="flex gap-2 items-center">
+            <div className="hidden md:flex gap-2">
+              {allowedViewKeys.map((viewKey) => (
+                <button
+                  key={viewKey}
+                  onClick={() => setCurrentView(viewKey)}
+                  className={`px-4 py-1 rounded-full font-medium transition duration-300 ${
+                    viewKey === currentView
+                      ? "bg-white text-indigo-600 shadow"
+                      : "hover:bg-white hover:text-indigo-600"
+                  }`}
                 >
-                  {(Object.keys(messages) as View[]).map((view) => (
-                    <option key={view} value={view}>
-                      {messages[view] ?? view}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                  {viewLabels[viewKey]}
+                </button>
+              ))}
             </div>
-          )}
+            <div className="md:hidden">
+              <select
+                className="text-indigo-600 bg-white rounded-md py-1 px-2 transition duration-300"
+                value={currentView}
+                onChange={(e) =>
+                  setCurrentView(e.target.value as "month" | "week" | "day" | "agenda")
+                }
+              >
+                {allowedViewKeys.map((viewKey) => (
+                  <option key={viewKey} value={viewKey}>
+                    {viewLabels[viewKey]}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-2 mt-2 justify-start">
+          {(["all", "personal", "group"] as const).map((type) => (
+            <button
+              key={type}
+              onClick={() => setFilterType(type)}
+              className={`px-4 py-1 text-sm rounded-full font-medium transition duration-300 ${
+                filterType === type
+                  ? "bg-white text-indigo-600 shadow"
+                  : "hover:bg-white hover:text-indigo-600"
+              }`}
+            >
+              {type === "all" ? "전체" : type === "personal" ? "개인" : "그룹"}
+            </button>
+          ))}
         </div>
       </header>
 
@@ -196,31 +275,32 @@ const CalendarBase: React.FC<CalendarBaseProps> = ({ initialDate, onlyView }) =>
             <motion.div key={currentView} {...motionVariants} className="h-full overflow-y-auto">
               <DnDCalendar
                 localizer={localizer}
-                events={events}
+                culture="ko"
+                events={filteredEvents}
                 startAccessor={(event: object) => (event as CalendarEvent).start}
                 endAccessor={(event: object) => (event as CalendarEvent).end}
                 view={currentView}
                 date={currentDate}
                 onNavigate={setCurrentDate}
-                onView={(v) => !onlyView && setCurrentView(v)}
-                views={onlyView ? [onlyView] : (Object.keys(messages) as View[])}
+                onView={(v) => !isFixedView && setCurrentView(v as any)}
+                views={isFixedView ? [currentView] : allowedViewKeys}
                 toolbar={false}
-                selectable
-                resizable
+                selectable={isEditable}
+                resizable={isEditable}
                 scrollToTime={scrollToTime}
                 eventPropGetter={eventStyleGetter}
                 messages={messages}
                 formats={formats}
-                onSelectSlot={handleSelectSlot}
-                onEventDrop={handleEventDrop}
-                onEventResize={handleEventResize}
+                onSelectSlot={isEditable ? handleSelectSlot : undefined}
+                onEventDrop={isEditable ? handleEventDrop : undefined}
+                onEventResize={isEditable ? handleEventResize : undefined}
               />
             </motion.div>
           </AnimatePresence>
         </DndProvider>
       </div>
 
-      {showAllDayModal && selectedSlot && (
+      {isEditable && showAllDayModal && selectedSlot && (
         <ScheduleAllDayModal
           onClose={() => setShowAllDayModal(false)}
           onSubmit={(data) => {
@@ -244,7 +324,7 @@ const CalendarBase: React.FC<CalendarBaseProps> = ({ initialDate, onlyView }) =>
         />
       )}
 
-      {showDetailModal && selectedSlot && (
+      {isEditable && showDetailModal && selectedSlot && (
         <ScheduleDetailModal
           onClose={() => setShowDetailModal(false)}
           onSubmit={(data) => {
@@ -274,4 +354,4 @@ const CalendarBase: React.FC<CalendarBaseProps> = ({ initialDate, onlyView }) =>
   );
 };
 
-export default CalendarBase;
+export default Calendar;

@@ -1,7 +1,7 @@
 // /frontend/src/components/Home.tsx
 
 import React from "react";
-import CalendarMonthly from "./CalendarMonthly";
+import Calendar from "./Calendar";
 
 const Home: React.FC = () => {
   return (
@@ -9,7 +9,7 @@ const Home: React.FC = () => {
       {/* 캘린더 영역 */}
       <div className="flex-1 bg-white rounded-lg shadow flex flex-col min-h-[32rem] overflow-hidden">
         <div className="flex-1 bg-gray-100 rounded-lg w-full h-full">
-          <CalendarMonthly />
+          <Calendar mode="read" view="month" />
         </div>
       </div>
 

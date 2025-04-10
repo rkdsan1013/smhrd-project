@@ -8,7 +8,7 @@ import Footer from "../components/Footer";
 import Home from "../components/Home";
 import GroupSearch from "../components/GroupSearch";
 import GroupRoom from "../components/GroupRoom";
-import CalendarBase from "../components/CalendarBase";
+import CalendarView from "../components/CalendarView";
 
 import { useUser } from "../contexts/UserContext";
 
@@ -54,7 +54,7 @@ const MainContent: React.FC = () => {
           <div>그룹 정보가 없습니다.</div>
         );
       case "calendar":
-        return <CalendarBase />;
+        return <CalendarView />;
       default:
         return <Home />;
     }
@@ -62,7 +62,6 @@ const MainContent: React.FC = () => {
 
   return (
     <div className="h-screen p-4">
-      {/* 💡 화면 전체 높이를 보장하기 위해 h-screen 사용 */}
       <div className="h-full flex flex-col md:flex-row gap-4 min-h-0">
         <Sidebar
           onHomeSelect={handleHomeSelect}
