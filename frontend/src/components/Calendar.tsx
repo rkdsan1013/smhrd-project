@@ -217,39 +217,41 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
               <Icons name="angleRight" className="w-5 h-5" />
             </button>
           </div>
-
-          <div className="flex gap-2 items-center">
-            <div className="hidden md:flex gap-2">
-              {allowedViewKeys.map((viewKey) => (
-                <button
-                  key={viewKey}
-                  onClick={() => setCurrentView(viewKey)}
-                  className={`px-4 py-1 rounded-full font-medium transition duration-300 ${
-                    viewKey === currentView
-                      ? "bg-white text-indigo-600 shadow"
-                      : "hover:bg-white hover:text-indigo-600"
-                  }`}
-                >
-                  {viewLabels[viewKey]}
-                </button>
-              ))}
-            </div>
-            <div className="md:hidden">
-              <select
-                className="text-indigo-600 bg-white rounded-md py-1 px-2 transition duration-300"
-                value={currentView}
-                onChange={(e) =>
-                  setCurrentView(e.target.value as "month" | "week" | "day" | "agenda")
-                }
-              >
+          {/* 뷰가 고정되어 있지 않을 경우에만 뷰 전환 UI를 렌더링 */}
+          {!isFixedView && (
+            <div className="flex gap-2 items-center">
+              <div className="hidden md:flex gap-2">
                 {allowedViewKeys.map((viewKey) => (
-                  <option key={viewKey} value={viewKey}>
+                  <button
+                    key={viewKey}
+                    onClick={() => setCurrentView(viewKey)}
+                    className={`px-4 py-1 rounded-full font-medium transition duration-300 ${
+                      viewKey === currentView
+                        ? "bg-white text-indigo-600 shadow"
+                        : "hover:bg-white hover:text-indigo-600"
+                    }`}
+                  >
                     {viewLabels[viewKey]}
-                  </option>
+                  </button>
                 ))}
-              </select>
+              </div>
+              <div className="md:hidden">
+                <select
+                  className="text-indigo-600 bg-white rounded-md py-1 px-2 transition duration-300"
+                  value={currentView}
+                  onChange={(e) =>
+                    setCurrentView(e.target.value as "month" | "week" | "day" | "agenda")
+                  }
+                >
+                  {allowedViewKeys.map((viewKey) => (
+                    <option key={viewKey} value={viewKey}>
+                      {viewLabels[viewKey]}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <div className="flex gap-2 mt-2 justify-start">
