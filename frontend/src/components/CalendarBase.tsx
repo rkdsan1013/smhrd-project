@@ -118,15 +118,20 @@ const CalendarBase: React.FC<CalendarBaseProps> = ({ initialDate, onlyView }) =>
     };
   };
 
-  const scrollToTime = useMemo(
-    () => moment(currentDate).set({ hour: 9, minute: 0 }).toDate(),
-    [currentView, currentDate],
-  );
+  const scrollToTime = useMemo(() => {
+    const today = moment().startOf("day");
+    const todayEvents = events.filter((e) => moment(e.start).isSame(today, "day"));
+    if (todayEvents.length > 0) {
+      const earliest = todayEvents.reduce((a, b) => (a.start < b.start ? a : b));
+      return new Date(earliest.start);
+    }
+    return moment(currentDate).set({ hour: 9, minute: 0 }).toDate();
+  }, [events, currentView, currentDate]);
 
   return (
     <div className="w-full h-full flex flex-col bg-gray-50">
       <header className="bg-indigo-600 text-white px-6 py-4 shadow-lg">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrev}
@@ -149,28 +154,43 @@ const CalendarBase: React.FC<CalendarBaseProps> = ({ initialDate, onlyView }) =>
               <Icons name="angleRight" className="w-5 h-5" />
             </button>
           </div>
-          <div className="hidden md:flex gap-2">
-            {(Object.keys(messages) as View[]).map((view) => (
-              <button
-                key={view}
-                onClick={() => setCurrentView(view)}
-                className={`px-4 py-1 rounded-full font-medium transition ${
-                  view === currentView
-                    ? "bg-white text-indigo-600 shadow"
-                    : "hover:bg-white hover:text-indigo-600"
-                }`}
+          <div className="flex gap-2 items-center">
+            <div className="hidden md:flex gap-2">
+              {(Object.keys(messages) as View[]).map((view) => (
+                <button
+                  key={view}
+                  onClick={() => setCurrentView(view)}
+                  className={`px-4 py-1 rounded-full font-medium transition ${
+                    view === currentView
+                      ? "bg-white text-indigo-600 shadow"
+                      : "hover:bg-white hover:text-indigo-600"
+                  }`}
+                >
+                  {messages[view] ?? view}
+                </button>
+              ))}
+            </div>
+            <div className="md:hidden">
+              <select
+                className="text-indigo-600 bg-white rounded-md py-1 px-2"
+                value={currentView}
+                onChange={(e) => setCurrentView(e.target.value as View)}
               >
-                {messages[view] ?? view}
-              </button>
-            ))}
+                {(Object.keys(messages) as View[]).map((view) => (
+                  <option key={view} value={view}>
+                    {messages[view] ?? view}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
       </header>
 
-      <div className="flex-1">
+      <div className="flex-1 overflow-hidden">
         <DndProvider backend={HTML5Backend}>
           <AnimatePresence mode="wait">
-            <motion.div key={currentView} {...motionVariants} className="h-full">
+            <motion.div key={currentView} {...motionVariants} className="h-full overflow-y-auto">
               <DnDCalendar
                 localizer={localizer}
                 events={events}
