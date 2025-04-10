@@ -12,7 +12,6 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import Icons from "./Icons";
 import ScheduleAllDayModal from "./ScheduleAllDayModal";
 import ScheduleDetailModal from "./ScheduleDetailModal";
-
 import { motion, AnimatePresence } from "framer-motion";
 
 const motionVariants = {
@@ -33,19 +32,6 @@ export interface CalendarEvent {
   type: "personal" | "group";
   description?: string;
   location?: string;
-}
-
-interface EventDropArg {
-  event: CalendarEvent;
-  start: Date;
-  end: Date;
-  allDay?: boolean;
-}
-
-interface EventResizeDone {
-  event: CalendarEvent;
-  start: Date;
-  end: Date;
 }
 
 const messages: Partial<Record<View, string>> = {
@@ -80,7 +66,6 @@ const CalendarBase: React.FC<CalendarBaseProps> = ({ initialDate, onlyView }) =>
   const [currentDate, setCurrentDate] = useState(initialDate || new Date());
   const [currentView, setCurrentView] = useState<View>(onlyView || "month");
   const [events, setEvents] = useState<CalendarEvent[]>([]);
-
   const [showAllDayModal, setShowAllDayModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<SlotInfo | null>(null);
@@ -92,23 +77,18 @@ const CalendarBase: React.FC<CalendarBaseProps> = ({ initialDate, onlyView }) =>
       .toDate();
   };
 
-  const iconButtonClass =
-    "flex items-center justify-center w-10 h-10 bg-indigo-600 text-white rounded-full shadow hover:bg-indigo-500 transition duration-300 focus:outline-none";
-
   const handlePrev = () => setCurrentDate(shiftDate(currentDate, currentView, "prev"));
   const handleNext = () => setCurrentDate(shiftDate(currentDate, currentView, "next"));
   const handleToday = () => setCurrentDate(new Date());
 
   const handleSelectSlot = (slotInfo: SlotInfo) => {
     setSelectedSlot(slotInfo);
-
     const isMonthAllDay = currentView === "month";
     const isExplicitAllDay = (slotInfo as any)?.box?.className?.includes("rbc-allday-cell");
     const isAllDayTimeRange =
       moment(slotInfo.start).hour() === 0 &&
       moment(slotInfo.end).hour() === 0 &&
       moment(slotInfo.end).diff(moment(slotInfo.start), "days") >= 1;
-
     if (isMonthAllDay || isExplicitAllDay || isAllDayTimeRange) {
       setShowAllDayModal(true);
     } else {
@@ -120,22 +100,10 @@ const CalendarBase: React.FC<CalendarBaseProps> = ({ initialDate, onlyView }) =>
     setEvents((prev) => prev.map((e) => (e.uuid === uuid ? { ...e, start, end } : e)));
   };
 
-  const handleEventDrop = (args: any) => {
-    const { event, start, end } = args as EventDropArg;
-    updateEvent(event.uuid, start, end);
-  };
+  const handleEventDrop = ({ event, start, end }: any) => updateEvent(event.uuid, start, end);
+  const handleEventResize = ({ event, start, end }: any) => updateEvent(event.uuid, start, end);
 
-  const handleEventResize = (args: any) => {
-    const { event, start, end } = args as EventResizeDone;
-    updateEvent(event.uuid, start, end);
-  };
-
-  const eventStyleGetter = (
-    event: object,
-    _start: Date,
-    _end: Date,
-    _isSelected: boolean,
-  ): { style: React.CSSProperties } => {
+  const eventStyleGetter = (event: object): { style: React.CSSProperties } => {
     const calendarEvent = event as CalendarEvent;
     const backgroundColor = calendarEvent.type === "personal" ? "#2563eb" : "#16a34a";
     return {
@@ -150,16 +118,20 @@ const CalendarBase: React.FC<CalendarBaseProps> = ({ initialDate, onlyView }) =>
     };
   };
 
-  const scrollToTime = useMemo(() => {
-    return moment(currentDate).set({ hour: 9, minute: 0 }).toDate();
-  }, [currentView, currentDate]);
+  const scrollToTime = useMemo(
+    () => moment(currentDate).set({ hour: 9, minute: 0 }).toDate(),
+    [currentView, currentDate],
+  );
 
   return (
     <div className="w-full h-full flex flex-col bg-gray-50">
       <header className="bg-indigo-600 text-white px-6 py-4 shadow-lg">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <button onClick={handlePrev} className={iconButtonClass}>
+            <button
+              onClick={handlePrev}
+              className="w-10 h-10 bg-indigo-600 rounded-full shadow text-white"
+            >
               <Icons name="angleLeft" className="w-5 h-5" />
             </button>
             <button
@@ -170,7 +142,10 @@ const CalendarBase: React.FC<CalendarBaseProps> = ({ initialDate, onlyView }) =>
                 currentView === "month" ? "YYYY년 MM월" : "YYYY년 MM월 DD일",
               )}
             </button>
-            <button onClick={handleNext} className={iconButtonClass}>
+            <button
+              onClick={handleNext}
+              className="w-10 h-10 bg-indigo-600 rounded-full shadow text-white"
+            >
               <Icons name="angleRight" className="w-5 h-5" />
             </button>
           </div>
@@ -182,7 +157,7 @@ const CalendarBase: React.FC<CalendarBaseProps> = ({ initialDate, onlyView }) =>
                 className={`px-4 py-1 rounded-full font-medium transition ${
                   view === currentView
                     ? "bg-white text-indigo-600 shadow"
-                    : "bg-transparent hover:bg-white hover:text-indigo-600"
+                    : "hover:bg-white hover:text-indigo-600"
                 }`}
               >
                 {messages[view] ?? view}
@@ -232,7 +207,7 @@ const CalendarBase: React.FC<CalendarBaseProps> = ({ initialDate, onlyView }) =>
                 uuid: uuidv4(),
                 title: data.title,
                 start: new Date(data.startDate),
-                end: new Date(data.endDate),
+                end: moment(data.endDate).add(1, "day").toDate(),
                 type: "personal",
                 description: data.description,
                 location: data.location,
@@ -241,7 +216,7 @@ const CalendarBase: React.FC<CalendarBaseProps> = ({ initialDate, onlyView }) =>
           }}
           defaultValues={{
             startDate: moment(selectedSlot.start).format("YYYY-MM-DD"),
-            endDate: moment(selectedSlot.end).format("YYYY-MM-DD"),
+            endDate: moment(selectedSlot.end).subtract(1, "day").format("YYYY-MM-DD"),
           }}
         />
       )}
