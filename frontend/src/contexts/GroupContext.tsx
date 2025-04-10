@@ -1,4 +1,4 @@
-// File: /frontend/src/contexts/GroupContext.tsx
+// /frontend/src/contexts/GroupContext.tsx
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
 import { useSocket } from "./SocketContext";
