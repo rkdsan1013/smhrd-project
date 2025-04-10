@@ -135,7 +135,6 @@ const CalendarBase: React.FC<CalendarBaseProps> = ({ initialDate, onlyView }) =>
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrev}
-              // 가운데 정렬 및 호버 효과 추가
               className="w-10 h-10 bg-indigo-600 rounded-full shadow text-white flex items-center justify-center transition-colors duration-300 hover:bg-indigo-500"
             >
               <Icons name="angleLeft" className="w-5 h-5" />
@@ -150,42 +149,44 @@ const CalendarBase: React.FC<CalendarBaseProps> = ({ initialDate, onlyView }) =>
             </button>
             <button
               onClick={handleNext}
-              // 가운데 정렬 및 호버 효과 추가
               className="w-10 h-10 bg-indigo-600 rounded-full shadow text-white flex items-center justify-center transition-colors duration-300 hover:bg-indigo-500"
             >
               <Icons name="angleRight" className="w-5 h-5" />
             </button>
           </div>
-          <div className="flex gap-2 items-center">
-            <div className="hidden md:flex gap-2">
-              {(Object.keys(messages) as View[]).map((view) => (
-                <button
-                  key={view}
-                  onClick={() => setCurrentView(view)}
-                  className={`px-4 py-1 rounded-full font-medium transition ${
-                    view === currentView
-                      ? "bg-white text-indigo-600 shadow"
-                      : "hover:bg-white hover:text-indigo-600"
-                  }`}
-                >
-                  {messages[view] ?? view}
-                </button>
-              ))}
-            </div>
-            <div className="md:hidden">
-              <select
-                className="text-indigo-600 bg-white rounded-md py-1 px-2"
-                value={currentView}
-                onChange={(e) => setCurrentView(e.target.value as View)}
-              >
+
+          {!onlyView && (
+            <div className="flex gap-2 items-center">
+              <div className="hidden md:flex gap-2">
                 {(Object.keys(messages) as View[]).map((view) => (
-                  <option key={view} value={view}>
+                  <button
+                    key={view}
+                    onClick={() => setCurrentView(view)}
+                    className={`px-4 py-1 rounded-full font-medium transition ${
+                      view === currentView
+                        ? "bg-white text-indigo-600 shadow"
+                        : "hover:bg-white hover:text-indigo-600"
+                    }`}
+                  >
                     {messages[view] ?? view}
-                  </option>
+                  </button>
                 ))}
-              </select>
+              </div>
+              <div className="md:hidden">
+                <select
+                  className="text-indigo-600 bg-white rounded-md py-1 px-2"
+                  value={currentView}
+                  onChange={(e) => setCurrentView(e.target.value as View)}
+                >
+                  {(Object.keys(messages) as View[]).map((view) => (
+                    <option key={view} value={view}>
+                      {messages[view] ?? view}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </header>
 
@@ -196,13 +197,13 @@ const CalendarBase: React.FC<CalendarBaseProps> = ({ initialDate, onlyView }) =>
               <DnDCalendar
                 localizer={localizer}
                 events={events}
-                startAccessor={(e: any) => e.start}
-                endAccessor={(e: any) => e.end}
+                startAccessor={(event: object) => (event as CalendarEvent).start}
+                endAccessor={(event: object) => (event as CalendarEvent).end}
                 view={currentView}
                 date={currentDate}
                 onNavigate={setCurrentDate}
                 onView={(v) => !onlyView && setCurrentView(v)}
-                views={Object.keys(messages) as View[]}
+                views={onlyView ? [onlyView] : (Object.keys(messages) as View[])}
                 toolbar={false}
                 selectable
                 resizable
