@@ -48,12 +48,12 @@ const VoteList: React.FC<VoteListProps> = ({ groupUuid, currentUserUuid }) => {
   return (
     <div className="h-full flex flex-col">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">여행 투표</h2>
+        <h2 className="text-xl font-bold">여행 일정</h2>
         <button
           onClick={() => setIsModalOpen(true)}
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
         >
-          투표 생성
+          일정 생성
         </button>
       </div>
       <div className="flex-1 overflow-y-auto">
