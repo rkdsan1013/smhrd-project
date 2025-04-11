@@ -40,9 +40,19 @@ const ScheduleListView = forwardRef<ScheduleListViewHandle, ScheduleListViewProp
     }, [schedules, filterType]);
 
     const sortedSchedules = useMemo<Schedule[]>(() => {
-      return [...filteredSchedules].sort(
-        (a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime(),
-      );
+      return [...filteredSchedules].sort((a, b) => {
+        const aStart = new Date(a.start_time);
+        const bStart = new Date(b.start_time);
+        // 만약 시작일(연, 월, 일)이 같다면 종료 시간이 빠른 순으로 정렬
+        if (
+          aStart.getFullYear() === bStart.getFullYear() &&
+          aStart.getMonth() === bStart.getMonth() &&
+          aStart.getDate() === bStart.getDate()
+        ) {
+          return new Date(a.end_time).getTime() - new Date(b.end_time).getTime();
+        }
+        return aStart.getTime() - bStart.getTime();
+      });
     }, [filteredSchedules]);
 
     const itemRefs = useRef<Array<HTMLDivElement | null>>([]);
