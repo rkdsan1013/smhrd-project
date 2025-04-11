@@ -1,4 +1,5 @@
 // /backend/src/models/voteModel.js
+
 const pool = require("../config/db");
 const voteQueries = require("./voteQueries");
 const voteTransactions = require("./voteTransactions");

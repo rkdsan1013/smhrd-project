@@ -1,4 +1,5 @@
 // /backend/src/controllers/voteController.js
+
 const voteModel = require("../models/voteModel");
 
 const createTravelVote = async (req, res, next) => {

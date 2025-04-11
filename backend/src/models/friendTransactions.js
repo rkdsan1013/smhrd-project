@@ -1,5 +1,4 @@
 // /backend/src/models/friendTransactions.js
-// 친구 요청 수락 트랜잭션 처리
 
 const acceptFriendRequest = async (dbPool, receiverUuid, requesterUuid) => {
   const connection = await dbPool.getConnection();

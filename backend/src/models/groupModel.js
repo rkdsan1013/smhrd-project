@@ -1,4 +1,4 @@
-// File: /backend/src/models/groupModel.js
+// /backend/src/models/groupModel.js
 
 const pool = require("../config/db");
 const groupQueries = require("./groupQueries");

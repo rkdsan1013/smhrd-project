@@ -1,4 +1,5 @@
 // /backend/src/models/voteQueries.js
+
 const INSERT_TRAVEL_VOTE = `
   INSERT INTO travel_votes (
     group_uuid, creator_uuid, location, start_date, end_date,

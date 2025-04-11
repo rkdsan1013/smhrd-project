@@ -1,5 +1,4 @@
 // /backend/src/models/userTransactions.js
-// 회원가입 트랜잭션: 사용자 및 프로필 생성
 
 const userQueries = require("./userQueries");
 

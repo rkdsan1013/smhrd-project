@@ -1,4 +1,5 @@
 // /backend/src/models/voteTransactions.js
+
 const voteQueries = require("./voteQueries");
 
 const createTravelVote = async (
