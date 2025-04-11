@@ -1,5 +1,4 @@
 // /frontend/src/components/Calendar.tsx
-
 import React, { useState, useMemo, useEffect } from "react";
 import { Calendar as RBCalendar, momentLocalizer, View, SlotInfo } from "react-big-calendar";
 import moment from "moment";
@@ -11,6 +10,7 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import Icons from "./Icons";
 import ScheduleAllDayModal from "./ScheduleAllDayModal";
 import ScheduleDetailModal from "./ScheduleDetailModal";
+import ScheduleListView from "./ScheduleListView";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSchedule, Schedule } from "../contexts/ScheduleContext";
 
@@ -256,57 +256,61 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
         <DndProvider backend={HTML5Backend}>
           <AnimatePresence mode="wait">
             <motion.div key={currentView} {...motionVariants} className="h-full overflow-y-auto">
-              <DnDCalendar
-                localizer={localizer}
-                culture="ko"
-                events={filteredEvents}
-                startAccessor={(schedule: object) => (schedule as Schedule).start_time}
-                endAccessor={(schedule: object) => (schedule as Schedule).end_time}
-                view={currentView}
-                date={currentDate}
-                onNavigate={setCurrentDate}
-                onView={(v) => !isFixedView && setCurrentView(v as any)}
-                views={isFixedView ? [currentView] : allowedViewKeys}
-                toolbar={false}
-                selectable={isEditable}
-                resizable={isEditable}
-                scrollToTime={scrollToTime}
-                eventPropGetter={(event: object) => {
-                  const schedule = event as Schedule;
-                  const backgroundColor = schedule.type === "personal" ? "#2563eb" : "#16a34a";
-                  return {
-                    style: {
-                      backgroundColor,
-                      borderRadius: "0.375rem",
-                      opacity: 0.9,
-                      color: "white",
-                      border: "none",
-                      display: "block",
-                    },
-                  };
-                }}
-                messages={messages}
-                formats={formats}
-                onSelectSlot={isEditable ? handleSelectSlot : undefined}
-                onEventDrop={
-                  isEditable
-                    ? ({ event, start, end }: any) =>
-                        updateSchedule((event as Schedule).uuid, {
-                          start_time: start,
-                          end_time: end,
-                        })
-                    : undefined
-                }
-                onEventResize={
-                  isEditable
-                    ? ({ event, start, end }: any) =>
-                        updateSchedule((event as Schedule).uuid, {
-                          start_time: start,
-                          end_time: end,
-                        })
-                    : undefined
-                }
-              />
+              {currentView === "agenda" ? (
+                <ScheduleListView filterType={filterType} />
+              ) : (
+                <DnDCalendar
+                  localizer={localizer}
+                  culture="ko"
+                  events={filteredEvents}
+                  startAccessor={(schedule: object) => (schedule as Schedule).start_time}
+                  endAccessor={(schedule: object) => (schedule as Schedule).end_time}
+                  view={currentView}
+                  date={currentDate}
+                  onNavigate={setCurrentDate}
+                  onView={(v) => !isFixedView && setCurrentView(v as any)}
+                  views={isFixedView ? [currentView] : allowedViewKeys}
+                  toolbar={false}
+                  selectable={isEditable}
+                  resizable={isEditable}
+                  scrollToTime={scrollToTime}
+                  eventPropGetter={(event: object) => {
+                    const schedule = event as Schedule;
+                    const backgroundColor = schedule.type === "personal" ? "#2563eb" : "#16a34a";
+                    return {
+                      style: {
+                        backgroundColor,
+                        borderRadius: "0.375rem",
+                        opacity: 0.9,
+                        color: "white",
+                        border: "none",
+                        display: "block",
+                      },
+                    };
+                  }}
+                  messages={messages}
+                  formats={formats}
+                  onSelectSlot={isEditable ? handleSelectSlot : undefined}
+                  onEventDrop={
+                    isEditable
+                      ? ({ event, start, end }: any) =>
+                          updateSchedule((event as Schedule).uuid, {
+                            start_time: start,
+                            end_time: end,
+                          })
+                      : undefined
+                  }
+                  onEventResize={
+                    isEditable
+                      ? ({ event, start, end }: any) =>
+                          updateSchedule((event as Schedule).uuid, {
+                            start_time: start,
+                            end_time: end,
+                          })
+                      : undefined
+                  }
+                />
+              )}
             </motion.div>
           </AnimatePresence>
         </DndProvider>
