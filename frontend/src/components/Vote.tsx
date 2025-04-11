@@ -65,87 +65,119 @@ export const VoteModal: React.FC<VoteModalProps> = ({ groupUuid, onClose, onVote
 
   return ReactDOM.createPortal(
     <div className="fixed inset-0 flex items-center justify-center z-50">
+      {/* Background Overlay */}
       <div
         className={`absolute inset-0 bg-black/60 transition-opacity duration-300 ${
           isVisible ? "opacity-100" : "opacity-0"
         }`}
+        onClick={handleClose}
       ></div>
+
+      {/* Modal Container */}
       <div
-        className={`relative bg-white rounded-lg shadow-xl w-96 transition-opacity duration-300 ${
-          isVisible ? "opacity-100" : "opacity-0"
+        className={`relative bg-white rounded-xl shadow-2xl w-full max-w-md transform transition-all duration-300 ${
+          isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"
         }`}
       >
-        <div className="flex justify-between items-center p-4 border-b border-gray-200">
-          <h2 className="text-xl font-bold">여행 투표 생성</h2>
+        {/* Header */}
+        <div className="flex justify-between items-center p-5 border-b border-gray-200">
+          <h2 className="text-2xl font-semibold text-gray-800">여행 투표 생성</h2>
           <button
             onClick={handleClose}
-            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-300"
+            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors duration-200"
           >
-            <Icons name="close" className="w-6 h-6 text-gray-600" />
+            <Icons name="close" className="w-6 h-6 text-gray-500" />
           </button>
         </div>
-        <div className="p-6">
-          <div className="space-y-4">
+
+        {/* Content */}
+        <div className="p-6 space-y-5">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">여행지</label>
             <input
               type="text"
               name="location"
-              placeholder="여행지"
+              placeholder="예: 서울"
               value={formData.location}
               onChange={handleChange}
-              className="w-full p-2 border rounded"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
             />
-            <input
-              type="date"
-              name="startDate"
-              value={formData.startDate}
-              onChange={handleChange}
-              className="w-full p-2 border rounded"
-            />
-            <input
-              type="date"
-              name="endDate"
-              value={formData.endDate}
-              onChange={handleChange}
-              className="w-full p-2 border rounded"
-            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">여행 시작일</label>
+              <input
+                type="date"
+                name="startDate"
+                value={formData.startDate}
+                onChange={handleChange}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">여행 종료일</label>
+              <input
+                type="date"
+                name="endDate"
+                value={formData.endDate}
+                onChange={handleChange}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">인원 수 (선택)</label>
             <input
               type="number"
               name="headcount"
-              placeholder="인원 수"
+              placeholder="예: 5"
               value={formData.headcount}
               onChange={handleChange}
-              className="w-full p-2 border rounded"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">투표 마감 시간</label>
             <input
               type="datetime-local"
               name="voteDeadline"
               value={formData.voteDeadline}
               onChange={handleChange}
-              className="w-full p-2 border rounded"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">설명 (선택)</label>
             <textarea
               name="description"
-              placeholder="설명"
+              placeholder="여행 계획에 대한 간단한 설명"
               value={formData.description}
               onChange={handleChange}
-              className="w-full p-2 border rounded"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 resize-none h-24"
             />
-            {error && <p className="text-red-500">{error}</p>}
           </div>
+
+          {error && <p className="text-red-600 text-sm font-medium">{error}</p>}
         </div>
-        <div className="p-4 border-t border-gray-200">
-          <div className="grid grid-cols-2 gap-2">
+
+        {/* Footer */}
+        <div className="p-5 border-t border-gray-200">
+          <div className="grid grid-cols-2 gap-3">
             <button
               onClick={handleClose}
-              className="h-10 w-full bg-gray-300 rounded-lg hover:bg-gray-400"
+              className="h-11 w-full bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors duration-200 font-medium"
             >
-              <span className="text-gray-800 text-sm">취소</span>
+              취소
             </button>
             <button
               onClick={handleSubmit}
-              className="h-10 w-full bg-green-500 rounded-lg hover:bg-green-600"
+              className="h-11 w-full bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium"
             >
-              <span className="text-white text-sm">생성</span>
+              투표 생성
             </button>
           </div>
         </div>
@@ -155,7 +187,7 @@ export const VoteModal: React.FC<VoteModalProps> = ({ groupUuid, onClose, onVote
   );
 };
 
-export const VoteItem: React.FC<VoteItemProps> = ({ vote, currentUserUuid, onVoteUpdated }) => {
+export const VoteItem: React.FC<VoteItemProps> = ({ vote, onVoteUpdated }) => {
   const handleParticipate = async () => {
     try {
       await participateInTravelVote(vote.uuid, !vote.has_participated);
@@ -166,22 +198,33 @@ export const VoteItem: React.FC<VoteItemProps> = ({ vote, currentUserUuid, onVot
   };
 
   return (
-    <div className="p-4 mb-4 border rounded-lg shadow-sm">
-      <h3 className="text-lg font-semibold">{vote.location}</h3>
-      <p>
-        기간: {vote.start_date} ~ {vote.end_date}
-      </p>
-      {vote.headcount && <p>인원: {vote.headcount}명</p>}
-      <p>마감: {vote.vote_deadline}</p>
-      {vote.description && <p>{vote.description}</p>}
-      <p>참여자: {vote.participant_count}명</p>
+    <div className="p-5 mb-4 border border-gray-200 rounded-xl shadow-md bg-white hover:shadow-lg transition-shadow duration-200">
+      <h3 className="text-xl font-semibold text-gray-800">{vote.location}</h3>
+      <div className="mt-2 space-y-2 text-gray-600">
+        <p>
+          <span className="font-medium text-blue-600">여행 기간:</span> {vote.start_date} ~{" "}
+          {vote.end_date}
+        </p>
+        {vote.headcount && (
+          <p>
+            <span className="font-medium text-blue-600">인원:</span> {vote.headcount}명
+          </p>
+        )}
+        <p>
+          <span className="font-medium text-red-600">투표 마감:</span> {vote.vote_deadline}
+        </p>
+        {vote.description && <p className="text-gray-500 italic">{vote.description}</p>}
+        <p>
+          <span className="font-medium">참여자:</span> {vote.participant_count}명
+        </p>
+      </div>
       <button
         onClick={handleParticipate}
-        className={`mt-2 px-4 py-2 rounded ${
+        className={`mt-4 px-5 py-2 rounded-lg font-medium text-white transition-colors duration-200 ${
           vote.has_participated ? "bg-red-500 hover:bg-red-600" : "bg-green-500 hover:bg-green-600"
-        } text-white`}
+        }`}
       >
-        {vote.has_participated ? "참여 취소" : "참여"}
+        {vote.has_participated ? "참여 취소" : "참여하기"}
       </button>
     </div>
   );
