@@ -6,6 +6,7 @@ import { SocketProvider } from "./SocketContext";
 import { FriendProvider } from "./FriendContext";
 import { GroupProvider } from "./GroupContext";
 import { NotificationProvider } from "./NotificationContext";
+import { ScheduleProvider } from "./ScheduleContext"; // ScheduleProvider 추가
 
 interface AppProvidersProps {
   children: React.ReactNode;
@@ -17,7 +18,9 @@ const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
       <SocketProvider>
         <FriendProvider>
           <GroupProvider>
-            <NotificationProvider>{children}</NotificationProvider>
+            <NotificationProvider>
+              <ScheduleProvider>{children}</ScheduleProvider>
+            </NotificationProvider>
           </GroupProvider>
         </FriendProvider>
       </SocketProvider>

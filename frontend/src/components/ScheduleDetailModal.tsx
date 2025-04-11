@@ -2,7 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
+import moment from "moment";
 import Icons from "./Icons";
+import ScheduleService from "../services/scheduleService";
 
 interface DefaultValues {
   detailDate: string;
@@ -12,22 +14,10 @@ interface DefaultValues {
 
 interface ScheduleDetailModalProps {
   onClose: () => void;
-  onSubmit: (data: {
-    title: string;
-    description: string;
-    location: string;
-    detailDate: string;
-    startTime: string;
-    endTime: string;
-  }) => void;
   defaultValues?: DefaultValues;
 }
 
-const ScheduleDetailModal: React.FC<ScheduleDetailModalProps> = ({
-  onClose,
-  onSubmit,
-  defaultValues,
-}) => {
+const ScheduleDetailModal: React.FC<ScheduleDetailModalProps> = ({ onClose, defaultValues }) => {
   const [isVisible, setIsVisible] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -55,9 +45,31 @@ const ScheduleDetailModal: React.FC<ScheduleDetailModalProps> = ({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = () => {
-    onSubmit(formData);
-    handleModalClose();
+  const handleSubmit = async () => {
+    try {
+      // 날짜와 시간을 결합하여 MySQL DATETIME 형식 "YYYY-MM-DD HH:mm:ss"로 변환
+      const start_time = moment(`${formData.detailDate}T${formData.startTime}`).format(
+        "YYYY-MM-DD HH:mm:ss",
+      );
+      const end_time = moment(`${formData.detailDate}T${formData.endTime}`).format(
+        "YYYY-MM-DD HH:mm:ss",
+      );
+
+      const scheduleData = {
+        title: formData.title,
+        description: formData.description,
+        location: formData.location,
+        start_time,
+        end_time,
+        type: "personal" as "personal",
+      };
+
+      await ScheduleService.createSchedule(scheduleData);
+      handleModalClose();
+    } catch (error) {
+      console.error("Error creating detailed schedule:", error);
+      alert("일정 생성에 실패했습니다.");
+    }
   };
 
   return ReactDOM.createPortal(

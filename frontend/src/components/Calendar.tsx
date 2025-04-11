@@ -1,18 +1,19 @@
 // /frontend/src/components/Calendar.tsx
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Calendar as RBCalendar, momentLocalizer, View, SlotInfo } from "react-big-calendar";
 import moment from "moment";
 import withDragAndDrop from "react-big-calendar/lib/addons/dragAndDrop";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { v4 as uuidv4 } from "uuid";
 import "moment/locale/ko";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import Icons from "./Icons";
 import ScheduleAllDayModal from "./ScheduleAllDayModal";
 import ScheduleDetailModal from "./ScheduleDetailModal";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSchedule, Schedule } from "../contexts/ScheduleContext";
+// import ScheduleService from "../services/ScheduleService"; // 제거: 사용되지 않음
 
 // 애니메이션 설정
 const motionVariants = {
@@ -39,18 +40,7 @@ const viewLabels: Record<"month" | "week" | "day" | "agenda", string> = {
   agenda: "일정",
 };
 
-// 캘린더 이벤트 인터페이스
-export interface CalendarEvent {
-  uuid: string;
-  title: string;
-  start: Date;
-  end: Date;
-  type: "personal" | "group";
-  description?: string;
-  location?: string;
-}
-
-// react-big-calendar용 메시지 객체
+// react-big-calendar 메시지 객체
 const messages: any = {
   allDay: "종일",
   date: "날짜",
@@ -64,11 +54,11 @@ const messages: any = {
   showMore: (total: number) => `+ ${total}개 일정 더 보기...`,
 };
 
-// 헬퍼 함수: 시간 포맷을 "A hh:mm" 형식으로 변환한 후 오전/오후를 한글로 치환 (예: "오전 05:30")
+// 시간 포맷 헬퍼 함수
 const formatKoreanTime = (date: Date, formatStr: string = "A hh:mm") =>
   moment(date).format(formatStr).replace(/AM/g, "오전").replace(/PM/g, "오후");
 
-// react-big-calendar의 날짜/시간 포맷 설정 객체
+// react-big-calendar 날짜/시간 포맷 설정 객체
 const formats = {
   dateFormat: "D",
   dayFormat: "D일",
@@ -80,26 +70,19 @@ const formats = {
     })`,
   dayRangeHeaderFormat: ({ start, end }: { start: Date; end: Date }) =>
     `${moment(start).format("YYYY.MM.DD")} ~ ${moment(end).format("YYYY.MM.DD")}`,
-  // Agenda: 날짜 포맷 (예: "04/10 (목)")
   agendaDateFormat: (date: Date) => {
     const formatted = moment(date).format("MM/DD");
     const dayAbbr = ["일", "월", "화", "수", "목", "금", "토"][date.getDay()];
     return `${formatted} (${dayAbbr})`;
   },
-  // Agenda: 단일 시간 포맷 (예: "오전 05:30")
   agendaTimeFormat: (date: Date) => formatKoreanTime(date),
-  // Agenda: 시간 범위 포맷 (예: "오전 05:30 - 오전 11:30")
   agendaTimeRangeFormat: ({ start, end }: { start: Date; end: Date }) =>
     `${formatKoreanTime(start)} - ${formatKoreanTime(end)}`,
-  // Agenda 헤더 (참고용)
   agendaHeaderFormat: () => `날짜       시간       일정`,
-  // 월, 주, 일 뷰의 시간 포맷
   timeGutterFormat: (date: Date) => formatKoreanTime(date),
   slotLabelFormat: (date: Date) => formatKoreanTime(date),
-  // 이벤트 막대기 시간 범위 포맷
   eventTimeRangeFormat: ({ start, end }: { start: Date; end: Date }) =>
     `${formatKoreanTime(start)} - ${formatKoreanTime(end)}`,
-  // 선택 영역 시간 범위 포맷
   selectRangeFormat: ({ start, end }: { start: Date; end: Date }) =>
     `${formatKoreanTime(start)} ~ ${formatKoreanTime(end)}`,
 };
@@ -111,21 +94,37 @@ export interface CalendarProps {
 }
 
 const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "read" }) => {
-  // 기본 뷰: view prop이 "all"인 경우 "month", 그렇지 않으면 전달된 뷰 사용
   const [currentView, setCurrentView] = useState<"month" | "week" | "day" | "agenda">(
     view === "all" ? "month" : (view as "month" | "week" | "day" | "agenda"),
   );
   const [currentDate, setCurrentDate] = useState(initialDate || new Date());
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [filterType, setFilterType] = useState<"all" | "personal" | "group">("all");
   const [showAllDayModal, setShowAllDayModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<SlotInfo | null>(null);
 
+  // useSchedule에서 필요한 함수들만 구조 분해 (createSchedule은 여기서 사용하지 않음)
+  const { schedules, updateSchedule, refreshSchedules } = useSchedule();
+
   const isEditable = mode === "edit";
   const isFixedView = view !== "all";
 
-  // 날짜 이동 함수: 주 단위 이동은 Agenda 뷰 외 기본적으로 월/일/주 단위로 처리
+  // 백엔드로부터 일정 목록을 새로 불러오는 함수
+  const updateSchedules = async () => {
+    try {
+      await refreshSchedules();
+    } catch (error) {
+      console.error("Error refreshing schedules:", error);
+    }
+  };
+
+  // 컴포넌트 마운트 시 일정 목록 로드
+  useEffect(() => {
+    updateSchedules();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 날짜 이동 기능
   const shiftDate = (
     date: Date,
     view: "month" | "week" | "day" | "agenda",
@@ -155,40 +154,20 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
       : setShowDetailModal(true);
   };
 
-  const updateEvent = (uuid: string, start: Date, end: Date) =>
-    setEvents((prev) => prev.map((e) => (e.uuid === uuid ? { ...e, start, end } : e)));
-
-  const handleEventDrop = ({ event, start, end }: any) => updateEvent(event.uuid, start, end);
-  const handleEventResize = ({ event, start, end }: any) => updateEvent(event.uuid, start, end);
-
-  const eventStyleGetter = (event: object): { style: React.CSSProperties } => {
-    const calendarEvent = event as CalendarEvent;
-    const backgroundColor = calendarEvent.type === "personal" ? "#2563eb" : "#16a34a";
-    return {
-      style: {
-        backgroundColor,
-        borderRadius: "0.375rem",
-        opacity: 0.9,
-        color: "white",
-        border: "none",
-        display: "block",
-      },
-    };
-  };
-
+  // react-big-calendar에 넘길 scrollToTime 계산
   const scrollToTime = useMemo(() => {
     const today = moment().startOf("day");
-    const todayEvents = events.filter((e) => moment(e.start).isSame(today, "day"));
+    const todayEvents = schedules.filter((s) => moment(s.start_time).isSame(today, "day"));
     if (todayEvents.length > 0) {
-      const earliest = todayEvents.reduce((a, b) => (a.start < b.start ? a : b));
-      return new Date(earliest.start);
+      const earliest = todayEvents.reduce((a, b) => (a.start_time < b.start_time ? a : b));
+      return new Date(earliest.start_time);
     }
     return moment(currentDate).set({ hour: 9, minute: 0 }).toDate();
-  }, [events, currentView, currentDate]);
+  }, [schedules, currentDate]);
 
   const filteredEvents = useMemo(
-    () => (filterType === "all" ? events : events.filter((e) => e.type === filterType)),
-    [events, filterType],
+    () => (filterType === "all" ? schedules : schedules.filter((s) => s.type === filterType)),
+    [schedules, filterType],
   );
 
   return (
@@ -217,7 +196,6 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
               <Icons name="angleRight" className="w-5 h-5" />
             </button>
           </div>
-          {/* 뷰가 고정되어 있지 않을 경우에만 뷰 전환 UI를 렌더링 */}
           {!isFixedView && (
             <div className="flex gap-2 items-center">
               <div className="hidden md:flex gap-2">
@@ -253,7 +231,6 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
             </div>
           )}
         </div>
-
         <div className="flex gap-2 mt-2 justify-start">
           {(["all", "personal", "group"] as const).map((type) => (
             <button
@@ -270,7 +247,6 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
           ))}
         </div>
       </header>
-
       <div className="flex-1 overflow-hidden">
         <DndProvider backend={HTML5Backend}>
           <AnimatePresence mode="wait">
@@ -279,8 +255,8 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
                 localizer={localizer}
                 culture="ko"
                 events={filteredEvents}
-                startAccessor={(event: object) => (event as CalendarEvent).start}
-                endAccessor={(event: object) => (event as CalendarEvent).end}
+                startAccessor={(schedule: object) => (schedule as Schedule).start_time}
+                endAccessor={(schedule: object) => (schedule as Schedule).end_time}
                 view={currentView}
                 date={currentDate}
                 onNavigate={setCurrentDate}
@@ -290,34 +266,51 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
                 selectable={isEditable}
                 resizable={isEditable}
                 scrollToTime={scrollToTime}
-                eventPropGetter={eventStyleGetter}
+                eventPropGetter={(event: object) => {
+                  const schedule = event as Schedule;
+                  const backgroundColor = schedule.type === "personal" ? "#2563eb" : "#16a34a";
+                  return {
+                    style: {
+                      backgroundColor,
+                      borderRadius: "0.375rem",
+                      opacity: 0.9,
+                      color: "white",
+                      border: "none",
+                      display: "block",
+                    },
+                  };
+                }}
                 messages={messages}
                 formats={formats}
                 onSelectSlot={isEditable ? handleSelectSlot : undefined}
-                onEventDrop={isEditable ? handleEventDrop : undefined}
-                onEventResize={isEditable ? handleEventResize : undefined}
+                onEventDrop={
+                  isEditable
+                    ? ({ event, start, end }: any) =>
+                        updateSchedule((event as Schedule).uuid, {
+                          start_time: start,
+                          end_time: end,
+                        })
+                    : undefined
+                }
+                onEventResize={
+                  isEditable
+                    ? ({ event, start, end }: any) =>
+                        updateSchedule((event as Schedule).uuid, {
+                          start_time: start,
+                          end_time: end,
+                        })
+                    : undefined
+                }
               />
             </motion.div>
           </AnimatePresence>
         </DndProvider>
       </div>
-
       {isEditable && showAllDayModal && selectedSlot && (
         <ScheduleAllDayModal
-          onClose={() => setShowAllDayModal(false)}
-          onSubmit={(data) => {
-            setEvents((prev) => [
-              ...prev,
-              {
-                uuid: uuidv4(),
-                title: data.title,
-                start: new Date(data.startDate),
-                end: moment(data.endDate).add(1, "day").toDate(),
-                type: "personal",
-                description: data.description,
-                location: data.location,
-              },
-            ]);
+          onClose={() => {
+            setShowAllDayModal(false);
+            updateSchedules();
           }}
           defaultValues={{
             startDate: moment(selectedSlot.start).format("YYYY-MM-DD"),
@@ -325,25 +318,11 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
           }}
         />
       )}
-
       {isEditable && showDetailModal && selectedSlot && (
         <ScheduleDetailModal
-          onClose={() => setShowDetailModal(false)}
-          onSubmit={(data) => {
-            const start = new Date(`${data.detailDate}T${data.startTime}`);
-            const end = new Date(`${data.detailDate}T${data.endTime}`);
-            setEvents((prev) => [
-              ...prev,
-              {
-                uuid: uuidv4(),
-                title: data.title,
-                start,
-                end,
-                type: "personal",
-                description: data.description,
-                location: data.location,
-              },
-            ]);
+          onClose={() => {
+            setShowDetailModal(false);
+            updateSchedules();
           }}
           defaultValues={{
             detailDate: moment(selectedSlot.start).format("YYYY-MM-DD"),

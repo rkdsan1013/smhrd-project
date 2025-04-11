@@ -2,7 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
+import moment from "moment";
 import Icons from "./Icons";
+import ScheduleService from "../services/scheduleService";
 
 interface DefaultValues {
   startDate: string;
@@ -11,21 +13,10 @@ interface DefaultValues {
 
 interface ScheduleAllDayModalProps {
   onClose: () => void;
-  onSubmit: (data: {
-    title: string;
-    description: string;
-    location: string;
-    startDate: string;
-    endDate: string;
-  }) => void;
   defaultValues?: DefaultValues;
 }
 
-const ScheduleAllDayModal: React.FC<ScheduleAllDayModalProps> = ({
-  onClose,
-  onSubmit,
-  defaultValues,
-}) => {
+const ScheduleAllDayModal: React.FC<ScheduleAllDayModalProps> = ({ onClose, defaultValues }) => {
   const [isVisible, setIsVisible] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -52,9 +43,26 @@ const ScheduleAllDayModal: React.FC<ScheduleAllDayModalProps> = ({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = () => {
-    onSubmit(formData);
-    handleModalClose();
+  const handleSubmit = async () => {
+    try {
+      // 변환: MySQL DATETIME 형식 "YYYY-MM-DD HH:mm:ss"로 포맷
+      // 종일 일정의 경우, 사용자가 입력한 종료 날짜를 포함하는 범위로 보고,
+      // 종료 날짜에 1일을 더해 Exclusive 종료 시간을 생성합니다.
+      const scheduleData = {
+        title: formData.title,
+        description: formData.description,
+        location: formData.location,
+        start_time: moment(formData.startDate).format("YYYY-MM-DD HH:mm:ss"),
+        end_time: moment(formData.endDate).add(1, "day").format("YYYY-MM-DD HH:mm:ss"),
+        type: "personal" as "personal",
+      };
+
+      await ScheduleService.createSchedule(scheduleData);
+      handleModalClose();
+    } catch (error) {
+      console.error("Error creating all-day schedule:", error);
+      alert("일정 생성에 실패했습니다.");
+    }
   };
 
   return ReactDOM.createPortal(
@@ -89,6 +97,7 @@ const ScheduleAllDayModal: React.FC<ScheduleAllDayModalProps> = ({
             placeholder="일정 제목"
             className="w-full border px-3 py-2 rounded-md"
           />
+
           <div className="flex gap-2">
             <input
               type="date"
@@ -105,6 +114,7 @@ const ScheduleAllDayModal: React.FC<ScheduleAllDayModalProps> = ({
               className="w-1/2 border px-3 py-2 rounded-md"
             />
           </div>
+
           <input
             type="text"
             name="location"
@@ -113,6 +123,7 @@ const ScheduleAllDayModal: React.FC<ScheduleAllDayModalProps> = ({
             placeholder="장소"
             className="w-full border px-3 py-2 rounded-md"
           />
+
           <textarea
             name="description"
             value={formData.description}
