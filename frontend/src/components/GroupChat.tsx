@@ -92,10 +92,10 @@ const GroupChat: React.FC<GroupChatProps> = ({ roomUuid, currentUserUuid, roomNa
                 <img
                   src={msg.sender_picture}
                   alt={msg.sender_name}
-                  className="w-8 h-8 rounded-full object-cover mt-1"
+                  className="w-10 h-10 rounded-full object-cover mt-1" // 아이콘 크기 키움
                 />
               ) : (
-                <div className="w-8 h-8 bg-gray-300 rounded-full mt-1" />
+                <div className="w-10 h-10 bg-gray-300 rounded-full mt-1" /> // 아이콘 크기 키움
               )}
               <div className="bg-gray-100 px-3 py-2 rounded-lg max-w-[70%] break-words">
                 <p className="text-xs text-gray-500 mb-1 truncate">{msg.sender_name}</p>

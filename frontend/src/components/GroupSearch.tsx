@@ -28,8 +28,8 @@ const GroupSearch: React.FC = () => {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">그룹 검색</h1>
-      <div className="flex items-center gap-2 mb-4">
+      <h1 className="text-2xl font-bold mb-6">그룹 검색</h1>
+      <div className="flex items-center gap-2 mb-6">
         <input
           type="text"
           value={searchKeyword}
@@ -54,14 +54,14 @@ const GroupSearch: React.FC = () => {
       ) : searchResults.length === 0 ? (
         <p className="text-center text-gray-500">검색 결과가 없습니다.</p>
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-y-4">
           {searchResults.map((group) => (
             <li
               key={group.uuid}
-              className="flex items-center justify-between p-3 border rounded hover:bg-gray-100 transition cursor-pointer"
+              className="flex items-center p-4 bg-white rounded-xl shadow-sm hover:shadow-md transition cursor-pointer"
               onClick={() => setSelectedGroup(group)}
             >
-              <div className="flex items-center gap-3">
+              <div className="flex-shrink-0">
                 {group.group_icon ? (
                   <img
                     src={group.group_icon}
@@ -71,10 +71,13 @@ const GroupSearch: React.FC = () => {
                 ) : (
                   <div className="w-12 h-12 bg-gray-300 rounded-full" />
                 )}
-                <div>
-                  <p className="font-semibold">{group.name}</p>
-                  <p className="text-sm text-gray-500">{group.description}</p>
-                </div>
+              </div>
+              <div className="ml-4 flex-grow">
+                <p className="font-semibold text-gray-800">{group.name}</p>
+                <p className="text-sm text-gray-500">{group.description}</p>
+              </div>
+              <div>
+                <Icons name="chevron-right" className="w-6 h-6 text-gray-400" />
               </div>
             </li>
           ))}
