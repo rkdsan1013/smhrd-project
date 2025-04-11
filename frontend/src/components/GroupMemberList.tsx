@@ -252,7 +252,7 @@ const GroupMemberList: React.FC<GroupMemberListProps> = ({ groupUuid }) => {
       <div className="mt-4 border-t border-gray-300 pt-4">
         <button
           onClick={handleToggleInviteMode}
-          className="w-full inline-flex justify-center items-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition-colors duration-300"
+          className="w-full inline-flex justify-center items-center bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md transition-colors duration-300"
         >
           {inviteMode ? "취소" : "초대"}
         </button>
