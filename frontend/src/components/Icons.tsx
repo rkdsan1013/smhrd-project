@@ -379,6 +379,22 @@ const Icons: React.FC<IconProps> = ({ name, className }) => {
         />
       </svg>
     ),
+    vote: (
+      <svg
+        className={defaultClass || "w-6 h-6 text-gray-800"}
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M3 10h18M7 10V5a1 1 0 011-1h8a1 1 0 011 1v5M5 10v10a1 1 0 001 1h12a1 1 0 001-1V10"
+        />
+      </svg>
+    ),
   };
 
   if (!iconMap[name]) {

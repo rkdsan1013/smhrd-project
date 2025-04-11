@@ -7,6 +7,8 @@ import GroupAnnouncement from "./GroupAnnouncement";
 import GroupCalendar from "./GroupCalendar";
 import GroupSettings from "./GroupSettings";
 import GroupMemberList from "./GroupMemberList";
+import VoteList from "./VoteList";
+
 import Icons from "./Icons";
 import { getGroupChatRoomUuid } from "../services/groupService";
 
@@ -16,7 +18,7 @@ interface GroupRoomProps {
   groupName: string;
 }
 
-type TabType = "announcement" | "calendar" | "chat" | "settings";
+type TabType = "announcement" | "calendar" | "chat" | "settings" | "vote"; // ✅ 추가
 
 const motionVariants = {
   initial: { opacity: 0, x: 50 },
@@ -109,6 +111,13 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
           <div className="flex-grow" />
           <div className="my-2 border-t border-gray-300" />
           <button
+            onClick={() => setSelectedTab("vote")}
+            className="w-full flex items-center justify-center lg:justify-start lg:text-left p-2 rounded hover:bg-gray-100 transition-all duration-200 active:scale-95"
+          >
+            <Icons name="vote" className="w-6 h-6" />
+            <span className="hidden lg:inline ml-2">투표</span>
+          </button>
+          <button
             onClick={() => setSelectedTab("settings")}
             className="w-full flex items-center justify-center lg:justify-start lg:text-left p-2 rounded hover:bg-gray-100 transition-all duration-200 active:scale-95"
           >
@@ -168,6 +177,7 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
                 )}
               </motion.div>
             )}
+
             {selectedTab === "settings" && (
               <motion.div
                 key={`settings-${groupUuid}`}
@@ -191,6 +201,19 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
                     updated_at: "",
                   }}
                 />
+              </motion.div>
+            )}
+            {selectedTab === "vote" && (
+              <motion.div
+                key={`vote-${groupUuid}`}
+                className="h-full"
+                variants={motionVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={{ duration: 0.2 }}
+              >
+                <VoteList groupUuid={groupUuid} currentUserUuid={currentUserUuid} />
               </motion.div>
             )}
           </AnimatePresence>

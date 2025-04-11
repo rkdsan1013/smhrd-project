@@ -16,6 +16,7 @@ const userRoutes = require("./routes/userRoutes");
 const groupRoutes = require("./routes/groupRoutes");
 const friendRoutes = require("./routes/friendRoutes");
 const chatRoutes = require("./routes/chatRoutes");
+const voteRoutes = require("./routes/voteRoutes");
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/groups", groupRoutes);
 app.use("/api/friends", friendRoutes);
 app.use("/api/chats", chatRoutes);
+app.use("/api/votes", voteRoutes);
 
 // 글로벌 에러 핸들러
 app.use((err, req, res, next) => {
