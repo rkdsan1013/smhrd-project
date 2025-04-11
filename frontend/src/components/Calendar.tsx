@@ -1,5 +1,6 @@
 // /frontend/src/components/Calendar.tsx
-import React, { useState, useMemo, useEffect } from "react";
+
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { Calendar as RBCalendar, momentLocalizer, View, SlotInfo } from "react-big-calendar";
 import moment from "moment";
 import withDragAndDrop from "react-big-calendar/lib/addons/dragAndDrop";
@@ -10,7 +11,7 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import Icons from "./Icons";
 import ScheduleAllDayModal from "./ScheduleAllDayModal";
 import ScheduleDetailModal from "./ScheduleDetailModal";
-import ScheduleListView from "./ScheduleListView";
+import ScheduleListView, { ScheduleListViewHandle } from "./ScheduleListView";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSchedule, Schedule } from "../contexts/ScheduleContext";
 
@@ -126,9 +127,31 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
     return moment(date).add(amount, unit).toDate();
   };
 
-  const handlePrev = () => setCurrentDate(shiftDate(currentDate, currentView, "prev"));
-  const handleNext = () => setCurrentDate(shiftDate(currentDate, currentView, "next"));
-  const handleToday = () => setCurrentDate(new Date());
+  const scheduleListViewRef = useRef<ScheduleListViewHandle>(null);
+
+  const handlePrev = () => {
+    if (currentView === "agenda") {
+      scheduleListViewRef.current?.scrollPrev();
+    } else {
+      setCurrentDate(shiftDate(currentDate, currentView, "prev"));
+    }
+  };
+
+  const handleNext = () => {
+    if (currentView === "agenda") {
+      scheduleListViewRef.current?.scrollNext();
+    } else {
+      setCurrentDate(shiftDate(currentDate, currentView, "next"));
+    }
+  };
+
+  const handleToday = () => {
+    if (currentView === "agenda") {
+      scheduleListViewRef.current?.scrollToToday();
+    } else {
+      setCurrentDate(new Date());
+    }
+  };
 
   const handleSelectSlot = (slotInfo: SlotInfo) => {
     if (!isEditable) return;
@@ -190,9 +213,11 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
               onClick={handleToday}
               className="text-xl font-bold px-4 py-1 bg-indigo-700 hover:bg-indigo-500 rounded-full transition duration-300"
             >
-              {moment(currentDate).format(
-                currentView === "month" ? "YYYY년 MM월" : "YYYY년 MM월 DD일",
-              )}
+              {currentView === "agenda"
+                ? moment(new Date()).format("YYYY년 MM월 DD일")
+                : moment(currentDate).format(
+                    currentView === "month" ? "YYYY년 MM월" : "YYYY년 MM월 DD일",
+                  )}
             </button>
             <button
               onClick={handleNext}
@@ -257,7 +282,7 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
           <AnimatePresence mode="wait">
             <motion.div key={currentView} {...motionVariants} className="h-full overflow-y-auto">
               {currentView === "agenda" ? (
-                <ScheduleListView filterType={filterType} />
+                <ScheduleListView ref={scheduleListViewRef} filterType={filterType} />
               ) : (
                 <DnDCalendar
                   localizer={localizer}
