@@ -1,7 +1,6 @@
 // /frontend/src/contexts/ScheduleContext.tsx
 
 import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo } from "react";
-import { v4 as uuidv4 } from "uuid";
 import moment from "moment";
 import { useSocket } from "../contexts/SocketContext";
 import scheduleService from "../services/scheduleService";
@@ -45,10 +44,10 @@ export const ScheduleProvider: React.FC<ScheduleProviderProps> = ({ children }) 
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const { socket } = useSocket();
 
-  // 생성 함수: 백엔드 호출 없이 refreshSchedules 호출 (예시)
-  const createSchedule = async (newSchedule: Omit<Schedule, "uuid" | "allDay">) => {
+  // _newSchedule 매개변수 이름 앞에 _를 붙여 사용하지 않음을 명시
+  const createSchedule = async (_newSchedule: Omit<Schedule, "uuid" | "allDay">) => {
     try {
-      // 직접 사용하지 않는 newPayload 변수 제거 (혹은 필요하면 실제 API 호출 후 사용)
+      // 필요하다면 API 호출을 통해 새 일정을 생성할 수 있습니다.
       await refreshSchedules();
     } catch (error) {
       console.error("일정 생성 실패", error);
@@ -56,29 +55,31 @@ export const ScheduleProvider: React.FC<ScheduleProviderProps> = ({ children }) 
     }
   };
 
-  // 업데이트 함수: Date -> string 변환 시, 명시적으로 타입 단언을 추가
   const updateSchedule = async (
     uuid: string,
     updatedData: Partial<Omit<Schedule, "uuid" | "allDay">>,
   ) => {
     try {
-      type ScheduleUpdatePayload = Partial<Omit<Schedule, "uuid" | "allDay">> & {
+      // start_time, end_time은 기존 Schedule 타입에서 제거한 후 문자열로 별도 정의
+      type ScheduleUpdatePayload = Partial<
+        Omit<Schedule, "uuid" | "allDay" | "start_time" | "end_time">
+      > & {
         start_time?: string;
         end_time?: string;
       };
       const payload: ScheduleUpdatePayload = {};
+
       if (updatedData.start_time) {
-        payload.start_time = moment(updatedData.start_time as Date).format("YYYY-MM-DD HH:mm:ss");
+        payload.start_time = moment(updatedData.start_time).format("YYYY-MM-DD HH:mm:ss");
       }
       if (updatedData.end_time) {
-        payload.end_time = moment(updatedData.end_time as Date).format(
-          "YYYY-MM-DD HH:mm:ss",
-        ) as string;
+        payload.end_time = moment(updatedData.end_time).format("YYYY-MM-DD HH:mm:ss");
       }
       if (updatedData.title !== undefined) payload.title = updatedData.title;
       if (updatedData.description !== undefined) payload.description = updatedData.description;
       if (updatedData.location !== undefined) payload.location = updatedData.location;
       if (updatedData.type !== undefined) payload.type = updatedData.type;
+
       await scheduleService.updateSchedule(uuid, payload as any);
       await refreshSchedules();
     } catch (error) {
