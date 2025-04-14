@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import moment from "moment";
 import Icons from "./Icons";
-import ScheduleService from "../services/scheduleService";
+import scheduleService from "../services/scheduleService";
 
 interface DefaultValues {
   detailDate: string;
@@ -20,6 +20,8 @@ interface ScheduleDetailModalProps {
 const ScheduleDetailModal: React.FC<ScheduleDetailModalProps> = ({ onClose, defaultValues }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -45,11 +47,35 @@ const ScheduleDetailModal: React.FC<ScheduleDetailModalProps> = ({ onClose, defa
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // 개인 일정이므로 과거 날짜 제한은 제외하고, 필수 입력과 시작/종료 시간 순서만 검증합니다.
+  const validateForm = () => {
+    const newErrors: Partial<Record<keyof typeof formData, string>> & { general?: string } = {};
+
+    if (!formData.title) newErrors.title = "일정 제목을 입력하세요.";
+    if (!formData.detailDate) newErrors.detailDate = "날짜를 선택하세요.";
+    if (!formData.startTime) newErrors.startTime = "시작 시간을 선택하세요.";
+    if (!formData.endTime) newErrors.endTime = "종료 시간을 선택하세요.";
+    if (!formData.location) newErrors.location = "장소를 입력하세요.";
+
+    if (formData.detailDate && formData.startTime && formData.endTime) {
+      const startDateTime = new Date(`${formData.detailDate}T${formData.startTime}`);
+      const endDateTime = new Date(`${formData.detailDate}T${formData.endTime}`);
+
+      if (startDateTime > endDateTime) {
+        newErrors.endTime = "종료 시간은 시작 시간보다 늦어야 합니다.";
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async () => {
     if (isSubmitting) return;
+    if (!validateForm()) return;
     setIsSubmitting(true);
     try {
-      // 날짜와 시간을 결합해 MySQL DATETIME 형식으로 변환
+      // 날짜와 시간을 결합해 MySQL DATETIME 형식으로 변환합니다.
       const start_time = moment(`${formData.detailDate}T${formData.startTime}`).format(
         "YYYY-MM-DD HH:mm:ss",
       );
@@ -66,7 +92,7 @@ const ScheduleDetailModal: React.FC<ScheduleDetailModalProps> = ({ onClose, defa
         type: "personal" as "personal",
       };
 
-      await ScheduleService.createSchedule(scheduleData);
+      await scheduleService.createSchedule(scheduleData);
       handleModalClose();
     } catch (error) {
       console.error("일정 생성에 실패했습니다.", error);
@@ -113,6 +139,7 @@ const ScheduleDetailModal: React.FC<ScheduleDetailModalProps> = ({ onClose, defa
               placeholder="일정 제목"
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
             />
+            {errors.title && <p className="mt-1 text-sm text-red-500">{errors.title}</p>}
           </div>
 
           <div>
@@ -124,6 +151,7 @@ const ScheduleDetailModal: React.FC<ScheduleDetailModalProps> = ({ onClose, defa
               onChange={handleChange}
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
             />
+            {errors.detailDate && <p className="mt-1 text-sm text-red-500">{errors.detailDate}</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -136,6 +164,7 @@ const ScheduleDetailModal: React.FC<ScheduleDetailModalProps> = ({ onClose, defa
                 onChange={handleChange}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               />
+              {errors.startTime && <p className="mt-1 text-sm text-red-500">{errors.startTime}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">종료 시간</label>
@@ -146,6 +175,7 @@ const ScheduleDetailModal: React.FC<ScheduleDetailModalProps> = ({ onClose, defa
                 onChange={handleChange}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               />
+              {errors.endTime && <p className="mt-1 text-sm text-red-500">{errors.endTime}</p>}
             </div>
           </div>
 
@@ -159,6 +189,7 @@ const ScheduleDetailModal: React.FC<ScheduleDetailModalProps> = ({ onClose, defa
               placeholder="장소"
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
             />
+            {errors.location && <p className="mt-1 text-sm text-red-500">{errors.location}</p>}
           </div>
 
           <div>
