@@ -280,7 +280,11 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
       <div className="flex-1 overflow-hidden">
         <DndProvider backend={HTML5Backend}>
           <AnimatePresence mode="wait">
-            <motion.div key={currentView} {...motionVariants} className="h-full overflow-y-auto">
+            <motion.div
+              key={currentView}
+              {...motionVariants}
+              className="h-full overflow-y-auto min-w-0"
+            >
               {currentView === "agenda" ? (
                 <ScheduleListView ref={scheduleListViewRef} filterType={filterType} />
               ) : (
