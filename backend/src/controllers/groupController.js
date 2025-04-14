@@ -1,4 +1,3 @@
-// /backend/src/controllers/groupController.js
 const groupModel = require("../models/groupModel");
 const chatTransactions = require("../models/chatTransactions");
 const chatModel = require("../models/chatModel");
@@ -8,7 +7,6 @@ const { validateName, validateDescription } = require("../utils/validators");
 const userModel = require("../models/userModel");
 const pool = require("../config/db");
 
-// 프로필 이미지 URL 포매팅
 const formatProfile = (profile) => {
   if (profile.profilePicture) {
     profile.profilePicture = formatImageUrl(profile.profilePicture);
@@ -16,11 +14,8 @@ const formatProfile = (profile) => {
   return profile;
 };
 
-// 그룹 생성
 const createGroup = async (req, res) => {
   try {
-    console.log("Request body:", req.body);
-    console.log("req.user:", req.user);
     if (!req.user || !req.user.uuid) {
       return res.status(401).json({ message: "인증되지 않은 사용자입니다." });
     }
@@ -48,14 +43,12 @@ const createGroup = async (req, res) => {
           budget_type: Number(parsedSurvey.budget_type) || 0,
           trip_duration: Number(parsedSurvey.trip_duration) || 0,
         };
-        console.log("Parsed surveyData:", surveyData);
       } catch (parseError) {
         console.error("Error parsing survey data:", parseError.message, parseError.stack);
         return res.status(400).json({ message: "설문 데이터 형식이 잘못되었습니다." });
       }
     }
 
-    console.log("Calling groupModel.createGroup");
     let createdGroup = await groupModel.createGroup(
       name,
       description,
@@ -69,7 +62,6 @@ const createGroup = async (req, res) => {
       throw new Error("Failed to create group: createdGroup is invalid");
     }
     const groupUuid = createdGroup.uuid;
-    console.log("Created group UUID:", groupUuid);
 
     let groupIconFile = null;
     let groupPictureFile = null;
@@ -97,7 +89,6 @@ const createGroup = async (req, res) => {
       createdGroup = await groupModel.getGroupByUuid(groupUuid);
     }
 
-    console.log("Creating group chat room");
     const groupRoomUuid = await chatTransactions.createGroupRoomWithLeader(
       groupUuid,
       groupLeaderUuid,
@@ -119,7 +110,6 @@ const createGroup = async (req, res) => {
       updated_at: createdGroup.updated_at,
       chat_room_uuid: String(createdGroup.chat_room_uuid),
     };
-    console.log("Response groupInfo:", responseGroup);
     res.status(201).json(responseGroup);
   } catch (error) {
     console.error("Error in createGroup:", error.message, error.stack);
@@ -127,7 +117,6 @@ const createGroup = async (req, res) => {
   }
 };
 
-// 내 그룹 목록 조회
 const getMyGroups = async (req, res) => {
   try {
     const userUuid = req.user.uuid;
@@ -144,7 +133,6 @@ const getMyGroups = async (req, res) => {
   }
 };
 
-// 그룹 검색
 const searchGroups = async (req, res) => {
   try {
     const { name } = req.body;
@@ -164,7 +152,6 @@ const searchGroups = async (req, res) => {
   }
 };
 
-// 그룹 참여 (가입)
 const joinGroup = async (req, res) => {
   try {
     const { groupUuid } = req.body;
@@ -188,7 +175,6 @@ const joinGroup = async (req, res) => {
   }
 };
 
-// 그룹 리더 프로필 조회
 const getUserProfile = async (req, res) => {
   try {
     const userUuid = req.params.uuid;
@@ -203,7 +189,6 @@ const getUserProfile = async (req, res) => {
   }
 };
 
-// 그룹 멤버 조회
 const getGroupMembers = async (req, res) => {
   try {
     const { groupUuid } = req.params;
@@ -221,7 +206,6 @@ const getGroupMembers = async (req, res) => {
   }
 };
 
-// 그룹 채팅방 UUID 조회
 const getGroupChatRoom = async (req, res) => {
   try {
     const { groupUuid } = req.params;
@@ -259,6 +243,83 @@ const getReceivedGroupInvites = async (req, res) => {
   }
 };
 
+const getGroupDetails = async (req, res) => {
+  try {
+    const groupUuid = req.params.groupUuid;
+    const userUuid = req.user.uuid;
+
+    const [memberRows] = await pool.query(
+      `SELECT 1 FROM group_members WHERE group_uuid = ? AND user_uuid = ?`,
+      [groupUuid, userUuid],
+    );
+    if (memberRows.length === 0) {
+      return res.status(403).json({ message: "그룹 멤버가 아닙니다." });
+    }
+
+    const [rows] = await pool.query(
+      `SELECT uuid, name, description, group_icon, group_picture, visibility, group_leader_uuid, created_at, updated_at
+       FROM group_info
+       WHERE uuid = ?`,
+      [groupUuid],
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "그룹을 찾을 수 없습니다." });
+    }
+
+    const group = {
+      ...rows[0],
+      group_icon: formatImageUrl(rows[0].group_icon),
+      group_picture: formatImageUrl(rows[0].group_picture),
+    };
+
+    return res.json(group);
+  } catch (error) {
+    console.error("Error in getGroupDetails:", error.message, error.stack);
+    return res.status(500).json({ message: `그룹 조회 실패: ${error.message}` });
+  }
+};
+
+const leaveGroup = async (req, res) => {
+  try {
+    const groupUuid = req.params.groupUuid;
+    const userUuid = req.user.uuid;
+
+    const [groupRows] = await pool.query(
+      `SELECT group_leader_uuid FROM group_info WHERE uuid = ?`,
+      [groupUuid],
+    );
+    if (groupRows.length === 0) {
+      return res.status(404).json({ message: "그룹을 찾을 수 없습니다." });
+    }
+
+    if (groupRows[0].group_leader_uuid === userUuid) {
+      return res.status(403).json({ message: "그룹 리더는 탈퇴할 수 없습니다." });
+    }
+
+    const [memberRows] = await pool.query(
+      `SELECT 1 FROM group_members WHERE group_uuid = ? AND user_uuid = ?`,
+      [groupUuid, userUuid],
+    );
+    if (memberRows.length === 0) {
+      return res.status(403).json({ message: "그룹 멤버가 아닙니다." });
+    }
+
+    await pool.query(`DELETE FROM group_members WHERE group_uuid = ? AND user_uuid = ?`, [
+      groupUuid,
+      userUuid,
+    ]);
+
+    global.io.to(groupUuid).emit("groupMemberLeft", { groupUuid, userUuid });
+
+    console.log(`leaveGroup: User ${userUuid} left group ${groupUuid}`);
+    return res.json({ message: "그룹에서 탈퇴되었습니다." });
+  } catch (error) {
+    console.error("Error in leaveGroup:", error.message, error.stack);
+    return res.status(500).json({ message: `그룹 탈퇴 실패: ${error.message}` });
+  }
+};
+
 module.exports = {
   createGroup,
   getMyGroups,
@@ -269,4 +330,6 @@ module.exports = {
   getGroupChatRoom,
   getSentGroupInvites,
   getReceivedGroupInvites,
+  getGroupDetails,
+  leaveGroup,
 };

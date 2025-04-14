@@ -1,5 +1,3 @@
-// /backend/src/routes/groupRoutes.js
-
 const express = require("express");
 const groupController = require("../controllers/groupController");
 const verifyToken = require("../middlewares/verifyToken");
@@ -19,8 +17,11 @@ const cpUpload = upload.fields([
   { name: "groupPicture", maxCount: 1 },
 ]);
 
-// 그룹 생성 (이미지 업로드 및 리사이즈 미들웨어 적용)
+// 그룹 생성
 router.post("/", verifyToken, cpUpload, resizeImage, groupController.createGroup);
+
+// 그룹 상세 조회
+router.get("/:groupUuid", verifyToken, groupController.getGroupDetails);
 
 // 그룹 멤버 조회
 router.get("/:groupUuid/members", verifyToken, groupController.getGroupMembers);
@@ -31,8 +32,13 @@ router.get("/:groupUuid/chatroom", verifyToken, groupController.getGroupChatRoom
 // 그룹 리더(사용자) 프로필 조회
 router.get("/profile/:uuid", verifyToken, groupController.getUserProfile);
 
+// 보낸 초대 조회
 router.get("/:groupUuid/invites/sent", verifyToken, groupController.getSentGroupInvites);
 
+// 받은 초대 조회
 router.get("/invites/received", verifyToken, groupController.getReceivedGroupInvites);
+
+// 그룹 탈퇴
+router.delete("/:groupUuid/members", verifyToken, groupController.leaveGroup);
 
 module.exports = router;
