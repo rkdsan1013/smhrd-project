@@ -93,7 +93,7 @@ const PopularDestinations: React.FC = () => {
       ) : error ? (
         <div className="flex-1 w-full flex items-center justify-center text-red-500">{error}</div>
       ) : (
-        <div className="flex-1 w-full overflow-y-auto pr-1 h-full mt-1">
+        <div className="flex-1 w-full overflow-y-auto pr-1 h-full mt-1 no-scrollbar">
           <ul className="w-full divide-y divide-gray-200">
             {/* ✅ 리스트 순회 */}
             {displayDestinations.map((d) => (
