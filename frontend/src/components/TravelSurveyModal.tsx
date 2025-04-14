@@ -1,6 +1,6 @@
 // /frontend/src/components/TravelSurveyModal.tsx
 
-import React, { useState } from "react";
+import { useState } from "react";
 import ReactDOM from "react-dom";
 import { submitSurvey } from "../services/surveyService";
 import Icons from "./Icons";
@@ -66,7 +66,7 @@ const TravelSurveyModal = ({ isVisible, onClose, userUuid }: TravelSurveyModalPr
   // Skip 버튼 동작 (마지막 질문 전까지만 사용)
   const handleSkip = () => {
     if (step < questions.length - 1) {
-      handleNextStep(); // 다음 질문으로 이동
+      handleNextStep();
     }
   };
 
@@ -121,10 +121,7 @@ const TravelSurveyModal = ({ isVisible, onClose, userUuid }: TravelSurveyModalPr
             당신의 여행 스타일을 알려주세요
             <Icons name="plane" className="w-6 h-6 text-blue-500 animate-bounce" />
           </h2>
-          <button
-            onClick={handleClose} // 창 닫기 버튼
-            className="text-gray-500 hover:text-gray-700 transition"
-          >
+          <button onClick={handleClose} className="text-gray-500 hover:text-gray-700 transition">
             <Icons name="close" className="w-5 h-5" />
           </button>
         </div>
@@ -168,7 +165,7 @@ const TravelSurveyModal = ({ isVisible, onClose, userUuid }: TravelSurveyModalPr
 
         <div className="flex justify-between items-center">
           <div className="flex gap-4">
-            {step < questions.length - 1 && ( // 마지막 질문에서 Skip 버튼 숨김
+            {step < questions.length - 1 && (
               <button
                 onClick={handleSkip}
                 className="text-gray-500 text-sm hover:text-gray-700 transition-all duration-200 hover:underline hover:underline-offset-4"
@@ -188,7 +185,7 @@ const TravelSurveyModal = ({ isVisible, onClose, userUuid }: TravelSurveyModalPr
           </div>
           {step === questions.length - 1 && (
             <button
-              onClick={handleSubmit} // 마지막 질문에서 제출 시 체크 안 된 항목은 0으로
+              onClick={handleSubmit}
               className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg px-6 py-2 hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 transform hover:scale-105"
             >
               제출하기

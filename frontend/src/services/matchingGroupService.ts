@@ -15,10 +15,12 @@ export interface MatchingGroupInfo {
 // 추천 매칭 그룹 가져오기 (단순화)
 export const getMatchingGroups = async (userUuid: string): Promise<MatchingGroupInfo[]> => {
   try {
-    console.log("getMatchingGroups 요청 시작");
+    console.log("getMatchingGroups 요청 시작, userUuid:", userUuid);
 
-    // 별도 파라미터 없이 기본 API 경로만 사용
-    const data = await get<MatchingGroupInfo[]>("/matching/recommend");
+    // 사용자 UUID를 쿼리 파라미터로 포함하여 API 호출
+    const endpoint = `/matching/recommend?userUuid=${encodeURIComponent(userUuid)}`;
+    const data = await get<MatchingGroupInfo[]>(endpoint);
+
     console.log("추천 그룹 데이터:", data);
     return data || [];
   } catch (error) {
