@@ -109,7 +109,13 @@ const Home: React.FC = () => {
                       )}
                       {/* 상단 배지 영역 (첫 번째 행) */}
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium px-2 py-1 bg-blue-100 text-blue-600 rounded">
+                        <span
+                          className={`text-xs font-medium px-2 py-1 rounded ${
+                            schedule.type === "personal"
+                              ? "bg-blue-100 text-blue-600"
+                              : "bg-green-100 text-green-600"
+                          }`}
+                        >
                           {schedule.type === "personal" ? "개인" : "그룹"}
                         </span>
                         <span className="bg-blue-500 text-white text-xs font-medium px-2 py-1 rounded">
@@ -152,7 +158,13 @@ const Home: React.FC = () => {
                 <div className="bg-white shadow-md rounded-lg p-4 mb-4 relative">
                   {/* 상단 배지 영역 (첫 번째 행) */}
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium px-2 py-1 bg-blue-100 text-blue-600 rounded">
+                    <span
+                      className={`text-xs font-medium px-2 py-1 rounded ${
+                        nextSchedule.type === "personal"
+                          ? "bg-blue-100 text-blue-600"
+                          : "bg-green-100 text-green-600"
+                      }`}
+                    >
                       {nextSchedule.type === "personal" ? "개인" : "그룹"}
                     </span>
                     <span className="bg-green-500 text-white text-xs font-medium px-2 py-1 rounded">
