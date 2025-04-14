@@ -22,20 +22,22 @@ const Home: React.FC = () => {
       .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
   }, [schedules, now]);
 
-  // 다음 일정: 현재 시각 이후 시작하는 스케줄 중 가장 빠른 일정
+  // 다음 일정: 현재 시각 이후인 allDay 일정 중 가장 빠른 일정 선택
   const nextSchedule = useMemo(() => {
-    const upcoming = schedules.filter((schedule) => {
+    const upcomingAllDay = schedules.filter((schedule) => {
       const start = new Date(schedule.start_time).getTime();
-      return start > now;
+      return schedule.allDay && start > now;
     });
-    upcoming.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
-    return upcoming[0] || null;
+    upcomingAllDay.sort(
+      (a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime(),
+    );
+    return upcomingAllDay[0] || null;
   }, [schedules, now]);
 
   const formatScheduleDate = (schedule: any): string => {
     if (schedule.allDay) {
       const startDate = moment(schedule.start_time);
-      // all-day 일정은 종료일에서 하루를 뺀 날짜로 표시
+      // all-day 일정은 종료일에서 하루를 빼서 표시
       const adjustedEndDate = moment(schedule.end_time).subtract(1, "day");
       return startDate.isSame(adjustedEndDate, "day")
         ? startDate.format("YYYY-MM-DD")
