@@ -1,3 +1,5 @@
+// /backend/src/models/voteTransactions.js
+
 const voteQueries = require("./voteQueries");
 const scheduleQueries = require("./scheduleQueries");
 const { v4: uuidv4 } = require("uuid");
@@ -12,7 +14,6 @@ const createTravelVote = async (
   endDate,
   headcount,
   description,
-  voteDeadline,
 ) => {
   const connection = await dbPool.getConnection();
   try {
@@ -48,7 +49,6 @@ const createTravelVote = async (
       endDate,
       headcount || null,
       description || null,
-      voteDeadline,
       scheduleUuid,
     ];
     await connection.query(voteQueries.INSERT_TRAVEL_VOTE_WITH_TITLE_AND_SCHEDULE, voteParams);

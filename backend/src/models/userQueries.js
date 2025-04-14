@@ -1,5 +1,4 @@
 // /backend/src/models/userQueries.js
-// 사용자 관련 SQL 쿼리 모음
 
 // 사용자 INSERT 쿼리
 const INSERT_USER = "INSERT INTO users (email, password) VALUES (?, ?)";

@@ -1,3 +1,5 @@
+// /backend/src/models/voteModel.js
+
 const pool = require("../config/db");
 const voteQueries = require("./voteQueries");
 const voteTransactions = require("./voteTransactions");
@@ -11,7 +13,6 @@ const createTravelVote = async (
   endDate,
   headcount,
   description,
-  voteDeadline,
 ) => {
   console.log(`createTravelVote: Starting for group ${groupUuid}, creator ${creatorUuid}`);
   try {
@@ -25,7 +26,6 @@ const createTravelVote = async (
       endDate,
       headcount,
       description,
-      voteDeadline,
     );
     console.log(`createTravelVote: Successfully created vote ${vote.uuid}`);
     return vote;

@@ -1,3 +1,5 @@
+// /frontend/src/components/Vote.tsx
+
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
 import Icons from "./Icons";
@@ -17,7 +19,6 @@ interface VoteItemProps {
     end_date: string;
     headcount?: number;
     description?: string;
-    vote_deadline: string;
     is_confirmed: boolean;
     participant_count: number;
     has_participated: boolean;
@@ -38,7 +39,6 @@ export const VoteModal: React.FC<VoteModalProps> = ({ groupUuid, onClose, onVote
     endDate: "",
     headcount: "",
     description: "",
-    voteDeadline: "",
   });
   const [errors, setErrors] = useState<
     Partial<Record<keyof typeof formData, string>> & { general?: string }
@@ -50,16 +50,13 @@ export const VoteModal: React.FC<VoteModalProps> = ({ groupUuid, onClose, onVote
     if (!formData.location) newErrors.location = "여행지를 입력하세요.";
     if (!formData.startDate) newErrors.startDate = "여행 시작일을 선택하세요.";
     if (!formData.endDate) newErrors.endDate = "여행 종료일을 선택하세요.";
-    if (!formData.voteDeadline) newErrors.voteDeadline = "투표 마감 시간을 선택하세요.";
 
     const now = new Date();
     const start = formData.startDate ? new Date(formData.startDate) : null;
     const end = formData.endDate ? new Date(formData.endDate) : null;
-    const deadline = formData.voteDeadline ? new Date(formData.voteDeadline) : null;
 
     if (start && start < now) newErrors.startDate = "시작일은 과거일 수 없습니다.";
     if (end && end < now) newErrors.endDate = "종료일은 과거일 수 없습니다.";
-    if (deadline && deadline < now) newErrors.voteDeadline = "마감 시간은 과거일 수 없습니다.";
     if (start && end && start > end) newErrors.endDate = "종료일은 시작일보다 늦어야 합니다.";
 
     setErrors(newErrors);
@@ -186,21 +183,6 @@ export const VoteModal: React.FC<VoteModalProps> = ({ groupUuid, onClose, onVote
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">투표 마감 시간</label>
-            <input
-              type="datetime-local"
-              name="voteDeadline"
-              value={formData.voteDeadline}
-              onChange={handleChange}
-              className={`w-full p-3 border rounded-lg focus:ring-2 ${
-                errors.voteDeadline ? "border-red-500" : "border-gray-300 focus:ring-blue-500"
-              }`}
-            />
-            {errors.voteDeadline && (
-              <p className="text-red-600 text-sm mt-1">{errors.voteDeadline}</p>
-            )}
-          </div>
-          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">설명 (선택)</label>
             <textarea
               name="description"
@@ -280,9 +262,6 @@ export const VoteItem: React.FC<VoteItemProps> = ({
             <span className="font-medium text-blue-600">인원:</span> {vote.headcount}명
           </p>
         )}
-        <p>
-          <span className="font-medium text-red-600">투표 마감:</span> {vote.vote_deadline}
-        </p>
         {vote.description && <p className="text-gray-500 italic">{vote.description}</p>}
         <p>
           <span className="font-medium">참여자:</span> {vote.participant_count}명

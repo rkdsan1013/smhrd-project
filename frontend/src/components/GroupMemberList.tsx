@@ -1,3 +1,5 @@
+// /frontend/src/components/GroupMemberList.tsx
+
 import React, { useEffect, useState } from "react";
 import {
   getGroupMembers,

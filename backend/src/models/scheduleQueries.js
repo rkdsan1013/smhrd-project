@@ -79,11 +79,9 @@ const scheduleQueries = {
   FROM schedule_members sm
   JOIN schedules s ON sm.schedule_uuid = s.uuid
   JOIN chat_rooms cr ON cr.schedule_uuid = s.uuid AND cr.type = 'schedule'
-  JOIN travel_votes tv ON tv.schedule_uuid = s.uuid
   WHERE sm.user_uuid = ?
     AND s.group_uuid = ?
-    AND tv.vote_deadline < UTC_TIMESTAMP()
-  ORDER BY tv.vote_deadline DESC
+  ORDER BY s.created_at DESC
 `,
 };
 

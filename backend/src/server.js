@@ -18,6 +18,9 @@ const friendRoutes = require("./routes/friendRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const voteRoutes = require("./routes/voteRoutes");
 const scheduleRoutes = require("./routes/scheduleRoutes");
+const travelRoutes = require("./routes/travelRoutes");
+const surveyRoutes = require("./routes/surveyRoutes");
+const matchingGroupRoutes = require("./routes/matchingGroupRoutes");
 
 const app = express();
 
@@ -44,6 +47,9 @@ app.use("/api/friends", friendRoutes);
 app.use("/api/chats", chatRoutes);
 app.use("/api/votes", voteRoutes);
 app.use("/api/schedules", scheduleRoutes);
+app.use("/api", travelRoutes);
+app.use("/api/surveys", surveyRoutes);
+app.use("/api/matching", matchingGroupRoutes);
 
 // 글로벌 에러 핸들러
 app.use((err, req, res, next) => {

@@ -1,6 +1,6 @@
 // /frontend/src/components/Calendar.tsx
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { Calendar as RBCalendar, momentLocalizer, View, SlotInfo } from "react-big-calendar";
 import moment from "moment";
 import withDragAndDrop from "react-big-calendar/lib/addons/dragAndDrop";
@@ -11,11 +11,10 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import Icons from "./Icons";
 import ScheduleAllDayModal from "./ScheduleAllDayModal";
 import ScheduleDetailModal from "./ScheduleDetailModal";
+import ScheduleListView, { ScheduleListViewHandle } from "./ScheduleListView";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSchedule, Schedule } from "../contexts/ScheduleContext";
-// import ScheduleService from "../services/ScheduleService"; // 제거: 사용되지 않음
 
-// 애니메이션 설정
 const motionVariants = {
   initial: { opacity: 0, x: 50, transition: { duration: 0.3 } },
   animate: { opacity: 1, x: 0, transition: { duration: 0.3 } },
@@ -26,13 +25,13 @@ moment.locale("ko");
 const localizer = momentLocalizer(moment);
 const DnDCalendar = withDragAndDrop(RBCalendar);
 
-// 허용되는 뷰 목록 및 라벨
 const allowedViewKeys: Array<"month" | "week" | "day" | "agenda"> = [
   "month",
   "week",
   "day",
   "agenda",
 ];
+
 const viewLabels: Record<"month" | "week" | "day" | "agenda", string> = {
   month: "월별",
   week: "주별",
@@ -40,7 +39,6 @@ const viewLabels: Record<"month" | "week" | "day" | "agenda", string> = {
   agenda: "일정",
 };
 
-// react-big-calendar 메시지 객체
 const messages: any = {
   allDay: "종일",
   date: "날짜",
@@ -51,14 +49,12 @@ const messages: any = {
   day: "일별",
   agenda: "일정",
   noEventsInRange: "일정이 없습니다.",
-  showMore: (total: number) => `+ ${total}개 일정 더 보기...`,
+  showMore: (total: number) => `+${total}`,
 };
 
-// 시간 포맷 헬퍼 함수
 const formatKoreanTime = (date: Date, formatStr: string = "A hh:mm") =>
   moment(date).format(formatStr).replace(/AM/g, "오전").replace(/PM/g, "오후");
 
-// react-big-calendar 날짜/시간 포맷 설정 객체
 const formats = {
   dateFormat: "D",
   dayFormat: "D일",
@@ -103,13 +99,11 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<SlotInfo | null>(null);
 
-  // useSchedule에서 필요한 함수들만 구조 분해 (createSchedule은 여기서 사용하지 않음)
   const { schedules, updateSchedule, refreshSchedules } = useSchedule();
 
   const isEditable = mode === "edit";
   const isFixedView = view !== "all";
 
-  // 백엔드로부터 일정 목록을 새로 불러오는 함수
   const updateSchedules = async () => {
     try {
       await refreshSchedules();
@@ -118,13 +112,11 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
     }
   };
 
-  // 컴포넌트 마운트 시 일정 목록 로드
   useEffect(() => {
     updateSchedules();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 날짜 이동 기능
   const shiftDate = (
     date: Date,
     view: "month" | "week" | "day" | "agenda",
@@ -135,9 +127,31 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
     return moment(date).add(amount, unit).toDate();
   };
 
-  const handlePrev = () => setCurrentDate(shiftDate(currentDate, currentView, "prev"));
-  const handleNext = () => setCurrentDate(shiftDate(currentDate, currentView, "next"));
-  const handleToday = () => setCurrentDate(new Date());
+  const scheduleListViewRef = useRef<ScheduleListViewHandle>(null);
+
+  const handlePrev = () => {
+    if (currentView === "agenda") {
+      scheduleListViewRef.current?.scrollPrev();
+    } else {
+      setCurrentDate(shiftDate(currentDate, currentView, "prev"));
+    }
+  };
+
+  const handleNext = () => {
+    if (currentView === "agenda") {
+      scheduleListViewRef.current?.scrollNext();
+    } else {
+      setCurrentDate(shiftDate(currentDate, currentView, "next"));
+    }
+  };
+
+  const handleToday = () => {
+    if (currentView === "agenda") {
+      scheduleListViewRef.current?.scrollToToday();
+    } else {
+      setCurrentDate(new Date());
+    }
+  };
 
   const handleSelectSlot = (slotInfo: SlotInfo) => {
     if (!isEditable) return;
@@ -154,16 +168,30 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
       : setShowDetailModal(true);
   };
 
-  // react-big-calendar에 넘길 scrollToTime 계산
   const scrollToTime = useMemo(() => {
-    const today = moment().startOf("day");
-    const todayEvents = schedules.filter((s) => moment(s.start_time).isSame(today, "day"));
-    if (todayEvents.length > 0) {
-      const earliest = todayEvents.reduce((a, b) => (a.start_time < b.start_time ? a : b));
-      return new Date(earliest.start_time);
+    if (currentView === "week") {
+      const startOfWeek = moment(currentDate).startOf("week");
+      const endOfWeek = moment(currentDate).endOf("week");
+      const weekEvents = schedules.filter((s) =>
+        moment(s.start_time).isBetween(startOfWeek, endOfWeek, undefined, "[]"),
+      );
+      if (weekEvents.length > 0) {
+        const earliest = weekEvents.reduce((a, b) =>
+          moment(a.start_time).isBefore(moment(b.start_time)) ? a : b,
+        );
+        return new Date(earliest.start_time);
+      }
+    } else if (currentView === "day") {
+      const dayEvents = schedules.filter((s) => moment(s.start_time).isSame(currentDate, "day"));
+      if (dayEvents.length > 0) {
+        const earliest = dayEvents.reduce((a, b) =>
+          moment(a.start_time).isBefore(moment(b.start_time)) ? a : b,
+        );
+        return new Date(earliest.start_time);
+      }
     }
     return moment(currentDate).set({ hour: 9, minute: 0 }).toDate();
-  }, [schedules, currentDate]);
+  }, [schedules, currentDate, currentView]);
 
   const filteredEvents = useMemo(
     () => (filterType === "all" ? schedules : schedules.filter((s) => s.type === filterType)),
@@ -185,9 +213,11 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
               onClick={handleToday}
               className="text-xl font-bold px-4 py-1 bg-indigo-700 hover:bg-indigo-500 rounded-full transition duration-300"
             >
-              {moment(currentDate).format(
-                currentView === "month" ? "YYYY년 MM월" : "YYYY년 MM월 DD일",
-              )}
+              {currentView === "agenda"
+                ? moment(new Date()).format("YYYY년 MM월 DD일")
+                : moment(currentDate).format(
+                    currentView === "month" ? "YYYY년 MM월" : "YYYY년 MM월 DD일",
+                  )}
             </button>
             <button
               onClick={handleNext}
@@ -250,58 +280,66 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
       <div className="flex-1 overflow-hidden">
         <DndProvider backend={HTML5Backend}>
           <AnimatePresence mode="wait">
-            <motion.div key={currentView} {...motionVariants} className="h-full overflow-y-auto">
-              <DnDCalendar
-                localizer={localizer}
-                culture="ko"
-                events={filteredEvents}
-                startAccessor={(schedule: object) => (schedule as Schedule).start_time}
-                endAccessor={(schedule: object) => (schedule as Schedule).end_time}
-                view={currentView}
-                date={currentDate}
-                onNavigate={setCurrentDate}
-                onView={(v) => !isFixedView && setCurrentView(v as any)}
-                views={isFixedView ? [currentView] : allowedViewKeys}
-                toolbar={false}
-                selectable={isEditable}
-                resizable={isEditable}
-                scrollToTime={scrollToTime}
-                eventPropGetter={(event: object) => {
-                  const schedule = event as Schedule;
-                  const backgroundColor = schedule.type === "personal" ? "#2563eb" : "#16a34a";
-                  return {
-                    style: {
-                      backgroundColor,
-                      borderRadius: "0.375rem",
-                      opacity: 0.9,
-                      color: "white",
-                      border: "none",
-                      display: "block",
-                    },
-                  };
-                }}
-                messages={messages}
-                formats={formats}
-                onSelectSlot={isEditable ? handleSelectSlot : undefined}
-                onEventDrop={
-                  isEditable
-                    ? ({ event, start, end }: any) =>
-                        updateSchedule((event as Schedule).uuid, {
-                          start_time: start,
-                          end_time: end,
-                        })
-                    : undefined
-                }
-                onEventResize={
-                  isEditable
-                    ? ({ event, start, end }: any) =>
-                        updateSchedule((event as Schedule).uuid, {
-                          start_time: start,
-                          end_time: end,
-                        })
-                    : undefined
-                }
-              />
+            <motion.div
+              key={currentView}
+              {...motionVariants}
+              className="h-full overflow-y-auto min-w-0"
+            >
+              {currentView === "agenda" ? (
+                <ScheduleListView ref={scheduleListViewRef} filterType={filterType} />
+              ) : (
+                <DnDCalendar
+                  localizer={localizer}
+                  culture="ko"
+                  events={filteredEvents}
+                  startAccessor={(schedule: object) => (schedule as Schedule).start_time}
+                  endAccessor={(schedule: object) => (schedule as Schedule).end_time}
+                  view={currentView}
+                  date={currentDate}
+                  onNavigate={setCurrentDate}
+                  onView={(v) => !isFixedView && setCurrentView(v as any)}
+                  views={isFixedView ? [currentView] : allowedViewKeys}
+                  toolbar={false}
+                  selectable={isEditable}
+                  resizable={isEditable}
+                  scrollToTime={scrollToTime}
+                  eventPropGetter={(event: object) => {
+                    const schedule = event as Schedule;
+                    const backgroundColor = schedule.type === "personal" ? "#2563eb" : "#16a34a";
+                    return {
+                      style: {
+                        backgroundColor,
+                        borderRadius: "0.375rem",
+                        opacity: 0.9,
+                        color: "white",
+                        border: "none",
+                        display: "block",
+                      },
+                    };
+                  }}
+                  messages={messages}
+                  formats={formats}
+                  onSelectSlot={isEditable ? handleSelectSlot : undefined}
+                  onEventDrop={
+                    isEditable
+                      ? ({ event, start, end }: any) =>
+                          updateSchedule((event as Schedule).uuid, {
+                            start_time: start,
+                            end_time: end,
+                          })
+                      : undefined
+                  }
+                  onEventResize={
+                    isEditable
+                      ? ({ event, start, end }: any) =>
+                          updateSchedule((event as Schedule).uuid, {
+                            start_time: start,
+                            end_time: end,
+                          })
+                      : undefined
+                  }
+                />
+              )}
             </motion.div>
           </AnimatePresence>
         </DndProvider>

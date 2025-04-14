@@ -1,3 +1,5 @@
+// /frontend/src/services/voteService.ts
+
 import { get, post } from "./apiClient";
 
 interface CreateTravelVoteData {
@@ -7,7 +9,6 @@ interface CreateTravelVoteData {
   endDate: string;
   headcount?: number;
   description?: string;
-  voteDeadline: string;
 }
 
 interface TravelVote {
@@ -17,7 +18,6 @@ interface TravelVote {
   end_date: string;
   headcount?: number;
   description?: string;
-  vote_deadline: string;
   is_confirmed: boolean;
   participant_count: number;
   has_participated: boolean;

@@ -1,4 +1,4 @@
-// File: /frontend/src/contexts/NotificationContext.tsx
+// /frontend/src/contexts/NotificationContext.tsx
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useSocket } from "./SocketContext";

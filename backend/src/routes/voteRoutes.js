@@ -1,11 +1,13 @@
+// /backend/src/routes/voteRoutes.js
+
 const express = require("express");
 const router = express.Router();
 const voteController = require("../controllers/voteController");
 const verifyToken = require("../middlewares/verifyToken");
 
 const validateVoteInput = (req, res, next) => {
-  const { group_uuid, location, startDate, endDate, voteDeadline } = req.body;
-  if (!group_uuid || !location || !startDate || !endDate || !voteDeadline) {
+  const { group_uuid, location, startDate, endDate } = req.body;
+  if (!group_uuid || !location || !startDate || !endDate) {
     return res.status(400).json({ success: false, message: "필수 필드가 누락되었습니다." });
   }
   next();

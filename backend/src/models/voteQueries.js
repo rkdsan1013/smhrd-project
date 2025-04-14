@@ -1,10 +1,12 @@
+// /backend/src/models/voteQueries.js
+
 // 그룹 내 투표 삽입 (제목과 일정 UUID 포함)
 const INSERT_TRAVEL_VOTE_WITH_TITLE_AND_SCHEDULE = `
   INSERT INTO travel_votes (
     uuid, group_uuid, creator_uuid, title,
     location, start_date, end_date,
-    headcount, description, vote_deadline, schedule_uuid
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    headcount, description, schedule_uuid
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `;
 
 // 그룹 내 투표 목록 조회 (참여자 수와 참여 여부 포함)
@@ -18,7 +20,7 @@ const SELECT_TRAVEL_VOTES_BY_GROUP = `
     ) AS has_participated
   FROM travel_votes tv
   LEFT JOIN travel_vote_participants tvp ON tv.uuid = tvp.vote_uuid
-  WHERE tv.group_uuid = ? AND tv.vote_deadline > UTC_TIMESTAMP()
+  WHERE tv.group_uuid = ?
   GROUP BY tv.uuid
   ORDER BY tv.created_at DESC
 `;

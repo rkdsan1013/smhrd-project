@@ -15,6 +15,7 @@ import { validateEmail, validatePassword, validateFullProfile } from "../utils/v
 import { formatYear, formatTwoDigits, getMaxDay } from "../utils/dateUtils";
 import { checkEmailExists, signIn, signUp } from "../services/authService";
 import Icons from "./Icons";
+import TravelSurveyModal from "./TravelSurveyModal"; // [추가] 설문 모달 임포트
 
 // 폼 상태 및 오류 필드 타입 정의
 type FormState = "start" | "signin" | "signup" | "profile";
@@ -50,6 +51,9 @@ const AuthForm: React.FC = () => {
   const [paradoxFlag, setParadoxFlag] = useState(false);
   const [showOverride, setShowOverride] = useState(false);
   const [hasMounted, setHasMounted] = useState(false);
+  // [추가] 설문 모달 상태
+  const [showSurveyModal, setShowSurveyModal] = useState(false);
+  const [userUuid, setUserUuid] = useState<string | null>(null);
 
   // 오류가 발생한 필드를 저장하는 상태
   const [errorField, setErrorField] = useState<ErrorField>(null);
@@ -351,10 +355,32 @@ const AuthForm: React.FC = () => {
     }
   };
 
-  // 인증 성공 후 처리
-  const handleAuthSuccess = (resp: { user?: { uuid: string; email: string } }, msg: string) => {
+  // [수정] 인증 성공 후 처리
+  const handleAuthSuccess = (
+    resp: { user?: { uuid: string; email: string } },
+    msg: string,
+  ) => {
     console.log(msg, resp);
-    window.dispatchEvent(new CustomEvent("userSignedIn", { detail: { user: resp.user } }));
+    if (formState === "profile" && resp.user?.uuid) {
+      // [추가] 회원가입 성공 시 설문 모달 표시
+      setUserUuid(resp.user.uuid);
+      setShowSurveyModal(true);
+    } else {
+      // 로그인 성공 시
+      window.dispatchEvent(new CustomEvent("userSignedIn", { detail: { user: resp.user } }));
+    }
+  };
+
+  // [추가] 설문 모달 닫기 핸들러
+  const handleSurveyModalClose = () => {
+    setShowSurveyModal(false);
+    setUserUuid(null);
+    // 설문 제출 후 로그인 성공 이벤트 발생 (기존 흐름 유지)
+    window.dispatchEvent(
+      new CustomEvent("userSignedIn", {
+        detail: { user: { uuid: userUuid, email } },
+      }),
+    );
   };
 
   // 폼 제출 핸들러
@@ -666,6 +692,12 @@ const AuthForm: React.FC = () => {
           </form>
         </div>
       </div>
+    {/* [추가] 설문 모달 렌더링 */}
+    <TravelSurveyModal
+        isVisible={showSurveyModal}
+        onClose={handleSurveyModalClose}
+        userUuid={userUuid}
+      />
     </div>
   );
 };

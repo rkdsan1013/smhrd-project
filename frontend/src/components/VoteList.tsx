@@ -1,3 +1,5 @@
+// /frontend/src/components/VoteList.tsx
+
 import React, { useState, useEffect } from "react";
 import { VoteModal, VoteItem } from "./Vote";
 import { getTravelVotes } from "../services/voteService";
@@ -16,7 +18,6 @@ interface TravelVote {
   end_date: string;
   headcount?: number;
   description?: string;
-  vote_deadline: string;
   is_confirmed: boolean;
   participant_count: number;
   has_participated: boolean;

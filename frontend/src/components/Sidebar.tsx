@@ -186,7 +186,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           <div className="relative flex items-center justify-center">
             <button
               onClick={onCalendarSelect}
-              onMouseEnter={(e) => handleMouseEnter(e, "달력")}
+              onMouseEnter={(e) => handleMouseEnter(e, "일정")}
               onMouseLeave={handleMouseLeave}
               className="flex items-center justify-center focus:outline-none hover:scale-105 active:scale-95 transition-transform duration-200"
             >

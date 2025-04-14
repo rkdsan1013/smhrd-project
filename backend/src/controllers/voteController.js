@@ -1,19 +1,21 @@
+// /backend/src/controllers/voteController.js
+
 const voteModel = require("../models/voteModel");
 
 const createTravelVote = async (req, res, next) => {
   try {
     const groupUuid = req.bodyGroupUuid;
     const creatorUuid = req.user.uuid;
-    const { title, location, startDate, endDate, headcount, description, voteDeadline } = req.body;
+    const { title, location, startDate, endDate, headcount, description } = req.body;
 
     console.log(
       `createTravelVote: user ${creatorUuid} creating vote for group ${groupUuid}, title: ${title}`,
     );
 
-    if (!location || !startDate || !endDate || !voteDeadline) {
+    if (!location || !startDate || !endDate) {
       return res.status(400).json({
         success: false,
-        message: "필수 필드(location, startDate, endDate, voteDeadline)가 누락되었습니다.",
+        message: "필수 필드(location, startDate, endDate)가 누락되었습니다.",
       });
     }
 
@@ -33,7 +35,6 @@ const createTravelVote = async (req, res, next) => {
       endDate,
       headcount,
       description,
-      voteDeadline,
     );
 
     global.io.to(groupUuid).emit("travelVoteCreated", {
@@ -51,12 +52,12 @@ const createTravelVote = async (req, res, next) => {
 
 const getTravelVotes = async (req, res, next) => {
   try {
-    const groupUuid = req.queryGroupUuid;
+    const groupUuid = req.query.group_uuid; // 쿼리 파라미터 수정
     const userUuid = req.user.uuid;
-
-    console.log(`getTravelVotes: user ${userUuid} fetching votes for group ${groupUuid}`);
+    console.log(`getTravelVotes: groupUuid=${groupUuid}, userUuid=${userUuid}`);
 
     const isMember = await voteModel.checkIsGroupMember(groupUuid, userUuid);
+    console.log(`isMember result: ${isMember}`);
     if (!isMember) {
       return res
         .status(403)
@@ -64,11 +65,11 @@ const getTravelVotes = async (req, res, next) => {
     }
 
     const votes = await voteModel.getTravelVotes(groupUuid, userUuid);
-    console.log(`getTravelVotes: returning ${votes.length} votes for group ${groupUuid}`);
+    console.log(`getTravelVotes: returning ${votes.length} votes`);
 
     res.status(200).json({ success: true, votes });
   } catch (error) {
-    console.error(`getTravelVotes error for user ${userUuid}: ${error.message}`);
+    console.error(`getTravelVotes error for user ${req.user?.uuid || "unknown"}:`, error);
     res.status(500).json({ success: false, message: `투표 조회 중 오류: ${error.message}` });
   }
 };
@@ -86,7 +87,7 @@ const participateInTravelVote = async (req, res, next) => {
     );
 
     // 투표 존재 여부 및 그룹 멤버 확인
-    const vote = await voteModel.getVoteById(voteUuid); // 새 메서드 호출
+    const vote = await voteModel.getVoteById(voteUuid);
     if (!vote) {
       return res.status(404).json({ success: false, message: "투표를 찾을 수 없습니다." });
     }
@@ -101,7 +102,7 @@ const participateInTravelVote = async (req, res, next) => {
     await voteModel.participateInTravelVote(voteUuid, userUuid, participate);
 
     // 참여자 수 조회
-    const participant_count = await voteModel.getParticipantCount(voteUuid); // 새 메서드 호출
+    const participant_count = await voteModel.getParticipantCount(voteUuid);
 
     // 소켓 이벤트
     global.io.to(vote.group_uuid).emit("voteParticipationUpdated", {
