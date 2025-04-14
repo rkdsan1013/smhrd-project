@@ -7,13 +7,14 @@ async function findAllByOwner(owner_uuid, group_uuid = null) {
   );
   try {
     let query = scheduleQueries.getSchedulesByOwner;
-    const params = [owner_uuid];
+    const params = [owner_uuid, owner_uuid]; // owner_uuid와 user_uuid로 동일 값 사용
 
     if (group_uuid) {
       query = `
-        SELECT uuid, title, description, location, start_time, end_time, type, owner_uuid, group_uuid
-        FROM schedules
-        WHERE owner_uuid = ? AND group_uuid = ?
+        SELECT DISTINCT s.uuid, s.title, s.description, s.location, s.start_time, s.end_time, s.type, s.owner_uuid, s.group_uuid
+        FROM schedules s
+        LEFT JOIN schedule_members sm ON s.uuid = sm.schedule_uuid
+        WHERE (s.owner_uuid = ? OR sm.user_uuid = ?) AND s.group_uuid = ?
       `;
       params.push(group_uuid);
 
@@ -76,7 +77,13 @@ async function create(schedule) {
       owner_uuid,
       group_uuid,
     ].filter((v) => v !== undefined);
-    await pool.query(scheduleQueries.insertSchedule, params);
+    await pool.query(scheduleQueries.INSERT_SCHEDULE, params);
+
+    // 그룹 일정일 경우 생성자를 schedule_members에 추가
+    if (group_uuid) {
+      await pool.query(scheduleQueries.INSERT_SCHEDULE_MEMBER, [uuid, owner_uuid]);
+    }
+
     console.log(`create: Schedule ${uuid} created`);
     return { uuid };
   } catch (error) {
@@ -129,7 +136,6 @@ async function remove(uuid, owner_uuid) {
 async function isScheduleParticipant(schedule_uuid, user_uuid) {
   console.log(`isScheduleParticipant: Checking user ${user_uuid} for schedule ${schedule_uuid}`);
   try {
-    // schedule_members 또는 travel_vote_participants로 확인
     const [rows] = await pool.query(
       `
       SELECT 1

@@ -14,11 +14,12 @@ const scheduleQueries = {
     VALUES (?, ?)
   `,
 
-  // 소유자의 모든 일정 조회
+  // 소유자 또는 참가자의 모든 일정 조회
   getSchedulesByOwner: `
-    SELECT uuid, title, description, location, start_time, end_time, type, owner_uuid, group_uuid
-    FROM schedules
-    WHERE owner_uuid = ?
+    SELECT DISTINCT s.uuid, s.title, s.description, s.location, s.start_time, s.end_time, s.type, s.owner_uuid, s.group_uuid
+    FROM schedules s
+    LEFT JOIN schedule_members sm ON s.uuid = sm.schedule_uuid
+    WHERE s.owner_uuid = ? OR sm.user_uuid = ?
   `,
 
   // 특정 일정 조회
@@ -72,17 +73,17 @@ const scheduleQueries = {
   `,
 
   GET_EXPIRED_SCHEDULE_CHATROOMS_BY_USER: `
-  SELECT 
-    cr.uuid AS chat_room_uuid,
-    s.title AS schedule_title,
-    s.uuid AS schedule_uuid
-  FROM schedule_members sm
-  JOIN schedules s ON sm.schedule_uuid = s.uuid
-  JOIN chat_rooms cr ON cr.schedule_uuid = s.uuid AND cr.type = 'schedule'
-  WHERE sm.user_uuid = ?
-    AND s.group_uuid = ?
-  ORDER BY s.created_at DESC
-`,
+    SELECT 
+      cr.uuid AS chat_room_uuid,
+      s.title AS schedule_title,
+      s.uuid AS schedule_uuid
+    FROM schedule_members sm
+    JOIN schedules s ON sm.schedule_uuid = s.uuid
+    JOIN chat_rooms cr ON cr.schedule_uuid = s.uuid AND cr.type = 'schedule'
+    WHERE sm.user_uuid = ?
+      AND s.group_uuid = ?
+    ORDER BY s.created_at DESC
+  `,
 };
 
 module.exports = scheduleQueries;

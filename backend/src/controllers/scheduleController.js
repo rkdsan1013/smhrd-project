@@ -1,5 +1,5 @@
 const scheduleModel = require("../models/scheduleModel");
-const voteModel = require("../models/voteModel"); // 그룹 멤버 체크용
+const voteModel = require("../models/voteModel");
 const { v4: uuidv4 } = require("uuid");
 
 const getSchedules = async (req, res) => {

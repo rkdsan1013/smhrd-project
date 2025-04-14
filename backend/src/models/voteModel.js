@@ -1,5 +1,3 @@
-// /backend/src/models/voteModel.js
-
 const pool = require("../config/db");
 const voteQueries = require("./voteQueries");
 const voteTransactions = require("./voteTransactions");
@@ -82,9 +80,10 @@ const participateInTravelVote = async (voteUuid, userUuid, participate) => {
 
       if (schedule_uuid) {
         await connection.query(
-          `INSERT IGNORE INTO schedule_members (schedule_uuid, user_uuid) VALUES (?, ?)`,
+          `INSERT INTO schedule_members (schedule_uuid, user_uuid) VALUES (?, ?) ON DUPLICATE KEY UPDATE user_uuid = user_uuid`,
           [schedule_uuid, userUuid],
         );
+        console.log(`Added user ${userUuid} to schedule_members for schedule ${schedule_uuid}`);
       }
     } else {
       const [[existing]] = await connection.query(
@@ -102,6 +101,7 @@ const participateInTravelVote = async (voteUuid, userUuid, participate) => {
           `DELETE FROM schedule_members WHERE schedule_uuid = ? AND user_uuid = ?`,
           [schedule_uuid, userUuid],
         );
+        console.log(`Removed user ${userUuid} from schedule_members for schedule ${schedule_uuid}`);
       }
 
       // 참여자 수 확인
@@ -114,6 +114,9 @@ const participateInTravelVote = async (voteUuid, userUuid, participate) => {
         await connection.query(`DELETE FROM travel_votes WHERE uuid = ?`, [voteUuid]);
         if (schedule_uuid) {
           await connection.query(`DELETE FROM schedules WHERE uuid = ?`, [schedule_uuid]);
+          await connection.query(`DELETE FROM schedule_members WHERE schedule_uuid = ?`, [
+            schedule_uuid,
+          ]);
           await connection.query(
             `DELETE FROM chat_rooms WHERE schedule_uuid = ? AND type = 'schedule'`,
             [schedule_uuid],
