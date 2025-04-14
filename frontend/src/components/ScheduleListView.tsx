@@ -33,29 +33,54 @@ const formatScheduleDate = (schedule: Schedule): string => {
 const ScheduleListView = forwardRef<ScheduleListViewHandle, ScheduleListViewProps>(
   ({ filterType }, ref) => {
     const { schedules } = useSchedule();
-    const now = new Date();
+    const nowTime = Date.now();
 
+    // 1. 필터링: 모든 all-day 일정은 항상 포함, 일반 일정은 현재 진행 중인 일정만 포함
     const filteredSchedules = useMemo(() => {
-      return filterType === "all"
-        ? schedules
-        : schedules.filter((schedule) => schedule.type === filterType);
+      const now = Date.now();
+      let filtered = schedules.filter((schedule) => {
+        if (!schedule.allDay) {
+          const start = new Date(schedule.start_time).getTime();
+          const end = new Date(schedule.end_time).getTime();
+          return now >= start && now <= end;
+        }
+        return true;
+      });
+      if (filterType !== "all") {
+        filtered = filtered.filter((schedule) => schedule.type === filterType);
+      }
+      return filtered;
     }, [schedules, filterType]);
 
+    // 2. 정렬: 그룹 번호 부여 (0: 종료, 1: 진행 중(all-day → "현재 일정"), 2: 진행 중(일반 → "진행중"), 3: upcoming)
     const sortedSchedules = useMemo<Schedule[]>(() => {
       return [...filteredSchedules].sort((a, b) => {
-        const aStart = new Date(a.start_time);
-        const bStart = new Date(b.start_time);
-        // 만약 시작일(연, 월, 일)이 같다면 종료 시간이 빠른 순으로 정렬
-        if (
-          aStart.getFullYear() === bStart.getFullYear() &&
-          aStart.getMonth() === bStart.getMonth() &&
-          aStart.getDate() === bStart.getDate()
-        ) {
-          return new Date(a.end_time).getTime() - new Date(b.end_time).getTime();
-        }
-        return aStart.getTime() - bStart.getTime();
+        const now = Date.now();
+        const aStart = new Date(a.start_time).getTime();
+        const aEnd = new Date(a.end_time).getTime();
+        const bStart = new Date(b.start_time).getTime();
+        const bEnd = new Date(b.end_time).getTime();
+
+        const aPast = now > aEnd;
+        const aActive = now >= aStart && now <= aEnd;
+        const aOrder = aPast ? 0 : aActive ? (a.allDay ? 1 : 2) : 3;
+
+        const bPast = now > bEnd;
+        const bActive = now >= bStart && now <= bEnd;
+        const bOrder = bPast ? 0 : bActive ? (b.allDay ? 1 : 2) : 3;
+
+        if (aOrder !== bOrder) return aOrder - bOrder;
+        return aStart - bStart;
       });
     }, [filteredSchedules]);
+
+    // 첫 upcoming 일정의 인덱스 (그룹 3에 해당하는 이벤트 중 가장 첫 이벤트)
+    const firstUpcomingIndex = useMemo(() => {
+      return sortedSchedules.findIndex((schedule) => {
+        const start = new Date(schedule.start_time).getTime();
+        return nowTime < start;
+      });
+    }, [sortedSchedules, nowTime]);
 
     const itemRefs = useRef<Array<HTMLDivElement | null>>([]);
     const [currentIndex, setCurrentIndex] = useState<number>(0);
@@ -82,14 +107,25 @@ const ScheduleListView = forwardRef<ScheduleListViewHandle, ScheduleListViewProp
       }
     };
 
+    // scrollToToday: 우선 일반(진행중) 일정을 우선 탐색한 후, 없으면 active 전체, 그 외 미래 일정으로 스크롤
     const scrollToToday = () => {
-      const nowTime = new Date().getTime();
-      let index = sortedSchedules.findIndex(
-        (s) =>
-          nowTime >= new Date(s.start_time).getTime() && nowTime <= new Date(s.end_time).getTime(),
-      );
+      const now = Date.now();
+      let index = sortedSchedules.findIndex((s) => {
+        const start = new Date(s.start_time).getTime();
+        const end = new Date(s.end_time).getTime();
+        // 일반 일정이면서 active인 경우 우선 선택
+        return !s.allDay && now >= start && now <= end;
+      });
       if (index === -1) {
-        index = sortedSchedules.findIndex((s) => new Date(s.start_time).getTime() > nowTime);
+        // 없으면 active인 모든 일정(즉, all-day 포함)에서 찾기
+        index = sortedSchedules.findIndex((s) => {
+          const start = new Date(s.start_time).getTime();
+          const end = new Date(s.end_time).getTime();
+          return now >= start && now <= end;
+        });
+      }
+      if (index === -1) {
+        index = sortedSchedules.findIndex((s) => new Date(s.start_time).getTime() > now);
       }
       if (index === -1) {
         index = 0;
@@ -103,14 +139,24 @@ const ScheduleListView = forwardRef<ScheduleListViewHandle, ScheduleListViewProp
       scrollToToday,
     }));
 
+    // 초기 스크롤: 진행중(Active) 일정 중 일반(진행중) 일정 우선, 없으면 active 전체, 그 외 미래 이벤트로
     useEffect(() => {
-      const nowTime = new Date().getTime();
-      let initialIndex = sortedSchedules.findIndex(
-        (s) =>
-          nowTime >= new Date(s.start_time).getTime() && nowTime <= new Date(s.end_time).getTime(),
-      );
+      const now = Date.now();
+      let initialIndex = sortedSchedules.findIndex((s) => {
+        const start = new Date(s.start_time).getTime();
+        const end = new Date(s.end_time).getTime();
+        // 일반 일정 중 진행중(진행중) 일정 우선
+        return !s.allDay && now >= start && now <= end;
+      });
       if (initialIndex === -1) {
-        initialIndex = sortedSchedules.findIndex((s) => new Date(s.start_time).getTime() > nowTime);
+        initialIndex = sortedSchedules.findIndex((s) => {
+          const start = new Date(s.start_time).getTime();
+          const end = new Date(s.end_time).getTime();
+          return now >= start && now <= end;
+        });
+      }
+      if (initialIndex === -1) {
+        initialIndex = sortedSchedules.findIndex((s) => new Date(s.start_time).getTime() > now);
       }
       if (initialIndex === -1) {
         initialIndex = 0;
@@ -132,32 +178,41 @@ const ScheduleListView = forwardRef<ScheduleListViewHandle, ScheduleListViewProp
           sortedSchedules.map((schedule, index) => {
             const scheduleStart = new Date(schedule.start_time).getTime();
             const scheduleEnd = new Date(schedule.end_time).getTime();
-            const nowTime = now.getTime();
+            const now = Date.now();
+            const isPast = now > scheduleEnd;
+            const isActive = now >= scheduleStart && now <= scheduleEnd;
+            const isUpcoming = !isPast && !isActive;
 
-            const isActive = nowTime >= scheduleStart && nowTime <= scheduleEnd;
-            const isNext =
-              !isActive &&
-              scheduleStart > nowTime &&
-              sortedSchedules.findIndex(
-                (s) =>
-                  new Date(s.start_time).getTime() > nowTime &&
-                  !(
-                    nowTime >= new Date(s.start_time).getTime() &&
-                    nowTime <= new Date(s.end_time).getTime()
-                  ),
-              ) === index;
-            const isPast = nowTime > scheduleEnd;
+            // 뱃지 텍스트 및 스타일 결정
+            let badgeText = "";
+            let badgeClass = "";
+            if (isPast) {
+              badgeText = "종료";
+              badgeClass = "bg-gray-500";
+            } else if (isActive) {
+              badgeText = schedule.allDay ? "현재 일정" : "진행중";
+              badgeClass = "bg-blue-500";
+            } else if (isUpcoming && index === firstUpcomingIndex) {
+              badgeText = "다음 일정";
+              badgeClass = "bg-green-500";
+            }
 
-            const total = scheduleEnd - scheduleStart;
-            const elapsed = nowTime - scheduleStart;
-            const progressPercent = isActive
-              ? Math.min(100, Math.max(0, (elapsed / total) * 100))
-              : 0;
+            // 일반(시간대) 일정의 진행율 계산 (all-day 일정은 progress bar 생략)
+            let progressPercent = 0;
+            if (isActive && !schedule.allDay) {
+              const total = scheduleEnd - scheduleStart;
+              const elapsed = now - scheduleStart;
+              progressPercent = Math.min(100, Math.max(0, (elapsed / total) * 100));
+            }
 
-            const startDate = moment(schedule.start_time).startOf("day");
-            const today = moment().startOf("day");
-            const daysLeft = startDate.diff(today, "days");
-            const dDayLabel = daysLeft === 0 ? "D-day" : `D-${daysLeft}`;
+            // dDay 레이블: 첫 upcoming 일정에 한하여
+            let dDayLabel = "";
+            if (isUpcoming && index === firstUpcomingIndex) {
+              const startDate = moment(schedule.start_time).startOf("day");
+              const today = moment().startOf("day");
+              const daysLeft = startDate.diff(today, "days");
+              dDayLabel = daysLeft === 0 ? "D-day" : `D-${daysLeft}`;
+            }
 
             return (
               <div
@@ -172,34 +227,29 @@ const ScheduleListView = forwardRef<ScheduleListViewHandle, ScheduleListViewProp
                   isActive ? "border-2 border-blue-500" : "border border-transparent"
                 }`}
               >
-                {isActive && (
-                  <>
-                    <div className="absolute top-0 left-0 h-1 w-full bg-gray-200 overflow-hidden">
-                      <div
-                        className="h-full bg-blue-500 transition-all duration-200"
-                        style={{ width: `${progressPercent}%` }}
-                      />
-                    </div>
-                    <span className="absolute top-1 right-0 bg-blue-500 text-white text-xs px-2 py-1 rounded-bl z-10">
-                      진행중
-                    </span>
-                  </>
+                {/* 진행 중이며 일반 일정인 경우 진행률 progress bar 표시 */}
+                {isActive && !schedule.allDay && (
+                  <div className="absolute top-0 left-0 h-1 w-full bg-gray-200 overflow-hidden">
+                    <div
+                      className="h-full bg-blue-500 transition-all duration-200"
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                  </div>
                 )}
 
-                {isNext && (
-                  <>
-                    <span className="absolute top-1 right-0 bg-green-500 text-white text-xs px-2 py-1 rounded-bl z-10">
-                      다음 일정
-                    </span>
-                    <span className="absolute top-7 right-0 bg-yellow-400 text-white text-xs px-2 py-1 rounded-bl z-10">
-                      {dDayLabel}
-                    </span>
-                  </>
+                {/* 뱃지 표시 */}
+                {badgeText && (
+                  <span
+                    className={`absolute top-1 right-0 ${badgeClass} text-white text-xs px-2 py-1 rounded-bl z-10`}
+                  >
+                    {badgeText}
+                  </span>
                 )}
 
-                {isPast && (
-                  <span className="absolute top-1 right-0 bg-gray-500 text-white text-xs px-2 py-1 rounded-bl z-10">
-                    종료
+                {/* 첫 upcoming 일정에 대한 dDay 레이블 */}
+                {isUpcoming && index === firstUpcomingIndex && (
+                  <span className="absolute top-7 right-0 bg-yellow-400 text-white text-xs px-2 py-1 rounded-bl z-10">
+                    {dDayLabel}
                   </span>
                 )}
 
