@@ -61,49 +61,51 @@ const GroupAnnouncement: React.FC<GroupAnnouncementProps> = ({
   };
 
   if (loading) {
-    return <div className="text-center text-gray-500 py-10">로딩 중...</div>;
+    return <div className="flex-1 flex items-center justify-center text-gray-500">로딩 중...</div>;
   }
 
   return (
-    // 기존의 h-screen 대신 부모 컨테이너에 맞게 h-full 사용
+    // 부모 영역에 맞게 h-full 사용
     <div className="h-full flex flex-col bg-gray-50">
-      <header className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-        <h2 className="text-3xl font-bold text-gray-800">그룹 공지사항</h2>
+      <header className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+        <h2 className="text-2xl font-bold text-gray-800">그룹 공지사항</h2>
         {isLeader && (
           <button
             onClick={() => setIsModalOpen(true)}
-            className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200"
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition duration-200"
           >
             공지사항 등록
           </button>
         )}
       </header>
-      {error && <p className="text-center text-red-500 my-4">{error}</p>}
-      <div className="flex-1 overflow-y-auto px-6 pb-6">
+
+      {error && <div className="px-4 py-2 text-center text-red-500">{error}</div>}
+
+      <div className="flex-1 overflow-y-auto px-4 py-4">
         {announcements.length === 0 ? (
           <p className="text-gray-500 text-center">등록된 공지사항이 없습니다.</p>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {announcements.map((announcement) => (
               <div
                 key={announcement.uuid}
-                className="p-6 bg-white rounded-lg border border-gray-200 shadow hover:shadow-lg transition-all duration-200"
+                className="p-4 bg-white rounded-lg shadow border border-gray-200 hover:shadow-md transition duration-200"
               >
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center">
-                    <Icons name="bell" className="w-7 h-7 text-yellow-500 mr-3" />
-                    <h3 className="text-xl font-bold text-gray-800">{announcement.title}</h3>
+                    <Icons name="bell" className="w-6 h-6 text-yellow-500 mr-2" />
+                    <h3 className="text-xl font-semibold text-gray-800">{announcement.title}</h3>
                   </div>
                   {isLeader && (
                     <button
                       onClick={() => handleDeleteAnnouncement(announcement.uuid)}
-                      className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-all duration-200"
+                      className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition duration-200"
                     >
                       삭제
                     </button>
                   )}
                 </div>
-                <p className="text-gray-700 mb-3">{announcement.content}</p>
+                <p className="text-gray-700 mb-2">{announcement.content}</p>
                 <div className="text-sm text-gray-500">
                   <span className="mr-4">작성자: {announcement.author_name}</span>
                   <span>작성일: {new Date(announcement.created_at).toLocaleString()}</span>
@@ -113,6 +115,7 @@ const GroupAnnouncement: React.FC<GroupAnnouncementProps> = ({
           </div>
         )}
       </div>
+
       {isModalOpen && (
         <GroupAnnouncementModal
           groupUuid={groupUuid}
