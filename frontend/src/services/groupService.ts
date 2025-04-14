@@ -1,4 +1,5 @@
 import { get, post, put, remove } from "./apiClient";
+import apiClient from "./apiClient";
 
 export interface CreateGroupPayload {
   name: string;
@@ -37,6 +38,15 @@ export interface Member {
 
 export interface GroupMembersResponse {
   members: Member[];
+}
+
+export interface Announcement {
+  uuid: string;
+  title: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  author_name: string;
 }
 
 const buildGroupFormData = (data: {
@@ -135,4 +145,58 @@ export const getGroupDetails = async (groupUuid: string): Promise<GroupInfo> => 
 
 export const leaveGroup = async (groupUuid: string): Promise<{ message: string }> => {
   return remove<{ message: string }>(`/groups/${groupUuid}/members`);
+};
+
+export const createAnnouncement = async (groupUuid: string, title: string, content: string) => {
+  try {
+    await apiClient.post(`/groups/${groupUuid}/announcements`, {
+      title,
+      content,
+    });
+    const { announcements } = await getAnnouncements(groupUuid);
+    const newAnnouncement = announcements.find(
+      (ann) => ann.title === title && ann.content === content,
+    );
+    return (
+      newAnnouncement || {
+        uuid: "",
+        title,
+        content,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        author_name: "리더",
+      }
+    );
+  } catch (error) {
+    console.error("[createAnnouncement] Error:", error);
+    throw error;
+  }
+};
+
+export const getAnnouncements = async (
+  groupUuid: string,
+): Promise<{ announcements: Announcement[] }> => {
+  const response = await apiClient.get(`/groups/${groupUuid}/announcements`);
+  return response.data;
+};
+
+export const updateAnnouncement = async (
+  groupUuid: string,
+  announcementUuid: string,
+  title: string,
+  content: string,
+): Promise<Announcement> => {
+  const response = await apiClient.put(`/groups/${groupUuid}/announcements/${announcementUuid}`, {
+    title,
+    content,
+  });
+  return response.data;
+};
+
+export const deleteAnnouncement = async (
+  groupUuid: string,
+  announcementUuid: string,
+): Promise<{ message: string }> => {
+  const response = await apiClient.delete(`/groups/${groupUuid}/announcements/${announcementUuid}`);
+  return response.data;
 };

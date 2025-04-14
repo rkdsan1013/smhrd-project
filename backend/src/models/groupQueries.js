@@ -1,6 +1,3 @@
-// /backend/src/models/groupQueries.js
-// 그룹 관련 SQL 쿼리 모음 (그룹 정보 및 초대 관련)
-
 const INSERT_GROUP_INFO = `
   INSERT INTO group_info
     (name, description, group_icon, group_picture, visibility, group_leader_uuid)
@@ -17,7 +14,6 @@ const SELECT_GROUP_BY_UUID = `
   SELECT * FROM group_info WHERE uuid = ?
 `;
 
-// 그룹 리더별 가장 최근 생성된 그룹 조회 (가장 최신 그룹 선택)
 const SELECT_LATEST_GROUP_BY_LEADER = `
   SELECT * FROM group_info
   WHERE group_leader_uuid = ?
@@ -31,7 +27,6 @@ const UPDATE_GROUP_IMAGES = `
   WHERE uuid = ?
 `;
 
-// 내가 가입한 그룹 목록 조회 (group_info와 group_members 조인)
 const SELECT_GROUPS_FOR_MEMBER = `
   SELECT gi.*
   FROM group_info gi
@@ -46,7 +41,6 @@ const SEARCH_GROUPS_BY_NAME = `
   ORDER BY created_at DESC
 `;
 
-// 그룹 초대장 관련 쿼리
 const SELECT_GROUP_INVITE_BY_UUID = `
   SELECT * FROM group_invites
   WHERE uuid = ? AND invited_user_uuid = ?
@@ -86,14 +80,12 @@ const CHECK_DUPLICATE_INVITE = `
   LIMIT 1
 `;
 
-// 그룹 멤버 확인 쿼리
 const CHECK_IS_GROUP_MEMBER = `
   SELECT 1 FROM group_members
   WHERE group_uuid = ? AND user_uuid = ?
   LIMIT 1
 `;
 
-// 그룹 멤버 조회: group_members와 user_profiles 조인
 const SELECT_GROUP_MEMBERS = `
   SELECT 
     up.uuid, 
@@ -112,20 +104,17 @@ const SELECT_SENT_GROUP_INVITES = `
 
 const SELECT_RECEIVED_GROUP_INVITES = `
   SELECT
-  gi.uuid AS inviteUuid,
-  gi.group_uuid AS groupUuid,
-  gi.invited_by_uuid AS inviterUuid,
-  up.name AS inviterName,
-  g.name AS groupName
-FROM group_invites gi
-JOIN user_profiles up ON gi.invited_by_uuid = up.uuid
-JOIN group_info g ON gi.group_uuid = g.uuid
-WHERE gi.invited_user_uuid = ?
-
+    gi.uuid AS inviteUuid,
+    gi.group_uuid AS groupUuid,
+    gi.invited_by_uuid AS inviterUuid,
+    up.name AS inviterName,
+    g.name AS groupName
+  FROM group_invites gi
+  JOIN user_profiles up ON gi.invited_by_uuid = up.uuid
+  JOIN group_info g ON gi.group_uuid = g.uuid
+  WHERE gi.invited_user_uuid = ?
 `;
 
-// 추가: group_info에서 방금 삽입한 그룹의 uuid 조회
-// 설명: group_info에 데이터를 삽입한 후 해당 uuid를 가져와 group_surveys 삽입 시 사용
 const SELECT_LATEST_GROUP_UUID = `
   SELECT uuid
   FROM group_info
@@ -133,13 +122,42 @@ const SELECT_LATEST_GROUP_UUID = `
   LIMIT 1
 `;
 
-// 추가: group_surveys 테이블에 설문 데이터 삽입
-// 설명: group_uuid를 외래키로 사용해 설문 데이터를 저장
 const INSERT_GROUP_SURVEY = `
   INSERT INTO group_surveys (uuid, group_uuid, activity_type, budget_type, trip_duration)
   VALUES (UUID(), ?, ?, ?, ?)
 `;
 
+// 공지사항 삽입
+const INSERT_ANNOUNCEMENT = `
+  INSERT INTO announcements (uuid, group_uuid, author_uuid, title, content)
+  VALUES (UUID(), ?, ?, ?, ?)
+`;
+
+const UPDATE_ANNOUNCEMENT = `
+  UPDATE announcements
+  SET title = ?, content = ?, updated_at = CURRENT_TIMESTAMP
+  WHERE uuid = ? AND group_uuid = ?
+`;
+
+const DELETE_ANNOUNCEMENT = `
+  DELETE FROM announcements
+  WHERE uuid = ? AND group_uuid = ?
+`;
+
+// 공지사항 조회
+const SELECT_ANNOUNCEMENTS_BY_GROUP = `
+  SELECT 
+    a.uuid, 
+    a.title, 
+    a.content, 
+    a.created_at, 
+    a.updated_at, 
+    COALESCE(up.name, 'Unknown') AS author_name
+  FROM announcements a
+  LEFT JOIN user_profiles up ON a.author_uuid = up.uuid
+  WHERE a.group_uuid = ?
+  ORDER BY a.created_at DESC
+`;
 
 module.exports = {
   INSERT_GROUP_INFO,
@@ -160,6 +178,10 @@ module.exports = {
   SELECT_GROUP_MEMBERS,
   SELECT_SENT_GROUP_INVITES,
   SELECT_RECEIVED_GROUP_INVITES,
-  SELECT_LATEST_GROUP_UUID, // 추가: 내보내기
-  INSERT_GROUP_SURVEY, // 추가: 내보내기
+  SELECT_LATEST_GROUP_UUID,
+  INSERT_GROUP_SURVEY,
+  INSERT_ANNOUNCEMENT,
+  SELECT_ANNOUNCEMENTS_BY_GROUP,
+  UPDATE_ANNOUNCEMENT,
+  DELETE_ANNOUNCEMENT,
 };

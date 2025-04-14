@@ -1,5 +1,3 @@
-// /backend/src/controllers/groupController.js
-
 const groupModel = require("../models/groupModel");
 const chatTransactions = require("../models/chatTransactions");
 const chatModel = require("../models/chatModel");
@@ -8,13 +6,6 @@ const { formatImageUrl } = require("../utils/imageUrlHelper");
 const { validateName, validateDescription } = require("../utils/validators");
 const userModel = require("../models/userModel");
 const pool = require("../config/db");
-
-const formatProfile = (profile) => {
-  if (profile.profilePicture) {
-    profile.profilePicture = formatImageUrl(profile.profilePicture);
-  }
-  return profile;
-};
 
 const createGroup = async (req, res) => {
   try {
@@ -296,7 +287,9 @@ const leaveGroup = async (req, res) => {
     }
 
     if (groupRows[0].group_leader_uuid === userUuid) {
-      return res.status(403).json({ message: "그룹 리더는 탈퇴할 수 없습니다." });
+      return res
+        .status(403)
+        .json({ message: "그룹 리더는 военных문화가 그룹 탈퇴할 수 없습니다." });
     }
 
     const [memberRows] = await pool.query(
@@ -322,6 +315,108 @@ const leaveGroup = async (req, res) => {
   }
 };
 
+const createAnnouncement = async (req, res) => {
+  try {
+    const groupUuid = req.params.groupUuid;
+    const userUuid = req.user.uuid;
+    const { title, content } = req.body;
+
+    if (!title || !content) {
+      return res.status(400).json({ message: "제목과 내용을 입력해주세요." });
+    }
+
+    const [groupRows] = await pool.query(
+      `SELECT group_leader_uuid FROM group_info WHERE uuid = ?`,
+      [groupUuid],
+    );
+    if (groupRows.length === 0) {
+      return res.status(404).json({ message: "그룹을 찾을 수 없습니다." });
+    }
+    if (groupRows[0].group_leader_uuid !== userUuid) {
+      return res.status(403).json({ message: "공지사항은 그룹 리더만 등록할 수 있습니다." });
+    }
+
+    const announcement = await groupModel.createAnnouncement(groupUuid, userUuid, title, content);
+    global.io.to(groupUuid).emit("announcementCreated", {
+      groupUuid,
+      announcementUuid: announcement.uuid,
+      title,
+    });
+
+    return res.status(201).json(announcement);
+  } catch (error) {
+    console.error("Error in createAnnouncement:", error.message, error.stack);
+    return res.status(500).json({ message: `공지사항 생성 실패: ${error.message}` });
+  }
+};
+
+const getAnnouncements = async (req, res) => {
+  try {
+    const groupUuid = req.params.groupUuid;
+    const userUuid = req.user.uuid;
+
+    const [memberRows] = await pool.query(
+      `SELECT 1 FROM group_members WHERE group_uuid = ? AND user_uuid = ?`,
+      [groupUuid, userUuid],
+    );
+    if (memberRows.length === 0) {
+      return res.status(403).json({ message: "그룹 멤버가 아닙니다." });
+    }
+
+    const announcements = await groupModel.getAnnouncementsByGroup(groupUuid);
+    return res.json({ announcements });
+  } catch (error) {
+    console.error("Error in getAnnouncements:", error.message, error.stack);
+    return res.status(500).json({ message: `공지사항 조회 실패: ${error.message}` });
+  }
+};
+
+const updateAnnouncement = async (req, res) => {
+  try {
+    const { groupUuid, announcementUuid } = req.params;
+    const { title, content } = req.body;
+    const userUuid = req.user.uuid;
+    const [groupRows] = await pool.query(
+      `SELECT group_leader_uuid FROM group_info WHERE uuid = ?`,
+      [groupUuid],
+    );
+    if (groupRows.length === 0)
+      return res.status(404).json({ message: "그룹을 찾을 수 없습니다." });
+    if (groupRows[0].group_leader_uuid !== userUuid)
+      return res.status(403).json({ message: "리더만 수정 가능합니다." });
+    const announcement = await groupModel.updateAnnouncement(
+      groupUuid,
+      announcementUuid,
+      title,
+      content,
+    );
+    global.io.to(groupUuid).emit("announcementUpdated", { groupUuid, announcementUuid, title });
+    res.status(200).json(announcement);
+  } catch (error) {
+    res.status(500).json({ message: `공지사항 수정 실패: ${error.message}` });
+  }
+};
+
+const deleteAnnouncement = async (req, res) => {
+  try {
+    const { groupUuid, announcementUuid } = req.params;
+    const userUuid = req.user.uuid;
+    const [groupRows] = await pool.query(
+      `SELECT group_leader_uuid FROM group_info WHERE uuid = ?`,
+      [groupUuid],
+    );
+    if (groupRows.length === 0)
+      return res.status(404).json({ message: "그룹을 찾을 수 없습니다." });
+    if (groupRows[0].group_leader_uuid !== userUuid)
+      return res.status(403).json({ message: "리더만 삭제 가능합니다." });
+    const result = await groupModel.deleteAnnouncement(groupUuid, announcementUuid);
+    global.io.to(groupUuid).emit("announcementDeleted", { groupUuid, announcementUuid });
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({ message: `공지사항 삭제 실패: ${error.message}` });
+  }
+};
+
 module.exports = {
   createGroup,
   getMyGroups,
@@ -334,4 +429,8 @@ module.exports = {
   getReceivedGroupInvites,
   getGroupDetails,
   leaveGroup,
+  createAnnouncement,
+  getAnnouncements,
+  updateAnnouncement,
+  deleteAnnouncement,
 };
