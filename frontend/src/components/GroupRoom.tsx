@@ -36,7 +36,6 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid }) => 
   const [groupDetails, setGroupDetails] = useState<any | null>(null);
   const { socket } = useSocket();
 
-  // 그룹 상세 정보 조회
   useEffect(() => {
     const fetchGroupDetails = async () => {
       setLoading(true);
@@ -54,7 +53,6 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid }) => 
     fetchGroupDetails();
   }, [groupUuid]);
 
-  // 그룹 채팅방 UUID 조회
   useEffect(() => {
     const fetchChatRoomUuid = async () => {
       setLoading(true);
@@ -74,7 +72,6 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid }) => 
     fetchChatRoomUuid();
   }, [groupUuid]);
 
-  // 일정 채팅방 UUID 조회
   useEffect(() => {
     const fetchScheduleChatRoomUuid = async () => {
       if (!scheduleUuid) {
@@ -110,7 +107,6 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid }) => 
     fetchScheduleChatRoomUuid();
   }, [scheduleUuid]);
 
-  // 소켓 이벤트 처리
   useEffect(() => {
     if (!socket) return;
 
@@ -161,18 +157,32 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid }) => 
       }
     };
 
+    const handleAnnouncementCreated = ({
+      groupUuid: eventGroupUuid,
+      title,
+    }: {
+      groupUuid: string;
+      announcementUuid: string;
+      title: string;
+    }) => {
+      if (eventGroupUuid === groupUuid && selectedTab !== "announcement") {
+        alert(`새 공지사항 "${title}"이 등록되었습니다.`);
+      }
+    };
+
     socket.on("scheduleCreated", handleScheduleCreated);
     socket.on("travelVoteCreated", handleTravelVoteCreated);
     socket.on("groupMemberLeft", handleGroupMemberLeft);
+    socket.on("announcementCreated", handleAnnouncementCreated);
 
     return () => {
       socket.off("scheduleCreated", handleScheduleCreated);
       socket.off("travelVoteCreated", handleTravelVoteCreated);
       socket.off("groupMemberLeft", handleGroupMemberLeft);
+      socket.off("announcementCreated", handleAnnouncementCreated);
     };
   }, [socket, groupUuid, selectedTab, currentUserUuid]);
 
-  // 채팅 탭 렌더링
   const renderChatTab = () => {
     if (loading) {
       return <div className="text-center text-gray-500">채팅방을 불러오는 중...</div>;
@@ -209,7 +219,6 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid }) => 
 
   return (
     <div className="h-full flex flex-col">
-      {/* 모바일 상단 네비게이션 */}
       <div className="block md:hidden mb-4 border-b border-gray-300 py-2">
         <div className="flex items-center justify-around">
           <button
@@ -239,9 +248,7 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid }) => 
         </div>
       </div>
 
-      {/* 메인 콘텐츠 영역 */}
       <div className="flex flex-1 overflow-hidden gap-4">
-        {/* 좌측 사이드바 */}
         <aside className="hidden md:flex flex-col md:w-24 lg:w-52 flex-shrink-0 border-r border-gray-300 p-4">
           <div className="space-y-4">
             <button
@@ -286,10 +293,9 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid }) => 
           </button>
         </aside>
 
-        {/* 중앙 콘텐츠 영역 */}
         <section className="flex-1 min-w-0 overflow-hidden p-4">
           <AnimatePresence mode="wait">
-            {selectedTab === "announcement" && (
+            {selectedTab === "announcement" && groupDetails && (
               <motion.div
                 key={`announcement-${groupUuid}`}
                 className="h-full"
@@ -299,7 +305,11 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid }) => 
                 exit="exit"
                 transition={{ duration: 0.2 }}
               >
-                <GroupAnnouncement />
+                <GroupAnnouncement
+                  groupUuid={groupUuid}
+                  currentUserUuid={currentUserUuid}
+                  groupLeaderUuid={groupDetails.group_leader_uuid}
+                />
               </motion.div>
             )}
             {selectedTab === "calendar" && (
@@ -364,7 +374,6 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid }) => 
           </AnimatePresence>
         </section>
 
-        {/* 우측 사이드바 */}
         <aside className="hidden md:flex flex-col md:w-40 lg:w-64 flex-shrink-0 border-l border-gray-300 p-4">
           <GroupMemberList groupUuid={groupUuid} />
         </aside>

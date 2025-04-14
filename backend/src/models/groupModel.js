@@ -1,11 +1,9 @@
-// /backend/src/models/groupModel.js
-
 const pool = require("../config/db");
 const groupQueries = require("./groupQueries");
 const groupTransactions = require("./groupTransactions");
 const friendModel = require("./friendModel");
+const { v4: uuidv4 } = require("uuid");
 
-// DB 연결 상태 확인
 const checkDbConnection = async () => {
   try {
     const [rows] = await pool.query("SELECT 1");
@@ -16,7 +14,6 @@ const checkDbConnection = async () => {
   }
 };
 
-// 그룹 단건 조회: uuid를 기준으로 그룹 정보를 조회
 const getGroupByUuid = async (groupUuid) => {
   try {
     const [rows] = await pool.query(groupQueries.SELECT_GROUP_BY_UUID, [groupUuid]);
@@ -33,7 +30,6 @@ const getGroupByUuid = async (groupUuid) => {
   }
 };
 
-// 그룹 이미지 업데이트: 그룹 아이콘, 그룹 사진 URL 업데이트
 const updateGroupImages = async (groupUuid, groupIconUrl, groupPictureUrl) => {
   try {
     const [result] = await pool.query(groupQueries.UPDATE_GROUP_IMAGES, [
@@ -49,7 +45,6 @@ const updateGroupImages = async (groupUuid, groupIconUrl, groupPictureUrl) => {
   }
 };
 
-// 내 그룹 목록 조회: 사용자가 가입한 그룹 조회
 const getMyGroups = async (userUuid) => {
   try {
     const [rows] = await pool.query(groupQueries.SELECT_GROUPS_FOR_MEMBER, [userUuid]);
@@ -60,7 +55,6 @@ const getMyGroups = async (userUuid) => {
   }
 };
 
-// 그룹 검색: 그룹 이름에 키워드 포함 여부로 검색
 const searchGroups = async (name) => {
   try {
     const [rows] = await pool.query(groupQueries.SEARCH_GROUPS_BY_NAME, [`%${name}%`]);
@@ -71,7 +65,6 @@ const searchGroups = async (name) => {
   }
 };
 
-// 그룹 생성: 그룹 생성 트랜잭션을 통해 그룹 생성 (DB에서 자동 생성된 uuid 사용)
 const createGroup = async (
   name,
   description,
@@ -83,20 +76,10 @@ const createGroup = async (
 ) => {
   let conn;
   try {
-    console.log("Attempting to get DB connection");
     await checkDbConnection();
     conn = await pool.getConnection();
-    console.log("DB connection acquired");
-
-    console.log("Starting transaction for group creation");
     await conn.beginTransaction();
 
-    console.log("Step 1: Inserting into group_info:", {
-      name,
-      description,
-      visibility,
-      groupLeaderUuid,
-    });
     const [insertResult] = await conn.query(groupQueries.INSERT_GROUP_INFO, [
       name,
       description,
@@ -105,25 +88,15 @@ const createGroup = async (
       visibility,
       groupLeaderUuid,
     ]);
-    console.log("Insert group_info result:", insertResult);
 
-    console.log("Step 2: Retrieving groupUuid");
     const [groupRows] = await conn.query(groupQueries.SELECT_LATEST_GROUP_UUID);
-    console.log("Group rows:", groupRows);
     const groupUuid = groupRows[0]?.uuid;
     if (!groupUuid) {
       throw new Error("Failed to retrieve groupUuid from group_info");
     }
-    console.log("Retrieved groupUuid:", groupUuid);
 
-    console.log("Step 3: Inserting into group_members:", { groupUuid, groupLeaderUuid });
-    const [memberResult] = await conn.query(groupQueries.INSERT_GROUP_MEMBER, [
-      groupUuid,
-      groupLeaderUuid,
-    ]);
-    console.log("Insert group_members result:", memberResult);
+    await conn.query(groupQueries.INSERT_GROUP_MEMBER, [groupUuid, groupLeaderUuid]);
 
-    console.log("Step 4: Verifying group_uuid exists in group_info");
     const [groupCheck] = await conn.query("SELECT uuid FROM group_info WHERE uuid = ?", [
       groupUuid,
     ]);
@@ -131,79 +104,30 @@ const createGroup = async (
       throw new Error(`group_uuid ${groupUuid} does not exist in group_info`);
     }
 
-    console.log("Step 5: Inserting into group_surveys");
     const surveyValues = [
       groupUuid,
       surveyData.activity_type || 0,
       surveyData.budget_type || 0,
       surveyData.trip_duration || 0,
     ];
-    console.log("Survey values:", surveyValues);
-    const [surveyResult] = await conn.query(groupQueries.INSERT_GROUP_SURVEY, surveyValues);
-    console.log("Insert group_surveys result:", surveyResult);
+    await conn.query(groupQueries.INSERT_GROUP_SURVEY, surveyValues);
 
-    console.log("Step 6: Committing transaction");
     await conn.commit();
 
-    // 커밋 후 데이터 확인
-    console.log("Verifying commit by fetching group_info");
-    const [verifyGroup] = await conn.query(groupQueries.SELECT_GROUP_BY_UUID, [groupUuid]);
-    if (!verifyGroup[0]) {
-      throw new Error("Transaction commit failed: group_info data not found after commit");
-    }
-    console.log("Verified group_info after commit:", verifyGroup[0]);
-
-    console.log("Verifying group_members after commit");
-    const [verifyMembers] = await conn.query(
-      "SELECT * FROM group_members WHERE group_uuid = ? AND user_uuid = ?",
-      [groupUuid, groupLeaderUuid],
-    );
-    if (!verifyMembers[0]) {
-      throw new Error("Transaction commit failed: group_members data not found after commit");
-    }
-    console.log("Verified group_members after commit:", verifyMembers[0]);
-
-    console.log("Verifying group_surveys after commit");
-    const [verifySurveys] = await conn.query("SELECT * FROM group_surveys WHERE group_uuid = ?", [
-      groupUuid,
-    ]);
-    if (!verifySurveys[0]) {
-      throw new Error("Transaction commit failed: group_surveys data not found after commit");
-    }
-    console.log("Verified group_surveys after commit:", verifySurveys[0]);
-
-    console.log("Step 7: Fetching created group");
     const [createdGroup] = await conn.query(groupQueries.SELECT_GROUP_BY_UUID, [groupUuid]);
     if (!createdGroup[0]) {
       throw new Error(`Failed to fetch created group with UUID: ${groupUuid}`);
     }
-    const groupInfo = { ...createdGroup[0] };
-    console.log("Sanitized groupInfo:", groupInfo);
-    return groupInfo;
+    return { ...createdGroup[0] };
   } catch (error) {
-    console.error("Error in createGroup (groupModel):", error.message, error.stack);
-    if (error.code === "ER_NO_REFERENCED_ROW_2") {
-      console.error("Foreign key constraint failed:", error.sqlMessage);
-      throw new Error(`Foreign key constraint failed: ${error.sqlMessage}`);
-    }
-    if (error.code === "ER_DUP_ENTRY") {
-      console.error("Duplicate entry error:", error.sqlMessage);
-      throw new Error(`Duplicate entry error: ${error.sqlMessage}`);
-    }
-    if (conn) {
-      await conn.rollback();
-      console.log("Transaction rolled back");
-    }
+    console.error("Error in createGroup:", error.message, error.stack);
+    if (conn) await conn.rollback();
     throw new Error(`Failed to create group: ${error.message}`);
   } finally {
-    if (conn) {
-      conn.release();
-      console.log("DB connection released");
-    }
+    if (conn) conn.release();
   }
 };
 
-// 그룹 멤버 조회: group_members와 user_profiles 조인하여 멤버 정보 반환
 const getGroupMembers = async (groupUuid) => {
   try {
     const [rows] = await pool.query(groupQueries.SELECT_GROUP_MEMBERS, [groupUuid]);
@@ -214,24 +138,22 @@ const getGroupMembers = async (groupUuid) => {
   }
 };
 
-// 그룹 초대 생성 함수
 const sendGroupInvite = async (groupUuid, inviterUuid, invitedUserUuid) => {
   try {
-    const [existing] = await pool.query(
-      "SELECT * FROM group_invites WHERE group_uuid = ? AND invited_by_uuid = ? AND invited_user_uuid = ?",
-      [groupUuid, inviterUuid, invitedUserUuid],
-    );
+    const [existing] = await pool.query(groupQueries.CHECK_DUPLICATE_INVITE, [
+      groupUuid,
+      inviterUuid,
+      invitedUserUuid,
+    ]);
     if (existing.length > 0) {
       return existing[0].uuid;
     }
-    await pool.query(
-      "INSERT INTO group_invites (group_uuid, invited_by_uuid, invited_user_uuid) VALUES (?, ?, ?)",
-      [groupUuid, inviterUuid, invitedUserUuid],
-    );
-    const [rows] = await pool.query(
-      "SELECT uuid FROM group_invites WHERE group_uuid = ? AND invited_by_uuid = ? AND invited_user_uuid = ?",
-      [groupUuid, inviterUuid, invitedUserUuid],
-    );
+    await pool.query(groupQueries.INSERT_GROUP_INVITE, [groupUuid, inviterUuid, invitedUserUuid]);
+    const [rows] = await pool.query(groupQueries.SELECT_LATEST_INVITE_UUID, [
+      groupUuid,
+      inviterUuid,
+      invitedUserUuid,
+    ]);
     return rows[0].uuid;
   } catch (error) {
     console.error("Error in sendGroupInvite:", error.message, error.stack);
@@ -262,6 +184,58 @@ const getReceivedInvitesByUserUuid = async (userUuid) => {
   }
 };
 
+// 공지사항 생성
+const createAnnouncement = async (groupUuid, authorUuid, title, content) => {
+  try {
+    await pool.query(groupQueries.INSERT_ANNOUNCEMENT, [groupUuid, authorUuid, title, content]);
+    const [rows] = await pool.query(groupQueries.SELECT_ANNOUNCEMENTS_BY_GROUP, [groupUuid]);
+    const createdAnnouncement = rows.find((row) => row.title === title && row.content === content);
+    if (!createdAnnouncement) {
+      throw new Error("Failed to fetch created announcement");
+    }
+    return createdAnnouncement;
+  } catch (error) {
+    console.error("Error in createAnnouncement:", error.message, error.stack);
+    throw new Error(`Failed to create announcement: ${error.message}`);
+  }
+};
+
+// 공지사항 목록 조회
+const getAnnouncementsByGroup = async (groupUuid) => {
+  try {
+    const [rows] = await pool.query(groupQueries.SELECT_ANNOUNCEMENTS_BY_GROUP, [groupUuid]);
+    return rows.map((row) => ({ ...row }));
+  } catch (error) {
+    console.error("Error in getAnnouncementsByGroup:", error.message, error.stack);
+    throw new Error(`Failed to fetch announcements: ${error.message}`);
+  }
+};
+
+const updateAnnouncement = async (groupUuid, announcementUuid, title, content) => {
+  const [result] = await pool.query(groupQueries.UPDATE_ANNOUNCEMENT, [
+    title,
+    content,
+    announcementUuid,
+    groupUuid,
+  ]);
+  if (result.affectedRows === 0) {
+    throw new Error("Announcement not found or unauthorized");
+  }
+  const [rows] = await pool.query(groupQueries.SELECT_ANNOUNCEMENTS_BY_GROUP, [groupUuid]);
+  return rows.find((row) => row.uuid === announcementUuid);
+};
+
+const deleteAnnouncement = async (groupUuid, announcementUuid) => {
+  const [result] = await pool.query(groupQueries.DELETE_ANNOUNCEMENT, [
+    announcementUuid,
+    groupUuid,
+  ]);
+  if (result.affectedRows === 0) {
+    throw new Error("Announcement not found or unauthorized");
+  }
+  return { message: "공지사항이 삭제되었습니다." };
+};
+
 module.exports = {
   getGroupByUuid,
   updateGroupImages,
@@ -272,4 +246,8 @@ module.exports = {
   sendGroupInvite,
   getSentInvitesByGroupAndSender,
   getReceivedInvitesByUserUuid,
+  createAnnouncement,
+  getAnnouncementsByGroup,
+  updateAnnouncement,
+  deleteAnnouncement,
 };

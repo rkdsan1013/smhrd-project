@@ -41,4 +41,18 @@ router.get("/invites/received", verifyToken, groupController.getReceivedGroupInv
 // 그룹 탈퇴
 router.delete("/:groupUuid/members", verifyToken, groupController.leaveGroup);
 
+router.post("/:groupUuid/announcements", verifyToken, groupController.createAnnouncement);
+router.get("/:groupUuid/announcements", verifyToken, groupController.getAnnouncements);
+
+router.put(
+  "/:groupUuid/announcements/:announcementUuid",
+  verifyToken,
+  groupController.updateAnnouncement,
+);
+router.delete(
+  "/:groupUuid/announcements/:announcementUuid",
+  verifyToken,
+  groupController.deleteAnnouncement,
+);
+
 module.exports = router;
