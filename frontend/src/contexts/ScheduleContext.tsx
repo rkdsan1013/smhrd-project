@@ -2,12 +2,10 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo } from "react";
 import { v4 as uuidv4 } from "uuid";
+import moment from "moment";
 import { useSocket } from "../contexts/SocketContext";
 import scheduleService from "../services/scheduleService";
 
-// 일정의 allDay 여부를 판단하는 도우미 함수
-// 시작 시간과 종료 시간이 모두 자정(00:00:00)인 경우 종일 이벤트로 설정하고,
-// 그렇지 않으면 시간 일정으로 판단하여 false를 반환합니다.
 const isAllDayEvent = (start: Date, end: Date): boolean => {
   const startIsMidnight =
     start.getHours() === 0 && start.getMinutes() === 0 && start.getSeconds() === 0;
@@ -15,7 +13,6 @@ const isAllDayEvent = (start: Date, end: Date): boolean => {
   return startIsMidnight && endIsMidnight;
 };
 
-// 수정된 일정 타입 정의: owner_uuid, group_uuid, created_at, updated_at 제거
 export interface Schedule {
   uuid: string;
   title: string;
@@ -24,16 +21,17 @@ export interface Schedule {
   start_time: Date;
   end_time: Date;
   type: "personal" | "group";
-  allDay: boolean; // 시간 일정이면 false, 종일 일정이면 true
+  allDay: boolean;
 }
 
 interface ScheduleContextType {
   schedules: Schedule[];
-  // 프론트엔드에서는 불필요한 필드는 보내지 않음
-  createSchedule: (newSchedule: Omit<Schedule, "uuid" | "allDay">) => void;
-  updateSchedule: (uuid: string, updatedData: Partial<Omit<Schedule, "uuid" | "allDay">>) => void;
-  deleteSchedule: (uuid: string) => void;
-  // 백엔드 API를 통해 최신 일정을 불러오는 함수
+  createSchedule: (newSchedule: Omit<Schedule, "uuid" | "allDay">) => Promise<void>;
+  updateSchedule: (
+    uuid: string,
+    updatedData: Partial<Omit<Schedule, "uuid" | "allDay">>,
+  ) => Promise<void>;
+  deleteSchedule: (uuid: string) => Promise<void>;
   refreshSchedules: () => Promise<void>;
 }
 
@@ -47,49 +45,61 @@ export const ScheduleProvider: React.FC<ScheduleProviderProps> = ({ children }) 
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const { socket } = useSocket();
 
-  // 클라이언트에서 생성한 일정은 uuid만 임의로 생성하며,
-  // start_time과 end_time에 따른 allDay 여부를 도우미 함수를 통해 결정함
-  const createSchedule = (newSchedule: Omit<Schedule, "uuid" | "allDay">) => {
-    const schedule: Schedule = {
-      ...newSchedule,
-      uuid: uuidv4(),
-      allDay: isAllDayEvent(newSchedule.start_time, newSchedule.end_time),
-    };
-    setSchedules((prev) => [...prev, schedule]);
+  // 생성 함수: 백엔드 호출 없이 refreshSchedules 호출 (예시)
+  const createSchedule = async (newSchedule: Omit<Schedule, "uuid" | "allDay">) => {
+    try {
+      // 직접 사용하지 않는 newPayload 변수 제거 (혹은 필요하면 실제 API 호출 후 사용)
+      await refreshSchedules();
+    } catch (error) {
+      console.error("일정 생성 실패", error);
+      throw error;
+    }
   };
 
-  const updateSchedule = (
+  // 업데이트 함수: Date -> string 변환 시, 명시적으로 타입 단언을 추가
+  const updateSchedule = async (
     uuid: string,
     updatedData: Partial<Omit<Schedule, "uuid" | "allDay">>,
   ) => {
-    setSchedules((prev) =>
-      prev.map((schedule) =>
-        schedule.uuid === uuid
-          ? {
-              ...schedule,
-              ...updatedData,
-              // 만약 시작/종료 시간이 갱신되면 allDay 여부도 재계산합니다.
-              allDay:
-                updatedData.start_time && updatedData.end_time
-                  ? isAllDayEvent(updatedData.start_time, updatedData.end_time)
-                  : schedule.allDay,
-            }
-          : schedule,
-      ),
-    );
+    try {
+      type ScheduleUpdatePayload = Partial<Omit<Schedule, "uuid" | "allDay">> & {
+        start_time?: string;
+        end_time?: string;
+      };
+      const payload: ScheduleUpdatePayload = {};
+      if (updatedData.start_time) {
+        payload.start_time = moment(updatedData.start_time as Date).format("YYYY-MM-DD HH:mm:ss");
+      }
+      if (updatedData.end_time) {
+        payload.end_time = moment(updatedData.end_time as Date).format(
+          "YYYY-MM-DD HH:mm:ss",
+        ) as string;
+      }
+      if (updatedData.title !== undefined) payload.title = updatedData.title;
+      if (updatedData.description !== undefined) payload.description = updatedData.description;
+      if (updatedData.location !== undefined) payload.location = updatedData.location;
+      if (updatedData.type !== undefined) payload.type = updatedData.type;
+      await scheduleService.updateSchedule(uuid, payload as any);
+      await refreshSchedules();
+    } catch (error) {
+      console.error("일정 업데이트 실패", error);
+      throw error;
+    }
   };
 
-  const deleteSchedule = (uuid: string) => {
-    setSchedules((prev) => prev.filter((schedule) => schedule.uuid !== uuid));
+  const deleteSchedule = async (uuid: string) => {
+    try {
+      await scheduleService.deleteSchedule(uuid);
+      await refreshSchedules();
+    } catch (error) {
+      console.error("일정 삭제 실패", error);
+      throw error;
+    }
   };
 
-  // 백엔드 API를 통해 최신 일정을 불러옴.
-  // scheduleService.fetchSchedules()는 일정 배열을 반환합니다.
   const refreshSchedules = async (): Promise<void> => {
     try {
       const data = await scheduleService.fetchSchedules();
-      // 각 항목의 start_time, end_time (문자열)을 Date 객체로 변환하고,
-      // 도우미 함수를 통해 allDay 플래그를 결정함
       const parsed = data.map((item) => {
         const start = new Date(item.start_time);
         const end = new Date(item.end_time);
@@ -98,7 +108,7 @@ export const ScheduleProvider: React.FC<ScheduleProviderProps> = ({ children }) 
           start_time: start,
           end_time: end,
           allDay: isAllDayEvent(start, end),
-        };
+        } as Schedule;
       });
       setSchedules(parsed);
     } catch (error) {
@@ -106,28 +116,24 @@ export const ScheduleProvider: React.FC<ScheduleProviderProps> = ({ children }) 
     }
   };
 
-  // Socket 이벤트 구독: 그룹 일정 업데이트 이벤트 반영
   useEffect(() => {
     if (!socket) return;
     const handleGroupScheduleUpdate = (data: Partial<Schedule> & { uuid: string }) => {
       setSchedules((prev) => {
         const existing = prev.find((sch) => sch.uuid === data.uuid);
-        // start_time, end_time가 문자열일 경우 Date 객체로 변환
-        const start = data.start_time ? new Date(data.start_time) : undefined;
-        const end = data.end_time ? new Date(data.end_time) : undefined;
+        const start = data.start_time ? new Date(data.start_time as any) : undefined;
+        const end = data.end_time ? new Date(data.end_time as any) : undefined;
         if (existing) {
           return prev.map((sch) =>
             sch.uuid === data.uuid
               ? {
                   ...sch,
                   ...data,
-                  // 둘 다 존재하면 allDay 재계산
                   allDay: start && end ? isAllDayEvent(start, end) : sch.allDay,
                 }
               : sch,
           );
         } else {
-          // 새로운 일정 수신 시 Date 변환 후 allDay 플래그 설정
           const newSchedule: Schedule = {
             ...data,
             uuid: data.uuid,

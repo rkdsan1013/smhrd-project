@@ -107,20 +107,16 @@ const createSchedule = async (req, res) => {
   }
 };
 
-const updateSchedule = async (req, res) => {
+const updateSchedule = async (req, res, next) => {
   try {
     const owner_uuid = req.user.uuid;
     const { uuid } = req.params;
+    // partial update를 허용하므로 title 등은 필수로 검증하지 않고, 다만 start_time과 end_time은 반드시 있어야 합니다.
     const { title, description, location, start_time, end_time, type } = req.body;
+
     console.log(`updateSchedule: user ${owner_uuid} updating schedule ${uuid}`);
 
-    // 필수 필드 검증
-    if (!title || !start_time || !end_time) {
-      return res
-        .status(400)
-        .json({ success: false, message: "title, start_time, end_time은 필수입니다." });
-    }
-
+    // 기존 일정 존재 확인
     const existingSchedule = await scheduleModel.findById(uuid, owner_uuid);
     if (!existingSchedule) {
       return res
@@ -128,6 +124,14 @@ const updateSchedule = async (req, res) => {
         .json({ success: false, message: "해당 일정이 존재하지 않거나 소유자가 아닙니다." });
     }
 
+    // start_time과 end_time은 있어야 함
+    if (!start_time || !end_time) {
+      return res
+        .status(400)
+        .json({ success: false, message: "start_time과 end_time은 필수입니다." });
+    }
+
+    // 업데이트에 전달되지 않은 필드에 대해서는 모델 쪽에서 기존값을 대체합니다.
     await scheduleModel.update(uuid, owner_uuid, {
       title,
       description,

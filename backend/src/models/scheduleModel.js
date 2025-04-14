@@ -9,7 +9,7 @@ async function findAllByOwner(owner_uuid, group_uuid = null) {
   );
   try {
     let query = scheduleQueries.getSchedulesByOwner;
-    const params = [owner_uuid, owner_uuid]; // owner_uuid와 user_uuid로 동일 값 사용
+    const params = [owner_uuid, owner_uuid]; // s.owner_uuid와 sm.user_uuid에 동일 값 사용
 
     if (group_uuid) {
       query = `
@@ -68,8 +68,7 @@ async function create(schedule) {
       owner_uuid,
       group_uuid,
     } = schedule;
-    // group_uuid 값이 undefined인 경우 명시적으로 null을 전달하여
-    // 항상 9개의 파라미터가 전달되도록 함
+    // group_uuid 값이 undefined인 경우 null을 전달하여 항상 9개 파라미터가 전달되도록 함
     const params = [
       uuid,
       title,
@@ -99,17 +98,30 @@ async function create(schedule) {
 async function update(uuid, owner_uuid, updateData) {
   console.log(`update: Updating schedule ${uuid} for user ${owner_uuid}`);
   try {
-    const { title, description, location, start_time, end_time, type } = updateData;
+    // 기존 스케줄 정보를 먼저 조회하여 업데이트할 누락된 필드의 기본값으로 사용합니다.
+    const existingSchedule = await findById(uuid, owner_uuid);
+
+    const titleFinal = updateData.title !== undefined ? updateData.title : existingSchedule.title;
+    const descriptionFinal =
+      updateData.description !== undefined ? updateData.description : existingSchedule.description;
+    const locationFinal =
+      updateData.location !== undefined ? updateData.location : existingSchedule.location;
+    const startTimeFinal =
+      updateData.start_time !== undefined ? updateData.start_time : existingSchedule.start_time;
+    const endTimeFinal =
+      updateData.end_time !== undefined ? updateData.end_time : existingSchedule.end_time;
+    const finalType = updateData.type !== undefined ? updateData.type : existingSchedule.type;
+
     const params = [
-      title,
-      description,
-      location,
-      start_time,
-      end_time,
-      type,
+      titleFinal,
+      descriptionFinal,
+      locationFinal,
+      startTimeFinal,
+      endTimeFinal,
+      finalType,
       uuid,
       owner_uuid,
-    ].filter((v) => v !== undefined);
+    ];
     const [result] = await pool.query(scheduleQueries.updateSchedule, params);
     if (result.affectedRows === 0) {
       throw new Error("일정 없음 또는 소유자가 아님");
