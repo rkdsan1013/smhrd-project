@@ -3,10 +3,12 @@
 import React, { useState, useEffect } from "react";
 import { VoteModal, VoteItem } from "./Vote";
 import { getTravelVotes } from "../services/voteService";
+import { useSocket } from "../contexts/SocketContext";
 
 interface VoteListProps {
   groupUuid: string;
   currentUserUuid: string;
+  onVoteSelected?: (scheduleUuid: string) => void;
 }
 
 interface TravelVote {
@@ -16,35 +18,108 @@ interface TravelVote {
   end_date: string;
   headcount?: number;
   description?: string;
-  vote_deadline: string;
   is_confirmed: boolean;
   participant_count: number;
   has_participated: boolean;
+  schedule_uuid?: string;
+  group_uuid: string;
 }
 
-const VoteList: React.FC<VoteListProps> = ({ groupUuid, currentUserUuid }) => {
+const VoteList: React.FC<VoteListProps> = ({ groupUuid, currentUserUuid, onVoteSelected }) => {
   const [votes, setVotes] = useState<TravelVote[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { socket } = useSocket();
 
   const fetchVotes = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const data = await getTravelVotes(groupUuid);
-      console.log("Fetched votes:", data); // 반환 데이터 로그
-      if (Array.isArray(data)) {
-        setVotes(data);
+      const response = await getTravelVotes(groupUuid);
+      console.log(`[VoteList] 투표 목록 조회 성공 (group ${groupUuid}):`, response);
+
+      if (Array.isArray(response.votes)) {
+        setVotes(response.votes);
+        console.log(`[VoteList] 투표 목록 설정: ${response.votes.length}개`);
       } else {
-        console.error("Expected an array, got:", data);
-        setVotes([]); // 배열이 아니면 빈 배열로 설정
+        throw new Error("투표 데이터 형식이 잘못되었습니다. 예상: { votes: 배열 }");
       }
-    } catch (error) {
-      console.error("투표 목록 조회 실패:", error);
-      setVotes([]); // 에러 발생 시 빈 배열 유지
+    } catch (error: any) {
+      const errMsg = error.message || `투표 목록을 불러오는 데 실패했습니다.`;
+      setError(errMsg);
+      setVotes([]);
+      console.error(`[VoteList] 투표 목록 조회 실패 (group ${groupUuid}):`, {
+        message: error.message,
+        data: error.data,
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchVotes();
-  }, [groupUuid]);
+
+    if (socket) {
+      socket.emit("joinRoom", groupUuid);
+
+      socket.on(
+        "travelVoteCreated",
+        ({ voteUuid, groupUuid: eventGroupUuid }: { voteUuid: string; groupUuid: string }) => {
+          if (eventGroupUuid === groupUuid) {
+            fetchVotes();
+            console.log(`[VoteList] 새 투표 생성 수신: ${voteUuid}`);
+          }
+        },
+      );
+
+      socket.on(
+        "voteParticipationUpdated",
+        ({
+          voteUuid,
+          participant_count,
+          userUuid,
+          participate,
+        }: {
+          voteUuid: string;
+          participant_count: number;
+          userUuid: string;
+          participate: boolean;
+        }) => {
+          setVotes((prev) =>
+            prev.map((vote) =>
+              vote.uuid === voteUuid
+                ? {
+                    ...vote,
+                    participant_count,
+                    has_participated:
+                      userUuid === currentUserUuid ? participate : vote.has_participated,
+                  }
+                : vote,
+            ),
+          );
+          console.log(`[VoteList] 투표 참여 업데이트: ${voteUuid}, count: ${participant_count}`);
+        },
+      );
+
+      socket.on(
+        "travelVoteDeleted",
+        ({ voteUuid, groupUuid: eventGroupUuid }: { voteUuid: string; groupUuid: string }) => {
+          if (eventGroupUuid === groupUuid) {
+            setVotes((prev) => prev.filter((vote) => vote.uuid !== voteUuid));
+            console.log(`[VoteList] 투표 삭제 수신: ${voteUuid}`);
+          }
+        },
+      );
+
+      return () => {
+        socket.off("travelVoteCreated");
+        socket.off("voteParticipationUpdated");
+        socket.off("travelVoteDeleted");
+      };
+    }
+  }, [groupUuid, socket, currentUserUuid]);
 
   return (
     <div className="h-full flex flex-col">
@@ -58,18 +133,22 @@ const VoteList: React.FC<VoteListProps> = ({ groupUuid, currentUserUuid }) => {
         </button>
       </div>
       <div className="flex-1 overflow-y-auto">
-        {votes.length === 0 ? (
-          <p>투표가 없습니다.</p>
-        ) : (
+        {loading && <p className="text-center text-gray-500">투표 목록을 불러오는 중...</p>}
+        {error && <p className="text-center text-red-500">{error}</p>}
+        {!loading && !error && votes.length === 0 && (
+          <p className="text-center text-gray-500">투표가 없습니다.</p>
+        )}
+        {!loading &&
+          !error &&
           votes.map((vote) => (
             <VoteItem
               key={vote.uuid}
               vote={vote}
               currentUserUuid={currentUserUuid}
               onVoteUpdated={fetchVotes}
+              onClick={() => vote.schedule_uuid && onVoteSelected?.(vote.schedule_uuid)}
             />
-          ))
-        )}
+          ))}
       </div>
       {isModalOpen && (
         <VoteModal
