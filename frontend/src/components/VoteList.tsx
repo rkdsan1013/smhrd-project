@@ -1,4 +1,5 @@
 // /frontend/src/components/VoteList.tsx
+
 import React, { useState, useEffect } from "react";
 import { VoteModal, VoteItem } from "./Vote";
 import { getTravelVotes } from "../services/voteService";

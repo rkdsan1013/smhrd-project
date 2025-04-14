@@ -42,7 +42,8 @@ const MainContent: React.FC = () => {
       case "home":
         return <Home />;
       case "groupSearch":
-        return <GroupSearch />;
+        // userUuid를 전달하여 TS 오류 해결
+        return <GroupSearch userUuid={userUuid} />;
       case "groupRoom":
         return mainContent.groupUuid && mainContent.groupName ? (
           <GroupRoom
@@ -62,7 +63,6 @@ const MainContent: React.FC = () => {
 
   return (
     <div className="h-screen p-4">
-      {/* 🔧 min-w-0 추가 */}
       <div className="h-full flex flex-col md:flex-row gap-4 min-h-0 min-w-0">
         <Sidebar
           onHomeSelect={handleHomeSelect}
@@ -70,9 +70,7 @@ const MainContent: React.FC = () => {
           onGroupSelect={handleGroupSelect}
           onCalendarSelect={handleCalendarSelect}
         />
-        {/* 🔧 min-w-0 추가 */}
         <div className="flex-1 flex flex-col gap-4 min-h-0 min-w-0">
-          {/* 🔧 min-w-0 추가 */}
           <main className="flex-1 bg-white rounded-lg shadow-lg relative overflow-y-auto no-scrollbar min-h-0 min-w-0">
             <AnimatePresence mode="wait">
               <motion.div

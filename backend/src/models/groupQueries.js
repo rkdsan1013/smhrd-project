@@ -124,6 +124,23 @@ WHERE gi.invited_user_uuid = ?
 
 `;
 
+// 추가: group_info에서 방금 삽입한 그룹의 uuid 조회
+// 설명: group_info에 데이터를 삽입한 후 해당 uuid를 가져와 group_surveys 삽입 시 사용
+const SELECT_LATEST_GROUP_UUID = `
+  SELECT uuid
+  FROM group_info
+  ORDER BY created_at DESC
+  LIMIT 1
+`;
+
+// 추가: group_surveys 테이블에 설문 데이터 삽입
+// 설명: group_uuid를 외래키로 사용해 설문 데이터를 저장
+const INSERT_GROUP_SURVEY = `
+  INSERT INTO group_surveys (uuid, group_uuid, activity_type, budget_type, trip_duration)
+  VALUES (UUID(), ?, ?, ?, ?)
+`;
+
+
 module.exports = {
   INSERT_GROUP_INFO,
   INSERT_GROUP_MEMBER,
@@ -143,4 +160,6 @@ module.exports = {
   SELECT_GROUP_MEMBERS,
   SELECT_SENT_GROUP_INVITES,
   SELECT_RECEIVED_GROUP_INVITES,
+  SELECT_LATEST_GROUP_UUID, // 추가: 내보내기
+  INSERT_GROUP_SURVEY, // 추가: 내보내기
 };

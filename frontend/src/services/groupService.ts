@@ -64,11 +64,32 @@ const buildGroupFormData = (data: {
 };
 
 // 그룹 생성 함수 (새 그룹 등록)
-export const createGroup = async (payload: CreateGroupPayload): Promise<GroupInfo> => {
-  const formData = buildGroupFormData(payload);
-  return post<GroupInfo>("/groups", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+// 추가: apiClient에서 post 함수 가져오기
+// 설명: fetch 대신 axios를 사용하기 위해 apiClient의 post 함수를 임포트
+export const createGroup = async (payload: {
+  name: string;
+  description: string;
+  groupIcon: File | null;
+  groupPicture: File | null;
+  visibility: "public" | "private";
+  survey: {
+    activity_type: number;
+    budget_type: number;
+    trip_duration: number;
+  };
+}): Promise<GroupInfo> => {
+  console.log("Token before request:", window.localStorage.getItem("token")); // 추가: 토큰 확인
+  const formData = new FormData();
+  formData.append("name", payload.name);
+  formData.append("description", payload.description);
+  if (payload.groupIcon) formData.append("groupIcon", payload.groupIcon);
+  if (payload.groupPicture) formData.append("groupPicture", payload.groupPicture);
+  formData.append("visibility", payload.visibility);
+  formData.append("survey", JSON.stringify(payload.survey));
+  console.log("FormData:", Object.fromEntries(formData)); // 추가: FormData 확인
+  // 수정: fetch를 apiClient의 post 함수로 교체
+  // 설명: axiosInstance를 사용해 요청을 보내도록 변경, 인터셉터(예: Authorization 헤더 추가)가 적용됨
+  return await post<GroupInfo>("/groups", formData);
 };
 
 // 그룹 수정 함수 (기존 그룹 업데이트)

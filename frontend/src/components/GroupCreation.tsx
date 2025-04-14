@@ -16,14 +16,19 @@ interface GroupCreationProps {
   onCreate?: (newGroup: GroupInfo) => void;
 }
 
+// 설문 선택지 정의
+const surveyOptions = {
+  activity: ["맛집탐방", "액티비티", "휴양", "문화/역사 체험"],
+  budget: ["가성비", "럭셔리"],
+  duration: ["당일치기", "7일 미만", "7일 이상"],
+};
+
 const GroupCreation: React.FC<GroupCreationProps> = ({ onClose, onCreate }) => {
-  // 단계: "creation" (그룹 생성) / "settings" (그룹 설정)
   const [step, setStep] = useState<"creation" | "settings">("creation");
   const [isVisible, setIsVisible] = useState(false);
   const [hasMounted, setHasMounted] = useState(false);
   const [formError, setFormError] = useState("");
 
-  // 그룹 정보 상태
   const [groupName, setGroupName] = useState("");
   const [groupDescription, setGroupDescription] = useState("");
   const [groupIcon, setGroupIcon] = useState<File | null>(null);
@@ -32,18 +37,22 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose, onCreate }) => {
   const [groupPicturePreview, setGroupPicturePreview] = useState<string | null>(null);
   const [groupVisibility, setGroupVisibility] = useState<"public" | "private">("private");
 
-  // 모달 높이 조절용 Ref
+  // 설문 상태 (선택 안 하면 ""로 유지)
+  const [surveyAnswers, setSurveyAnswers] = useState({
+    activity: "",
+    budget: "",
+    duration: "",
+  });
+
   const outerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
   const oldHeightRef = useRef<number | null>(null);
 
-  // 모달 페이드인 처리 (약간의 딜레이)
   useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 50);
     return () => clearTimeout(timer);
   }, []);
 
-  // 최초 마운트 시 모달 높이 설정
   useEffect(() => {
     if (outerRef.current && innerRef.current) {
       outerRef.current.style.height = `${innerRef.current.offsetHeight}px`;
@@ -52,7 +61,6 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose, onCreate }) => {
     setHasMounted(true);
   }, []);
 
-  // 내용 변화에 따라 모달 높이 조절
   const adjustHeight = () => {
     if (outerRef.current && innerRef.current) {
       const newHeight = innerRef.current.offsetHeight;
@@ -64,7 +72,6 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose, onCreate }) => {
       if (Math.round(currentHeight) !== Math.round(newHeight)) {
         outerRef.current.style.transition = "none";
         outerRef.current.style.height = `${currentHeight}px`;
-        // 강제 리플로우
         outerRef.current.getBoundingClientRect();
         outerRef.current.style.transition = "height 0.3s ease-in-out";
         outerRef.current.style.height = `${newHeight}px`;
@@ -83,9 +90,9 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose, onCreate }) => {
     hasMounted,
     step,
     formError,
+    surveyAnswers,
   ]);
 
-  // 파일 선택 변경 핸들러 (공통)
   const handleFileChange = (
     e: ChangeEvent<HTMLInputElement>,
     setFile: React.Dispatch<React.SetStateAction<File | null>>,
@@ -107,7 +114,11 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose, onCreate }) => {
   const onGroupPictureChangeSettings = (e: ChangeEvent<HTMLInputElement>) =>
     handleFileChange(e, setGroupPicture, setGroupPicturePreview);
 
-  // 그룹 생성 전 '설정' 단계로 전환 시 이름과 설명 검증
+  const handleSurveyChange = (key: keyof typeof surveyAnswers, value: string) => {
+    setSurveyAnswers((prev) => ({ ...prev, [key]: prev[key] === value ? "" : value }));
+    setFormError("");
+  };
+
   const goToSettings = () => {
     const nameValidation = validateName(groupName);
     if (!nameValidation.valid) {
@@ -124,13 +135,11 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose, onCreate }) => {
     setStep("settings");
   };
 
-  // 그룹 생성 '이전' 단계로 돌아가기
   const goToCreation = () => {
     captureHeight();
     setStep("creation");
   };
 
-  // 그룹 생성 제출 시 최종 검증 및 API 호출
   const onSubmitGroup = async () => {
     const nameValidation = validateName(groupName);
     if (!nameValidation.valid) {
@@ -142,6 +151,7 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose, onCreate }) => {
       setFormError(descValidation.message ?? "유효하지 않은 입력입니다.");
       return;
     }
+
     try {
       const payload = {
         name: groupName.trim(),
@@ -149,6 +159,17 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose, onCreate }) => {
         groupIcon,
         groupPicture,
         visibility: groupVisibility,
+        survey: {
+          activity_type: surveyAnswers.activity
+            ? surveyOptions.activity.indexOf(surveyAnswers.activity) + 1
+            : 0,
+          budget_type: surveyAnswers.budget
+            ? surveyOptions.budget.indexOf(surveyAnswers.budget) + 1
+            : 0,
+          trip_duration: surveyAnswers.duration
+            ? surveyOptions.duration.indexOf(surveyAnswers.duration) + 1
+            : 0,
+        },
       };
       const createdGroup = await createGroup(payload);
       alert("그룹이 생성되었습니다. 그룹 ID: " + createdGroup.uuid);
@@ -166,7 +187,6 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose, onCreate }) => {
     setTimeout(onClose, 300);
   };
 
-  // 애니메이션 효과용 현재 높이 기록
   const captureHeight = () => {
     if (outerRef.current) {
       oldHeightRef.current = outerRef.current.offsetHeight;
@@ -175,13 +195,11 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose, onCreate }) => {
 
   return ReactDOM.createPortal(
     <div className="fixed inset-0 flex items-center justify-center z-9999">
-      {/* 배경 오버레이 */}
       <div
         className={`absolute inset-0 bg-black/60 transition-opacity duration-300 ${
           isVisible ? "opacity-100" : "opacity-0"
         }`}
       />
-      {/* 모달 컨테이너 */}
       <div
         className={`relative bg-white rounded-lg shadow-xl w-96 select-none transition-opacity duration-300 ${
           isVisible ? "opacity-100" : "opacity-0"
@@ -193,7 +211,6 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose, onCreate }) => {
           position: "absolute",
         }}
       >
-        {/* 헤더 */}
         <div className="flex justify-between items-center p-4 border-b border-gray-200">
           <h2 className="text-xl font-bold">{step === "creation" ? "그룹 생성" : "그룹 설정"}</h2>
           <button
@@ -203,12 +220,10 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose, onCreate }) => {
             <Icons name="close" className="w-6 h-6 text-gray-600" />
           </button>
         </div>
-        {/* 콘텐츠 영역 */}
         <div ref={outerRef} style={{ overflow: "hidden" }}>
           <div ref={innerRef} className="p-6 space-y-6">
             {step === "creation" ? (
               <div className="flex flex-col items-center space-y-4">
-                {/* 그룹 아이콘 */}
                 <div className="flex flex-col items-center">
                   <label
                     htmlFor="groupIcon"
@@ -238,7 +253,6 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose, onCreate }) => {
                     className="hidden"
                   />
                 </div>
-                {/* 그룹 이름 입력 */}
                 <div className="w-full">
                   <div className="relative">
                     <input
@@ -257,7 +271,6 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose, onCreate }) => {
                     </label>
                   </div>
                 </div>
-                {/* 그룹 설명 입력 */}
                 <div className="w-full relative">
                   <textarea
                     id="groupDescription"
@@ -283,7 +296,6 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose, onCreate }) => {
                     그룹 설명
                   </label>
                 </div>
-                {/* 공개/비공개 토글 */}
                 <div className="w-full text-left">
                   <span className="text-sm font-medium text-gray-700">공개 여부</span>
                   <div className="mt-2">
@@ -311,7 +323,6 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose, onCreate }) => {
               </div>
             ) : (
               <div className="space-y-6">
-                {/* 그룹 설정 폼 상단: 아이콘, 그룹 이름, 공개/비공개 상태 */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center flex-1 min-w-0 space-x-4">
                     <div className="w-12 h-12 rounded-full overflow-hidden shrink-0">
@@ -338,7 +349,6 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose, onCreate }) => {
                     {groupVisibility === "public" ? "공개" : "비공개"}
                   </div>
                 </div>
-                {/* 그룹 배경 사진 영역 */}
                 <div>
                   <label
                     htmlFor="groupPicture"
@@ -366,11 +376,70 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose, onCreate }) => {
                     className="hidden"
                   />
                 </div>
-                {/* 그룹 설명 미리보기 */}
                 <div className="text-left">
                   <p className="text-base font-medium text-gray-800 mb-1">그룹 설명</p>
                   <div style={{ maxHeight: "15rem", overflowY: "auto" }}>
                     <p className="text-sm text-gray-700 whitespace-pre-wrap">{groupDescription}</p>
+                  </div>
+                </div>
+                {/* 멀티셀렉트 칩스 스타일 설문 UI */}
+                <div className="w-full space-y-4">
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 mb-2">선호하는 여행 활동</p>
+                    <div className="flex flex-wrap gap-2">
+                      {surveyOptions.activity.map((opt) => (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => handleSurveyChange("activity", opt)}
+                          className={`px-3 py-1 rounded-full text-sm font-medium transition-all duration-200 ${
+                            surveyAnswers.activity === opt
+                              ? "bg-blue-500 text-white shadow-md"
+                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          }`}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 mb-2">선호하는 여행 예산</p>
+                    <div className="flex flex-wrap gap-2">
+                      {surveyOptions.budget.map((opt) => (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => handleSurveyChange("budget", opt)}
+                          className={`px-3 py-1 rounded-full text-sm font-medium transition-all duration-200 ${
+                            surveyAnswers.budget === opt
+                              ? "bg-blue-500 text-white shadow-md"
+                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          }`}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 mb-2">선호하는 여행 기간</p>
+                    <div className="flex flex-wrap gap-2">
+                      {surveyOptions.duration.map((opt) => (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => handleSurveyChange("duration", opt)}
+                          className={`px-3 py-1 rounded-full text-sm font-medium transition-all duration-200 ${
+                            surveyAnswers.duration === opt
+                              ? "bg-blue-500 text-white shadow-md"
+                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          }`}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
                 {formError && <p className="w-full text-red-500 text-sm text-left">{formError}</p>}
@@ -378,7 +447,6 @@ const GroupCreation: React.FC<GroupCreationProps> = ({ onClose, onCreate }) => {
             )}
           </div>
         </div>
-        {/* 푸터 */}
         <div className="p-4 border-t border-gray-200">
           {step === "creation" ? (
             <div className="grid grid-cols-2 gap-2">

@@ -1,3 +1,5 @@
+// /frontend/src/components/ScheduleListView.tsx
+
 import { useMemo, useEffect, useRef, useState, forwardRef, useImperativeHandle } from "react";
 import { useSchedule } from "../contexts/ScheduleContext";
 import type { Schedule } from "../contexts/ScheduleContext";

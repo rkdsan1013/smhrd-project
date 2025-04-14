@@ -1,8 +1,7 @@
 // /backend/src/controllers/groupController.js
-
 const groupModel = require("../models/groupModel");
 const chatTransactions = require("../models/chatTransactions");
-const chatModel = require("../models/chatModel"); // 그룹 채팅방 조회용 모델
+const chatModel = require("../models/chatModel");
 const { saveGroupIcon, saveGroupPicture } = require("../utils/imageHelper");
 const { formatImageUrl } = require("../utils/imageUrlHelper");
 const { validateName, validateDescription } = require("../utils/validators");
@@ -18,12 +17,16 @@ const formatProfile = (profile) => {
 };
 
 // 그룹 생성
-const createGroup = async (req, res, next) => {
+const createGroup = async (req, res) => {
   try {
+    console.log("Request body:", req.body);
+    console.log("req.user:", req.user);
+    if (!req.user || !req.user.uuid) {
+      return res.status(401).json({ message: "인증되지 않은 사용자입니다." });
+    }
     const groupLeaderUuid = req.user.uuid;
-    const { name, description, visibility } = req.body;
+    const { name, description, visibility, survey } = req.body;
 
-    // 그룹 이름 및 설명, 공개 상태 검사
     const nameValidation = validateName(name);
     if (!nameValidation.valid) {
       return res.status(400).json({ message: nameValidation.message });
@@ -36,7 +39,23 @@ const createGroup = async (req, res, next) => {
       return res.status(400).json({ message: "유효한 공개 상태를 선택해 주세요." });
     }
 
-    // 그룹 생성 (아이콘, 사진은 null로 초기화)
+    let surveyData = { activity_type: 0, budget_type: 0, trip_duration: 0 };
+    if (survey) {
+      try {
+        const parsedSurvey = typeof survey === "string" ? JSON.parse(survey) : survey;
+        surveyData = {
+          activity_type: Number(parsedSurvey.activity_type) || 0,
+          budget_type: Number(parsedSurvey.budget_type) || 0,
+          trip_duration: Number(parsedSurvey.trip_duration) || 0,
+        };
+        console.log("Parsed surveyData:", surveyData);
+      } catch (parseError) {
+        console.error("Error parsing survey data:", parseError.message, parseError.stack);
+        return res.status(400).json({ message: "설문 데이터 형식이 잘못되었습니다." });
+      }
+    }
+
+    console.log("Calling groupModel.createGroup");
     let createdGroup = await groupModel.createGroup(
       name,
       description,
@@ -44,10 +63,14 @@ const createGroup = async (req, res, next) => {
       groupLeaderUuid,
       null,
       null,
+      surveyData,
     );
+    if (!createdGroup || !createdGroup.uuid) {
+      throw new Error("Failed to create group: createdGroup is invalid");
+    }
     const groupUuid = createdGroup.uuid;
+    console.log("Created group UUID:", groupUuid);
 
-    // 업로드된 파일 처리 (그룹 아이콘, 그룹 사진)
     let groupIconFile = null;
     let groupPictureFile = null;
     if (req.files) {
@@ -66,7 +89,6 @@ const createGroup = async (req, res, next) => {
     if (groupPictureFile) {
       groupPictureUrl = await saveGroupPicture(groupUuid, groupPictureFile);
     }
-    // 이미지가 변경되었으면 DB 업데이트
     if (
       groupIconUrl !== createdGroup.group_icon ||
       groupPictureUrl !== createdGroup.group_picture
@@ -75,25 +97,38 @@ const createGroup = async (req, res, next) => {
       createdGroup = await groupModel.getGroupByUuid(groupUuid);
     }
 
-    // 그룹 채팅방 생성 및 그룹 리더 추가
+    console.log("Creating group chat room");
     const groupRoomUuid = await chatTransactions.createGroupRoomWithLeader(
       groupUuid,
       groupLeaderUuid,
     );
     createdGroup.chat_room_uuid = groupRoomUuid;
 
-    // 이미지 URL 포매팅
     createdGroup.group_icon = formatImageUrl(createdGroup.group_icon);
     createdGroup.group_picture = formatImageUrl(createdGroup.group_picture);
 
-    res.status(201).json(createdGroup);
+    const responseGroup = {
+      uuid: createdGroup.uuid,
+      name: createdGroup.name,
+      description: createdGroup.description,
+      group_icon: createdGroup.group_icon,
+      group_picture: createdGroup.group_picture,
+      visibility: createdGroup.visibility,
+      group_leader_uuid: createdGroup.group_leader_uuid,
+      created_at: createdGroup.created_at,
+      updated_at: createdGroup.updated_at,
+      chat_room_uuid: String(createdGroup.chat_room_uuid),
+    };
+    console.log("Response groupInfo:", responseGroup);
+    res.status(201).json(responseGroup);
   } catch (error) {
-    next(error);
+    console.error("Error in createGroup:", error.message, error.stack);
+    res.status(500).json({ message: `그룹 생성 실패: ${error.message}` });
   }
 };
 
 // 내 그룹 목록 조회
-const getMyGroups = async (req, res, next) => {
+const getMyGroups = async (req, res) => {
   try {
     const userUuid = req.user.uuid;
     let groups = await groupModel.getMyGroups(userUuid);
@@ -104,12 +139,13 @@ const getMyGroups = async (req, res, next) => {
     }));
     res.status(200).json(groups);
   } catch (error) {
-    next(error);
+    console.error("Error in getMyGroups:", error.message, error.stack);
+    res.status(500).json({ message: `그룹 목록 조회 실패: ${error.message}` });
   }
 };
 
 // 그룹 검색
-const searchGroups = async (req, res, next) => {
+const searchGroups = async (req, res) => {
   try {
     const { name } = req.body;
     if (!name) {
@@ -123,12 +159,13 @@ const searchGroups = async (req, res, next) => {
     }));
     res.status(200).json(groups);
   } catch (error) {
-    next(error);
+    console.error("Error in searchGroups:", error.message, error.stack);
+    res.status(500).json({ message: `그룹 검색 실패: ${error.message}` });
   }
 };
 
 // 그룹 참여 (가입)
-const joinGroup = async (req, res, next) => {
+const joinGroup = async (req, res) => {
   try {
     const { groupUuid } = req.body;
     const userUuid = req.user.uuid;
@@ -146,12 +183,13 @@ const joinGroup = async (req, res, next) => {
     );
     res.status(200).json({ message: "그룹 참여 완료" });
   } catch (error) {
-    next(error);
+    console.error("Error in joinGroup:", error.message, error.stack);
+    res.status(500).json({ message: `그룹 참여 실패: ${error.message}` });
   }
 };
 
 // 그룹 리더 프로필 조회
-const getUserProfile = async (req, res, next) => {
+const getUserProfile = async (req, res) => {
   try {
     const userUuid = req.params.uuid;
     const profile = await userModel.getUserProfile(userUuid);
@@ -160,12 +198,13 @@ const getUserProfile = async (req, res, next) => {
     }
     res.status(200).json({ success: true, profile });
   } catch (error) {
-    next(error);
+    console.error("Error in getUserProfile:", error.message, error.stack);
+    res.status(500).json({ message: `프로필 조회 실패: ${error.message}` });
   }
 };
 
 // 그룹 멤버 조회
-const getGroupMembers = async (req, res, next) => {
+const getGroupMembers = async (req, res) => {
   try {
     const { groupUuid } = req.params;
     let members = await groupModel.getGroupMembers(groupUuid);
@@ -177,12 +216,13 @@ const getGroupMembers = async (req, res, next) => {
     });
     res.status(200).json({ members });
   } catch (error) {
-    next(error);
+    console.error("Error in getGroupMembers:", error.message, error.stack);
+    res.status(500).json({ message: `그룹 멤버 조회 실패: ${error.message}` });
   }
 };
 
 // 그룹 채팅방 UUID 조회
-const getGroupChatRoom = async (req, res, next) => {
+const getGroupChatRoom = async (req, res) => {
   try {
     const { groupUuid } = req.params;
     const chatRoom = await chatModel.getGroupChatRoomByGroupUuid(groupUuid);
@@ -191,28 +231,31 @@ const getGroupChatRoom = async (req, res, next) => {
     }
     res.status(200).json({ chat_room_uuid: chatRoom.uuid });
   } catch (error) {
-    next(error);
+    console.error("Error in getGroupChatRoom:", error.message, error.stack);
+    res.status(500).json({ message: `채팅방 조회 실패: ${error.message}` });
   }
 };
 
-const getSentGroupInvites = async (req, res, next) => {
+const getSentGroupInvites = async (req, res) => {
   try {
     const groupUuid = req.params.groupUuid;
     const invitedByUuid = req.user.uuid;
     const invites = await groupModel.getSentInvitesByGroupAndSender(groupUuid, invitedByUuid);
     res.status(200).json(invites);
   } catch (error) {
-    next(error);
+    console.error("Error in getSentGroupInvites:", error.message, error.stack);
+    res.status(500).json({ message: `보낸 초대 조회 실패: ${error.message}` });
   }
 };
 
-const getReceivedGroupInvites = async (req, res, next) => {
+const getReceivedGroupInvites = async (req, res) => {
   try {
     const userUuid = req.user.uuid;
     const invites = await groupModel.getReceivedInvitesByUserUuid(userUuid);
     res.status(200).json(invites);
   } catch (error) {
-    next(error);
+    console.error("Error in getReceivedGroupInvites:", error.message, error.stack);
+    res.status(500).json({ message: `받은 초대 조회 실패: ${error.message}` });
   }
 };
 

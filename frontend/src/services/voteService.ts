@@ -1,4 +1,5 @@
 // /frontend/src/services/voteService.ts
+
 import { get, post } from "./apiClient";
 
 interface CreateTravelVoteData {

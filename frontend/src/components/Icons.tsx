@@ -288,6 +288,64 @@ const Icons: React.FC<IconProps> = ({ name, className }) => {
         />
       </svg>
     ),
+      plane: (
+        <svg
+          className={defaultClass || "w-6 h-6 text-blue-500"}
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" />
+        </svg>
+    ),
+
+    fire: (
+      <svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 32 32"
+  className={defaultClass || "w-6 h-6"}
+>
+  <path
+    fill="#FF914D"
+    d="M16 2s-2 6-2 9 2 5 3 5 3-2 3-4-1-4-1-4 5 3 5 10-6 11-10 11-10-5-10-11c0-7 6-12 8-14z"
+  />
+</svg>
+
+
+    ),
+    locationMarker: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={defaultClass || "w-4 h-4 text-gray-500"}
+      >
+        <path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7z" />
+        <circle cx="12" cy="9" r="2" />
+      </svg>
+    ),
+    chevronDown: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={defaultClass || "w-4 h-4 text-blue-700"}
+      >
+        <path d="M6 9l6 6 6-6" />
+      </svg>
+    ),
     cog: (
       <svg
         className={defaultClass || "w-6 h-6 text-gray-800"}
