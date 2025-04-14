@@ -52,7 +52,8 @@ const ScheduleListView = forwardRef<ScheduleListViewHandle, ScheduleListViewProp
       return filtered;
     }, [schedules, filterType]);
 
-    // 2. 정렬: 그룹 번호 부여 (0: 종료, 1: 진행 중(all-day → "현재 일정"), 2: 진행 중(일반 → "진행중"), 3: upcoming)
+    // 2. 정렬: 그룹 번호 부여 (0: 종료, 1: 진행 중(all-day → "현재 일정"), 2: 진행 중(일반 → "진행중"), 3: 시작 예정)
+    // 수정된 정렬 로직: 일정 시작 날짜(YYYY-MM-DD)가 같으면, 종료 시간이 빠른 순서대로 정렬
     const sortedSchedules = useMemo<Schedule[]>(() => {
       return [...filteredSchedules].sort((a, b) => {
         const now = Date.now();
@@ -70,6 +71,13 @@ const ScheduleListView = forwardRef<ScheduleListViewHandle, ScheduleListViewProp
         const bOrder = bPast ? 0 : bActive ? (b.allDay ? 1 : 2) : 3;
 
         if (aOrder !== bOrder) return aOrder - bOrder;
+
+        // 시작 날짜(YYYY-MM-DD)가 같으면, 종료 시간이 빠른 순서로 정렬
+        const aStartDate = moment(a.start_time).format("YYYY-MM-DD");
+        const bStartDate = moment(b.start_time).format("YYYY-MM-DD");
+        if (aStartDate === bStartDate) {
+          return aEnd - bEnd;
+        }
         return aStart - bStart;
       });
     }, [filteredSchedules]);

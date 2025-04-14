@@ -2,7 +2,7 @@
 
 import React, { useMemo } from "react";
 import Calendar from "./Calendar";
-import PopularDestinations from "./PopularTravelDestinations";
+import PopularTravelDestinations from "./PopularTravelDestinations";
 import { useSchedule } from "../contexts/ScheduleContext";
 import moment from "moment";
 import Icons from "./Icons";
@@ -11,33 +11,48 @@ const Home: React.FC = () => {
   const { schedules } = useSchedule();
   const now = Date.now();
 
-  // 현재 진행 중인 일정: 현재 시각이 일정의 시작 및 종료 사이인 경우
+  // 현재 진행 중인 allday 일정 필터링 및 정렬
   const currentSchedules = useMemo(() => {
     return schedules
       .filter((schedule) => {
+        if (!schedule.allDay) return false;
         const start = new Date(schedule.start_time).getTime();
         const end = new Date(schedule.end_time).getTime();
         return now >= start && now <= end;
       })
-      .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+      .sort((a, b) => {
+        const aStartDate = moment(a.start_time).format("YYYY-MM-DD");
+        const bStartDate = moment(b.start_time).format("YYYY-MM-DD");
+        if (aStartDate === bStartDate) {
+          return new Date(a.end_time).getTime() - new Date(b.end_time).getTime();
+        }
+        return new Date(a.start_time).getTime() - new Date(b.start_time).getTime();
+      });
   }, [schedules, now]);
 
-  // 다음 일정: 현재 시각 이후인 allDay 일정 중 가장 빠른 일정 선택
+  // 다음 일정: 현재 시각 이후에 시작하는 allday 일정 중 가장 빠른 이벤트
   const nextSchedule = useMemo(() => {
     const upcomingAllDay = schedules.filter((schedule) => {
+      if (!schedule.allDay) return false;
       const start = new Date(schedule.start_time).getTime();
-      return schedule.allDay && start > now;
+      return start > now;
     });
-    upcomingAllDay.sort(
-      (a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime(),
-    );
+    upcomingAllDay.sort((a, b) => {
+      const aStartDate = moment(a.start_time).format("YYYY-MM-DD");
+      const bStartDate = moment(b.start_time).format("YYYY-MM-DD");
+      if (aStartDate === bStartDate) {
+        return new Date(a.end_time).getTime() - new Date(b.end_time).getTime();
+      }
+      return new Date(a.start_time).getTime() - new Date(b.start_time).getTime();
+    });
     return upcomingAllDay[0] || null;
   }, [schedules, now]);
 
+  // 일정 날짜 포맷팅 함수
   const formatScheduleDate = (schedule: any): string => {
     if (schedule.allDay) {
       const startDate = moment(schedule.start_time);
-      // all-day 일정은 종료일에서 하루를 빼서 표시
+      // allday 일정은 종료일에서 하루 빼서 표시
       const adjustedEndDate = moment(schedule.end_time).subtract(1, "day");
       return startDate.isSame(adjustedEndDate, "day")
         ? startDate.format("YYYY-MM-DD")
@@ -60,96 +75,133 @@ const Home: React.FC = () => {
 
       {/* 대시보드 영역 */}
       <div className="flex-1 bg-white rounded-lg shadow p-4 flex flex-row min-h-[25rem] lg:min-h-[25rem] lg:h-full gap-4">
-        {/* 왼쪽: 현재 일정 / 다음 일정 */}
-        <div className="flex flex-col flex-1 gap-4">
-          {/* 현재 일정 */}
-          <div className="bg-gray-50 rounded flex flex-col p-4 flex-1 overflow-y-auto no-scrollbar">
-            <h2 className="text-xl font-bold mb-2">현재 일정</h2>
-            {currentSchedules.length > 0 ? (
-              currentSchedules.map((schedule: any) => (
-                <div key={schedule.uuid} className="mb-4 p-2 border-b last:border-0">
-                  <div className="flex items-center mb-1">
-                    <span
-                      className={`text-xs font-medium px-2 py-0.5 rounded mr-2 ${
-                        schedule.type === "personal"
-                          ? "bg-blue-100 text-blue-600"
-                          : "bg-green-100 text-green-600"
-                      }`}
-                    >
-                      {schedule.type === "personal" ? "개인" : "그룹"}
-                    </span>
-                    {schedule.allDay ? (
-                      <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-bl">
-                        현재 일정
-                      </span>
-                    ) : (
-                      <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-bl">
-                        진행중
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-sm text-gray-500">{formatScheduleDate(schedule)}</div>
-                  <div className="text-lg font-bold truncate" title={schedule.title}>
-                    {schedule.title}
-                  </div>
-                  {schedule.location && (
+        {/* 왼쪽: 현재 일정 / 다음 일정 영역 */}
+        <div className="flex flex-col flex-1 gap-4 h-full">
+          {/* 현재 일정 섹션 */}
+          <div className="bg-white rounded shadow-sm border border-gray-200 flex flex-col flex-1 overflow-hidden">
+            {/* 헤더: 배경색과 구분선 추가 */}
+            <div className="sticky top-0 z-10 px-4 py-2 bg-white">
+              <h2 className="text-xl font-bold text-gray-900">현재 일정</h2>
+              <div className="w-3/4 mx-auto mt-2 border-b border-gray-300"></div>
+            </div>
+            <div className="flex-1 overflow-y-auto no-scrollbar px-4 py-2">
+              {currentSchedules.length > 0 ? (
+                currentSchedules.map((schedule: any) => {
+                  const start = new Date(schedule.start_time).getTime();
+                  const end = new Date(schedule.end_time).getTime();
+                  const totalDuration = end - start;
+                  const elapsed = now - start;
+                  const progressPercent =
+                    totalDuration > 0
+                      ? Math.min(100, Math.max(0, (elapsed / totalDuration) * 100))
+                      : 0;
+                  return (
                     <div
-                      className="text-gray-700 mt-1 flex items-center gap-1 truncate"
-                      title={schedule.location}
+                      key={schedule.uuid}
+                      className="bg-white shadow-md rounded-lg p-4 mb-4 relative"
                     >
-                      <Icons name="mapPinAlt" className="w-4 h-4 text-gray-500" />
-                      <span>{schedule.location}</span>
+                      {now >= start && now <= end && (
+                        <div className="w-full h-1 bg-gray-200 rounded mb-3">
+                          <div
+                            className="h-full bg-blue-500 transition-all duration-200 rounded"
+                            style={{ width: `${progressPercent}%` }}
+                          />
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between">
+                        <div className="flex flex-col items-start">
+                          <span className="text-xs font-medium w-auto px-2 py-1 bg-blue-100 text-blue-600 rounded">
+                            {schedule.type === "personal" ? "개인" : "그룹"}
+                          </span>
+                          <span className="text-sm text-gray-500 mt-1">
+                            {formatScheduleDate(schedule)}
+                          </span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="bg-blue-500 text-white text-xs font-medium px-2 py-1 rounded">
+                            현재 일정
+                          </span>
+                        </div>
+                      </div>
+                      <div className="mt-3 text-lg font-bold truncate" title={schedule.title}>
+                        {schedule.title}
+                      </div>
+                      {schedule.location && (
+                        <div
+                          className="mt-2 flex items-center gap-1 text-gray-700"
+                          title={schedule.location}
+                        >
+                          <Icons name="mapPinAlt" className="w-4 h-4" />
+                          <span>{schedule.location}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="text-gray-500">현재 진행 중인 일정이 없습니다.</div>
+              )}
+            </div>
+          </div>
+
+          {/* 다음 일정 섹션 */}
+          <div className="bg-white rounded shadow-sm border border-gray-200 flex flex-col flex-1 overflow-hidden">
+            {/* 헤더: 배경색과 구분선 추가 */}
+            <div className="sticky top-0 z-10 px-4 py-2 bg-white">
+              <h2 className="text-xl font-bold text-gray-900">다음 일정</h2>
+              <div className="w-3/4 mx-auto mt-2 border-b border-gray-300"></div>
+            </div>
+            <div className="flex-1 overflow-y-auto no-scrollbar px-4 py-2">
+              {nextSchedule ? (
+                <div className="bg-white shadow-md rounded-lg p-4 mb-4 relative">
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-col items-start">
+                      <span className="text-xs font-medium w-auto px-2 py-1 bg-blue-100 text-blue-600 rounded">
+                        {nextSchedule.type === "personal" ? "개인" : "그룹"}
+                      </span>
+                      <span className="text-sm text-gray-500 mt-1">
+                        {formatScheduleDate(nextSchedule)}
+                      </span>
+                      {(() => {
+                        const diff = moment(nextSchedule.start_time)
+                          .startOf("day")
+                          .diff(moment().startOf("day"), "days");
+                        if (diff === 0)
+                          return <span className="text-sm text-red-600 mt-1">D-Day</span>;
+                        else if (diff > 0)
+                          return <span className="text-sm text-red-600 mt-1">D-{diff}</span>;
+                        return null;
+                      })()}
+                    </div>
+                    <div className="flex items-center">
+                      <span className="bg-green-500 text-white text-xs font-medium px-2 py-1 rounded">
+                        다음 일정
+                      </span>
+                    </div>
+                  </div>
+                  <div className="mt-3 text-lg font-bold truncate" title={nextSchedule.title}>
+                    {nextSchedule.title}
+                  </div>
+                  {nextSchedule.location && (
+                    <div
+                      className="mt-2 flex items-center gap-1 text-gray-700"
+                      title={nextSchedule.location}
+                    >
+                      <Icons name="mapPinAlt" className="w-4 h-4" />
+                      <span>{nextSchedule.location}</span>
                     </div>
                   )}
                 </div>
-              ))
-            ) : (
-              <div className="text-gray-500">현재 진행 중인 일정이 없습니다.</div>
-            )}
-          </div>
-
-          {/* 다음 일정 */}
-          <div className="bg-gray-50 rounded flex flex-col p-4 flex-1 overflow-y-auto no-scrollbar">
-            <h2 className="text-xl font-bold mb-2">다음 일정</h2>
-            {nextSchedule ? (
-              <div className="p-2">
-                <div className="flex items-center mb-1">
-                  <span
-                    className={`text-xs font-medium px-2 py-0.5 rounded mr-2 ${
-                      nextSchedule.type === "personal"
-                        ? "bg-blue-100 text-blue-600"
-                        : "bg-green-100 text-green-600"
-                    }`}
-                  >
-                    {nextSchedule.type === "personal" ? "개인" : "그룹"}
-                  </span>
-                  <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-bl">
-                    다음 일정
-                  </span>
-                </div>
-                <div className="text-sm text-gray-500">{formatScheduleDate(nextSchedule)}</div>
-                <div className="text-lg font-bold truncate" title={nextSchedule.title}>
-                  {nextSchedule.title}
-                </div>
-                {nextSchedule.location && (
-                  <div
-                    className="text-gray-700 mt-1 flex items-center gap-1 truncate"
-                    title={nextSchedule.location}
-                  >
-                    <Icons name="mapPinAlt" className="w-4 h-4 text-gray-500" />
-                    <span>{nextSchedule.location}</span>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="text-gray-500">다음 일정이 없습니다.</div>
-            )}
+              ) : (
+                <div className="text-gray-500">다음 일정이 없습니다.</div>
+              )}
+            </div>
           </div>
         </div>
 
         {/* 오른쪽: 여행지 + 지도 컴포넌트 */}
         <div className="bg-gray-50 rounded flex items-center justify-center flex-1">
-          <PopularDestinations />
+          <PopularTravelDestinations />
         </div>
       </div>
     </div>
