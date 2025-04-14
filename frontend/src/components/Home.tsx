@@ -14,13 +14,13 @@ const Home: React.FC = () => {
   // 현재 진행 중인 allday 일정 필터링 및 정렬
   const currentSchedules = useMemo(() => {
     return schedules
-      .filter((schedule) => {
+      .filter((schedule: any) => {
         if (!schedule.allDay) return false;
         const start = new Date(schedule.start_time).getTime();
         const end = new Date(schedule.end_time).getTime();
         return now >= start && now <= end;
       })
-      .sort((a, b) => {
+      .sort((a: any, b: any) => {
         const aStartDate = moment(a.start_time).format("YYYY-MM-DD");
         const bStartDate = moment(b.start_time).format("YYYY-MM-DD");
         if (aStartDate === bStartDate) {
@@ -32,12 +32,12 @@ const Home: React.FC = () => {
 
   // 다음 일정: 현재 시각 이후에 시작하는 allday 일정 중 가장 빠른 이벤트
   const nextSchedule = useMemo(() => {
-    const upcomingAllDay = schedules.filter((schedule) => {
+    const upcomingAllDay = schedules.filter((schedule: any) => {
       if (!schedule.allDay) return false;
       const start = new Date(schedule.start_time).getTime();
       return start > now;
     });
-    upcomingAllDay.sort((a, b) => {
+    upcomingAllDay.sort((a: any, b: any) => {
       const aStartDate = moment(a.start_time).format("YYYY-MM-DD");
       const bStartDate = moment(b.start_time).format("YYYY-MM-DD");
       if (aStartDate === bStartDate) {
@@ -107,20 +107,18 @@ const Home: React.FC = () => {
                           />
                         </div>
                       )}
+                      {/* 상단 배지 영역 (첫 번째 행) */}
                       <div className="flex items-center justify-between">
-                        <div className="flex flex-col items-start">
-                          <span className="text-xs font-medium w-auto px-2 py-1 bg-blue-100 text-blue-600 rounded">
-                            {schedule.type === "personal" ? "개인" : "그룹"}
-                          </span>
-                          <span className="text-sm text-gray-500 mt-1">
-                            {formatScheduleDate(schedule)}
-                          </span>
-                        </div>
-                        <div className="flex items-center">
-                          <span className="bg-blue-500 text-white text-xs font-medium px-2 py-1 rounded">
-                            현재 일정
-                          </span>
-                        </div>
+                        <span className="text-xs font-medium px-2 py-1 bg-blue-100 text-blue-600 rounded">
+                          {schedule.type === "personal" ? "개인" : "그룹"}
+                        </span>
+                        <span className="bg-blue-500 text-white text-xs font-medium px-2 py-1 rounded">
+                          현재 일정
+                        </span>
+                      </div>
+                      {/* 날짜 정보 (두 번째 행) */}
+                      <div className="mt-1 text-sm text-gray-500">
+                        {formatScheduleDate(schedule)}
                       </div>
                       <div className="mt-3 text-lg font-bold truncate" title={schedule.title}>
                         {schedule.title}
@@ -152,30 +150,30 @@ const Home: React.FC = () => {
             <div className="flex-1 overflow-y-auto no-scrollbar px-4 py-2">
               {nextSchedule ? (
                 <div className="bg-white shadow-md rounded-lg p-4 mb-4 relative">
+                  {/* 상단 배지 영역 (첫 번째 행) */}
                   <div className="flex items-center justify-between">
-                    <div className="flex flex-col items-start">
-                      <span className="text-xs font-medium w-auto px-2 py-1 bg-blue-100 text-blue-600 rounded">
-                        {nextSchedule.type === "personal" ? "개인" : "그룹"}
-                      </span>
-                      <span className="text-sm text-gray-500 mt-1">
-                        {formatScheduleDate(nextSchedule)}
-                      </span>
-                      {(() => {
-                        const diff = moment(nextSchedule.start_time)
-                          .startOf("day")
-                          .diff(moment().startOf("day"), "days");
-                        if (diff === 0)
-                          return <span className="text-sm text-red-600 mt-1">D-Day</span>;
-                        else if (diff > 0)
-                          return <span className="text-sm text-red-600 mt-1">D-{diff}</span>;
-                        return null;
-                      })()}
-                    </div>
-                    <div className="flex items-center">
-                      <span className="bg-green-500 text-white text-xs font-medium px-2 py-1 rounded">
-                        다음 일정
-                      </span>
-                    </div>
+                    <span className="text-xs font-medium px-2 py-1 bg-blue-100 text-blue-600 rounded">
+                      {nextSchedule.type === "personal" ? "개인" : "그룹"}
+                    </span>
+                    <span className="bg-green-500 text-white text-xs font-medium px-2 py-1 rounded">
+                      다음 일정
+                    </span>
+                  </div>
+                  {/* 날짜 및 D-Day 정보 (두 번째 행) */}
+                  <div className="mt-1 flex items-center">
+                    <span className="text-sm text-gray-500">
+                      {formatScheduleDate(nextSchedule)}
+                    </span>
+                    {(() => {
+                      const diff = moment(nextSchedule.start_time)
+                        .startOf("day")
+                        .diff(moment().startOf("day"), "days");
+                      if (diff === 0)
+                        return <span className="text-sm text-red-600 ml-2">D-Day</span>;
+                      else if (diff > 0)
+                        return <span className="text-sm text-red-600 ml-2">D-{diff}</span>;
+                      return null;
+                    })()}
                   </div>
                   <div className="mt-3 text-lg font-bold truncate" title={nextSchedule.title}>
                     {nextSchedule.title}
