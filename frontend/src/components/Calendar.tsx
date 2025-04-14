@@ -12,6 +12,7 @@ import Icons from "./Icons";
 import ScheduleAllDayModal from "./ScheduleAllDayModal";
 import ScheduleDetailModal from "./ScheduleDetailModal";
 import ScheduleEditModal from "./ScheduleEditModal";
+import ScheduleDetailEditModal from "./ScheduleDetailEditModal";
 import ScheduleListView, { ScheduleListViewHandle } from "./ScheduleListView";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSchedule, Schedule } from "../contexts/ScheduleContext";
@@ -100,6 +101,7 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
   const [showAllDayModal, setShowAllDayModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDetailEditModal, setShowDetailEditModal] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<SlotInfo | null>(null);
 
@@ -171,13 +173,22 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
     }
   };
 
-  // 이벤트 클릭 시 – 개인 일정 수정 모달을 엽니다.
+  // 이벤트 클릭 시 – 세부 일정 수정 (비종일 일정은 ScheduleDetailEditModal, 종일 일정은 기존 ScheduleEditModal)
   const handleSelectEvent = (event: object) => {
     if (!isEditable) return;
     const schedule = event as Schedule;
     if (schedule.type === "group") return;
+    // 일정의 시작, 종료 시간을 통해 all‑day 여부를 판단합니다.
+    const isAllDayEvent =
+      moment(schedule.start_time).hour() === 0 &&
+      moment(schedule.end_time).hour() === 0 &&
+      moment(schedule.end_time).diff(moment(schedule.start_time), "days") >= 1;
     setSelectedSchedule(schedule);
-    setShowEditModal(true);
+    if (isAllDayEvent) {
+      setShowEditModal(true);
+    } else {
+      setShowDetailEditModal(true);
+    }
   };
 
   // 드래그 & 드롭 및 크기 조절 시, start_time과 end_time 업데이트 (백엔드 업데이트 후 최신 데이터 갱신)
@@ -409,6 +420,23 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
             location: selectedSchedule.location || "",
             startDate: moment(selectedSchedule.start_time).format("YYYY-MM-DD"),
             endDate: moment(selectedSchedule.end_time).subtract(1, "day").format("YYYY-MM-DD"),
+          }}
+        />
+      )}
+      {isEditable && showDetailEditModal && selectedSchedule && (
+        <ScheduleDetailEditModal
+          onClose={() => {
+            setShowDetailEditModal(false);
+            updateSchedulesAsync();
+            setSelectedSchedule(null);
+          }}
+          defaultValues={{
+            uuid: selectedSchedule.uuid,
+            description: selectedSchedule.description || "",
+            location: selectedSchedule.location || "",
+            detailDate: moment(selectedSchedule.start_time).format("YYYY-MM-DD"),
+            startTime: moment(selectedSchedule.start_time).format("HH:mm"),
+            endTime: moment(selectedSchedule.end_time).format("HH:mm"),
           }}
         />
       )}
