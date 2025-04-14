@@ -1,5 +1,3 @@
-// /frontend/src/components/GroupRoom.tsx
-
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import GroupChat from "./GroupChat";
@@ -8,9 +6,10 @@ import GroupCalendar from "./GroupCalendar";
 import GroupSettings from "./GroupSettings";
 import GroupMemberList from "./GroupMemberList";
 import VoteList from "./VoteList";
-
 import Icons from "./Icons";
 import { getGroupChatRoomUuid } from "../services/groupService";
+import { getScheduleChatRoomUuid } from "../services/scheduleService";
+import { useSocket } from "../contexts/SocketContext";
 
 interface GroupRoomProps {
   groupUuid: string;
@@ -18,7 +17,7 @@ interface GroupRoomProps {
   groupName: string;
 }
 
-type TabType = "announcement" | "calendar" | "chat" | "settings" | "vote"; // ✅ 추가
+type TabType = "announcement" | "calendar" | "chat" | "settings" | "vote";
 
 const motionVariants = {
   initial: { opacity: 0, x: 50 },
@@ -29,15 +28,26 @@ const motionVariants = {
 const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, groupName }) => {
   const [selectedTab, setSelectedTab] = useState<TabType>("chat");
   const [chatRoomUuid, setChatRoomUuid] = useState<string | null>(null);
+  const [scheduleChatRoomUuid, setScheduleChatRoomUuid] = useState<string | null>(null);
+  const [scheduleChatRoomTitle, setScheduleChatRoomTitle] = useState<string | null>(null);
+  const [scheduleUuid, setScheduleUuid] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [chatRoomError, setChatRoomError] = useState<string | null>(null);
+  const [scheduleChatRoomError, setScheduleChatRoomError] = useState<string | null>(null);
+  const { socket } = useSocket();
 
+  // 그룹 채팅방 UUID 조회
   useEffect(() => {
     const fetchChatRoomUuid = async () => {
+      setLoading(true);
+      setChatRoomError(null);
       try {
         const data = await getGroupChatRoomUuid(groupUuid);
         setChatRoomUuid(data.chat_room_uuid);
-      } catch (error) {
-        console.error("채팅방 정보를 가져오지 못했습니다.", error);
+        console.log(`[GroupRoom] 그룹 채팅방 UUID 조회 성공: ${data.chat_room_uuid}`);
+      } catch (error: any) {
+        setChatRoomError("그룹 채팅방 정보를 가져오지 못했습니다.");
+        console.error(`[GroupRoom] 그룹 채팅방 조회 실패 (group ${groupUuid}): ${error.message}`);
       } finally {
         setLoading(false);
       }
@@ -46,9 +56,124 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
     fetchChatRoomUuid();
   }, [groupUuid]);
 
+  // 일정 채팅방 UUID 조회
+  useEffect(() => {
+    const fetchScheduleChatRoomUuid = async () => {
+      if (!scheduleUuid) {
+        setScheduleChatRoomUuid(null);
+        setScheduleChatRoomTitle(null);
+        return;
+      }
+
+      console.log(`[GroupRoom] 일정 채팅방 조회 시작 (schedule ${scheduleUuid})`);
+      setLoading(true);
+      setScheduleChatRoomError(null);
+      try {
+        const data = await getScheduleChatRoomUuid(scheduleUuid);
+        setScheduleChatRoomUuid(data.chat_room_uuid);
+        setScheduleChatRoomTitle(data.title);
+        console.log(
+          `[GroupRoom] 일정 채팅방 조회 성공: ${data.chat_room_uuid}, title: ${data.title}`,
+        );
+      } catch (error: any) {
+        const errMsg =
+          error.response?.status === 403
+            ? "이 일정 채팅방에 접근할 권한이 없습니다."
+            : "일정 채팅방 정보를 가져오지 못했습니다.";
+        setScheduleChatRoomError(errMsg);
+        console.error(
+          `[GroupRoom] 일정 채팅방 조회 실패 (schedule ${scheduleUuid}): ${error.message}`,
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchScheduleChatRoomUuid();
+  }, [scheduleUuid]);
+
+  // 소켓 이벤트 처리
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.emit("joinRoom", groupUuid);
+
+    const handleScheduleCreated = ({
+      scheduleUuid: newScheduleUuid,
+      groupUuid: eventGroupUuid,
+      title,
+    }: {
+      scheduleUuid: string;
+      groupUuid: string;
+      title: string;
+    }) => {
+      if (eventGroupUuid === groupUuid) {
+        console.log(`[GroupRoom] 새 일정 생성: ${newScheduleUuid}, title: ${title}`);
+        // 투표 탭이 아닌 경우 알림만, 투표 탭에서는 VoteList가 처리
+        if (selectedTab !== "vote") {
+          alert(`새 일정 "${title}"이 생성되었습니다.`);
+        }
+      }
+    };
+
+    const handleTravelVoteCreated = ({
+      voteUuid,
+      groupUuid: eventGroupUuid,
+    }: {
+      voteUuid: string;
+      groupUuid: string;
+    }) => {
+      if (eventGroupUuid === groupUuid) {
+        console.log(`[GroupRoom] 새 투표 생성: ${voteUuid}`);
+        if (selectedTab !== "vote") {
+          alert("새 투표가 생성되었습니다.");
+        }
+      }
+    };
+
+    socket.on("scheduleCreated", handleScheduleCreated);
+    socket.on("travelVoteCreated", handleTravelVoteCreated);
+
+    return () => {
+      socket.off("scheduleCreated", handleScheduleCreated);
+      socket.off("travelVoteCreated", handleTravelVoteCreated);
+    };
+  }, [socket, groupUuid, selectedTab]);
+
+  // 채팅 탭 렌더링 로직 분리
+  const renderChatTab = () => {
+    if (loading) {
+      return <div className="text-center text-gray-500">채팅방을 불러오는 중...</div>;
+    }
+    if (scheduleChatRoomError) {
+      return <div className="text-center text-red-500">{scheduleChatRoomError}</div>;
+    }
+    if (scheduleChatRoomUuid) {
+      console.log("[GroupRoom] 렌더링: 일정 채팅방 열림");
+      return (
+        <GroupChat
+          roomUuid={scheduleChatRoomUuid}
+          currentUserUuid={currentUserUuid}
+          roomName={scheduleChatRoomTitle ?? groupName}
+        />
+      );
+    }
+    if (chatRoomError) {
+      return <div className="text-center text-red-500">{chatRoomError}</div>;
+    }
+    if (chatRoomUuid) {
+      console.log("[GroupRoom] 렌더링: 그룹 채팅방 열림");
+      return (
+        <GroupChat roomUuid={chatRoomUuid} currentUserUuid={currentUserUuid} roomName={groupName} />
+      );
+    }
+    console.log("[GroupRoom] 렌더링: 채팅방 없음");
+    return <div className="text-center text-gray-500">채팅방 정보를 가져오지 못했습니다.</div>;
+  };
+
   return (
     <div className="h-full flex flex-col">
-      {/* 모바일 상단 네비게이션 (md 미만): 텍스트 제거하고 아이콘만 표시 */}
+      {/* 모바일 상단 네비게이션 */}
       <div className="block md:hidden mb-4 border-b border-gray-300 py-2">
         <div className="flex items-center justify-around">
           <button
@@ -78,9 +203,9 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
         </div>
       </div>
 
-      {/* 메인 콘텐츠 영역: 좌측 메뉴, 중앙 콘텐츠, 우측 멤버 리스트 */}
+      {/* 메인 콘텐츠 영역 */}
       <div className="flex flex-1 overflow-hidden gap-4">
-        {/* 좌측 사이드바: md 이하에서는 아이콘만, lg 이상에서는 메뉴 텍스트도 함께 표시 */}
+        {/* 좌측 사이드바 */}
         <aside className="hidden md:flex flex-col md:w-24 lg:w-52 flex-shrink-0 border-r border-gray-300 p-4">
           <div className="space-y-4">
             <button
@@ -97,9 +222,6 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
               <Icons name="calendar" className="w-6 h-6" />
               <span className="hidden lg:inline ml-2">일정</span>
             </button>
-          </div>
-          <div className="my-2 border-t border-gray-300" />
-          <div className="space-y-4">
             <button
               onClick={() => setSelectedTab("chat")}
               className="w-full flex items-center justify-center lg:justify-start lg:text-left p-2 rounded hover:bg-gray-100 transition-all duration-200 active:scale-95"
@@ -108,6 +230,8 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
               <span className="hidden lg:inline ml-2">채팅</span>
             </button>
           </div>
+          <div className="my-2 border-t border-gray-300" />
+          <div className="space-y-4"></div>
           <div className="flex-grow" />
           <div className="my-2 border-t border-gray-300" />
           <button
@@ -126,7 +250,7 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
           </button>
         </aside>
 
-        {/* 중앙 콘텐츠 영역: 최소 400px는 유지 */}
+        {/* 중앙 콘텐츠 영역 */}
         <section className="flex-1 min-w-0 overflow-hidden p-4">
           <AnimatePresence mode="wait">
             {selectedTab === "announcement" && (
@@ -165,19 +289,9 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
                 exit="exit"
                 transition={{ duration: 0.2 }}
               >
-                {loading && <div>채팅방을 불러오는 중...</div>}
-                {!loading && chatRoomUuid ? (
-                  <GroupChat
-                    roomUuid={chatRoomUuid}
-                    currentUserUuid={currentUserUuid}
-                    roomName={groupName}
-                  />
-                ) : (
-                  !loading && <div>채팅방 정보를 가져오지 못했습니다.</div>
-                )}
+                {renderChatTab()}
               </motion.div>
             )}
-
             {selectedTab === "settings" && (
               <motion.div
                 key={`settings-${groupUuid}`}
@@ -213,13 +327,20 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
                 exit="exit"
                 transition={{ duration: 0.2 }}
               >
-                <VoteList groupUuid={groupUuid} currentUserUuid={currentUserUuid} />
+                <VoteList
+                  groupUuid={groupUuid}
+                  currentUserUuid={currentUserUuid}
+                  onVoteSelected={(scheduleUuid: string) => {
+                    setScheduleUuid(scheduleUuid);
+                    setSelectedTab("chat");
+                  }}
+                />
               </motion.div>
             )}
           </AnimatePresence>
         </section>
 
-        {/* 우측 사이드바: md 이하에서는 숨기고, lg 이상 또는 md에서는 적절한 공간 할당 */}
+        {/* 우측 사이드바 */}
         <aside className="hidden md:flex flex-col md:w-40 lg:w-64 flex-shrink-0 border-l border-gray-300 p-4">
           <GroupMemberList groupUuid={groupUuid} />
         </aside>

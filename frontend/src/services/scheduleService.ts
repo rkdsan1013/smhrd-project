@@ -11,6 +11,11 @@ export interface Schedule {
   type: "personal" | "group";
 }
 
+interface ScheduleChatRoomResponse {
+  chat_room_uuid: string;
+  title: string;
+}
+
 const BASE_URL = "/schedules";
 
 /**
@@ -38,6 +43,12 @@ export const updateSchedule = async (
 export const deleteSchedule = async (uuid: string): Promise<void> => {
   const url = `${BASE_URL}/${uuid}`;
   return await remove<void>(url);
+};
+
+export const getScheduleChatRoomUuid = async (
+  scheduleUuid: string,
+): Promise<ScheduleChatRoomResponse> => {
+  return get<ScheduleChatRoomResponse>(`/schedules/${scheduleUuid}/chat`);
 };
 
 const ScheduleService = {
