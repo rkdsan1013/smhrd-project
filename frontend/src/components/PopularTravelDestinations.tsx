@@ -14,14 +14,12 @@ interface TravelDestination {
 }
 
 const PopularTravelDestinations: React.FC = () => {
-  // 상태 선언
   const [destinations, setDestinations] = useState<TravelDestination[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [showAll, setShowAll] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedDestination, setSelectedDestination] = useState<TravelDestination | null>(null);
 
-  // 여행지 리스트 가져오기
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -36,10 +34,8 @@ const PopularTravelDestinations: React.FC = () => {
     fetchData();
   }, []);
 
-  // 표시할 여행지 (7개 제한 또는 전체)
   const displayDestinations = showAll ? destinations : destinations.slice(0, 7);
 
-  // 해시태그 포맷팅
   const formatTags = (tags: string | string[]): string[] => {
     try {
       if (Array.isArray(tags)) return tags.map((tag) => `#${tag.trim()}`);
@@ -53,7 +49,6 @@ const PopularTravelDestinations: React.FC = () => {
     }
   };
 
-  // 순위에 따른 배경색 반환
   const getRankColor = (rank: number) => {
     switch (rank) {
       case 1:
@@ -78,12 +73,11 @@ const PopularTravelDestinations: React.FC = () => {
           </h3>
           <button
             onClick={() => setShowAll(!showAll)}
-            className="text-blue-700 flex items-center justify-center w-10 h-10 rounded-full hover:bg-blue-50 transition-all duration-200"
+            className="text-blue-700 flex items-center justify-center w-10 h-10 rounded-full hover:bg-blue-50 transition-all duration-200 ml-4"
           >
             <Icons name={showAll ? "angleUp" : "angleDown"} className="w-6 h-6 text-blue-700" />
           </button>
         </div>
-        {/* 구분선: 전체 폼 영역의 좌우를 채움 */}
         <div className="w-full mt-2 border-b border-gray-300"></div>
       </div>
 
@@ -100,7 +94,6 @@ const PopularTravelDestinations: React.FC = () => {
           <ul className="w-full divide-y divide-gray-200">
             {displayDestinations.map((d) => (
               <React.Fragment key={d.travelRank}>
-                {/* 여행지 항목 */}
                 <li
                   onClick={() =>
                     setSelectedDestination(
@@ -137,8 +130,6 @@ const PopularTravelDestinations: React.FC = () => {
                     </div>
                   </div>
                 </li>
-
-                {/* 선택된 항목 아래 지도 표시 */}
                 {selectedDestination?.travelRank === d.travelRank && (
                   <li className="py-3 px-2">
                     <DestinationMap address={d.locationAddress} />
