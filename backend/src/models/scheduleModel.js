@@ -1,3 +1,5 @@
+// /backend/src/models/scheduleModel.js
+
 const pool = require("../config/db");
 const scheduleQueries = require("./scheduleQueries");
 
@@ -66,6 +68,8 @@ async function create(schedule) {
       owner_uuid,
       group_uuid,
     } = schedule;
+    // group_uuid 값이 undefined인 경우 명시적으로 null을 전달하여
+    // 항상 9개의 파라미터가 전달되도록 함
     const params = [
       uuid,
       title,
@@ -75,8 +79,8 @@ async function create(schedule) {
       end_time,
       type,
       owner_uuid,
-      group_uuid,
-    ].filter((v) => v !== undefined);
+      group_uuid === undefined ? null : group_uuid,
+    ];
     await pool.query(scheduleQueries.INSERT_SCHEDULE, params);
 
     // 그룹 일정일 경우 생성자를 schedule_members에 추가

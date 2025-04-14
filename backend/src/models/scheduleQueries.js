@@ -1,3 +1,5 @@
+// /backend/src/models/scheduleQueries.js
+
 const scheduleQueries = {
   // 일정 삽입 (트랜잭션 및 독립 생성 공용)
   INSERT_SCHEDULE: `

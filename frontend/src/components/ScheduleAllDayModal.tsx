@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import moment from "moment";
 import Icons from "./Icons";
-import ScheduleService from "../services/scheduleService";
+import scheduleService from "../services/scheduleService";
 
 interface DefaultValues {
   startDate: string;
@@ -57,7 +57,7 @@ const ScheduleAllDayModal: React.FC<ScheduleAllDayModalProps> = ({ onClose, defa
         type: "personal" as "personal",
       };
 
-      await ScheduleService.createSchedule(scheduleData);
+      await scheduleService.createSchedule(scheduleData);
       handleModalClose();
     } catch (error) {
       console.error("일정 생성에 실패했습니다.", error);
