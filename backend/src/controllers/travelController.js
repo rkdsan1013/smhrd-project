@@ -1,4 +1,5 @@
 // backend/src/controllers/travelController.js
+
 const db = require("../config/db"); // DB 연결
 const travelQueries = require("../models/travelQueries"); // 쿼리문
 const TravelDestination = require("../models/travelModel"); // 모델

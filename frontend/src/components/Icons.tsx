@@ -149,6 +149,22 @@ const Icons: React.FC<IconProps> = ({ name, className }) => {
         />
       </svg>
     ),
+    user: (
+      <svg
+        className={defaultClass || "w-6 h-6 text-gray-800"}
+        aria-hidden="true"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          fill-rule="evenodd"
+          d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-2 9a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4h-4Z"
+          clip-rule="evenodd"
+        />
+      </svg>
+    ),
+
     users: (
       <svg
         className={defaultClass || "w-6 h-6 text-gray-800"}
@@ -288,34 +304,32 @@ const Icons: React.FC<IconProps> = ({ name, className }) => {
         />
       </svg>
     ),
-      plane: (
-        <svg
-          className={defaultClass || "w-6 h-6 text-blue-500"}
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" />
-        </svg>
+    plane: (
+      <svg
+        className={defaultClass || "w-6 h-6 text-blue-500"}
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" />
+      </svg>
     ),
 
     fire: (
       <svg
-  xmlns="http://www.w3.org/2000/svg"
-  viewBox="0 0 32 32"
-  className={defaultClass || "w-6 h-6"}
->
-  <path
-    fill="#FF914D"
-    d="M16 2s-2 6-2 9 2 5 3 5 3-2 3-4-1-4-1-4 5 3 5 10-6 11-10 11-10-5-10-11c0-7 6-12 8-14z"
-  />
-</svg>
-
-
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 32 32"
+        className={defaultClass || "w-6 h-6"}
+      >
+        <path
+          fill="#FF914D"
+          d="M16 2s-2 6-2 9 2 5 3 5 3-2 3-4-1-4-1-4 5 3 5 10-6 11-10 11-10-5-10-11c0-7 6-12 8-14z"
+        />
+      </svg>
     ),
     locationMarker: (
       <svg
@@ -465,6 +479,40 @@ const Icons: React.FC<IconProps> = ({ name, className }) => {
           fill-rule="evenodd"
           d="M11.906 1.994a8.002 8.002 0 0 1 8.09 8.421 7.996 7.996 0 0 1-1.297 3.957.996.996 0 0 1-.133.204l-.108.129c-.178.243-.37.477-.573.699l-5.112 6.224a1 1 0 0 1-1.545 0L5.982 15.26l-.002-.002a18.146 18.146 0 0 1-.309-.38l-.133-.163a.999.999 0 0 1-.13-.202 7.995 7.995 0 0 1 6.498-12.518ZM15 9.997a3 3 0 1 1-5.999 0 3 3 0 0 1 5.999 0Z"
           clip-rule="evenodd"
+        />
+      </svg>
+    ),
+    angleUp: (
+      <svg
+        className={defaultClass || "w-6 h-6 text-gray-800"}
+        aria-hidden="true"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          d="m5 15 7-7 7 7"
+        />
+      </svg>
+    ),
+    angleDown: (
+      <svg
+        className={defaultClass || "w-6 h-6 text-gray-800"}
+        aria-hidden="true"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          d="m19 9-7 7-7-7"
         />
       </svg>
     ),

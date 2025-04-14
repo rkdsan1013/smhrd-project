@@ -3,9 +3,9 @@
 import React, { useState, useEffect } from "react";
 import travelService from "../services/travelService";
 import Icons from "./Icons";
-import DestinationMap from "./DestinationMap"; // ✅ 지도 컴포넌트 분리 후 import
+import DestinationMap from "./DestinationMap";
 
-// ✅ 여행지 타입 정의
+// 여행지 타입 정의
 interface TravelDestination {
   travelRank: number;
   destinationName: string;
@@ -13,15 +13,13 @@ interface TravelDestination {
   trendingTags: string | string[];
 }
 
-const PopularDestinations: React.FC = () => {
-  // ✅ 상태 선언
+const PopularTravelDestinations: React.FC = () => {
   const [destinations, setDestinations] = useState<TravelDestination[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [showAll, setShowAll] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedDestination, setSelectedDestination] = useState<TravelDestination | null>(null); // ✅ 클릭된 여행지
+  const [selectedDestination, setSelectedDestination] = useState<TravelDestination | null>(null);
 
-  // ✅ 여행지 리스트 가져오기
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -36,10 +34,8 @@ const PopularDestinations: React.FC = () => {
     fetchData();
   }, []);
 
-  // ✅ 표시할 여행지 (7개 제한 또는 전체)
   const displayDestinations = showAll ? destinations : destinations.slice(0, 7);
 
-  // ✅ 해시태그 포맷팅
   const formatTags = (tags: string | string[]): string[] => {
     try {
       if (Array.isArray(tags)) return tags.map((tag) => `#${tag.trim()}`);
@@ -53,7 +49,6 @@ const PopularDestinations: React.FC = () => {
     }
   };
 
-  // ✅ 순위에 따른 배경색
   const getRankColor = (rank: number) => {
     switch (rank) {
       case 1:
@@ -68,23 +63,25 @@ const PopularDestinations: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-full flex flex-col items-start justify-start text-left rounded-xl shadow-sm bg-white p-4 font-[Jua]">
-      {/* ✅ 헤더 */}
-      <div className="flex justify-between items-center w-full mb-5 mt-4">
-        <h3 className="font-bold text-lg text-gray-800 flex items-center gap-1">
-          <Icons name="fire" className="w-6 h-6 text-pink-400 animate-pulse" />
-          지금 뜨는 여행지
-        </h3>
-        <button
-          onClick={() => setShowAll(!showAll)}
-          className="text-blue-700 text-sm hover:underline flex items-center gap-1"
-        >
-          {showAll ? "접기" : "더 보기"}{" "}
-          <Icons name="chevronDown" className="w-4 h-4 text-blue-700" />
-        </button>
+    <div className="w-full h-full flex flex-col items-start justify-start text-left rounded-xl shadow-sm border border-gray-200 bg-white p-4">
+      {/* 헤더 */}
+      <div className="w-full px-4 py-2">
+        <div className="flex justify-between items-center w-full">
+          <h3 className="font-bold text-lg text-gray-800 flex items-center gap-1">
+            <Icons name="fire" className="w-6 h-6 text-pink-400 animate-pulse" />
+            지금 뜨는 여행지
+          </h3>
+          <button
+            onClick={() => setShowAll(!showAll)}
+            className="text-blue-700 flex items-center justify-center w-10 h-10 rounded-full hover:bg-blue-50 transition-all duration-200 ml-4"
+          >
+            <Icons name={showAll ? "angleUp" : "angleDown"} className="w-6 h-6 text-blue-700" />
+          </button>
+        </div>
+        <div className="w-full mt-2 border-b border-gray-300"></div>
       </div>
 
-      {/* ✅ 리스트 로딩/에러/데이터 표시 */}
+      {/* 리스트 로딩/에러/데이터 표시 */}
       {loading ? (
         <div className="flex-1 w-full flex items-center justify-center">
           <Icons name="spinner" className="w-8 h-8 text-pink-400 animate-spin" />
@@ -95,10 +92,8 @@ const PopularDestinations: React.FC = () => {
       ) : (
         <div className="flex-1 w-full overflow-y-auto pr-1 h-full mt-1 no-scrollbar">
           <ul className="w-full divide-y divide-gray-200">
-            {/* ✅ 리스트 순회 */}
             {displayDestinations.map((d) => (
               <React.Fragment key={d.travelRank}>
-                {/* ✅ 여행지 항목 */}
                 <li
                   onClick={() =>
                     setSelectedDestination(
@@ -116,7 +111,7 @@ const PopularDestinations: React.FC = () => {
                   </span>
                   <div className="flex-1">
                     <span className="font-medium block text-gray-800">{d.destinationName}</span>
-                    <div className="flex items-center gap-1 text-gray-500 text-xs mt-1/2">
+                    <div className="flex items-center gap-1 text-gray-500 text-xs mt-0.5">
                       <Icons
                         name="locationMarker"
                         className="w-4 h-4 text-gray-500 group-hover:animate-bounce"
@@ -135,8 +130,6 @@ const PopularDestinations: React.FC = () => {
                     </div>
                   </div>
                 </li>
-
-                {/* ✅ 해당 항목이 선택되었을 경우 → 그 아래 지도 표시 */}
                 {selectedDestination?.travelRank === d.travelRank && (
                   <li className="py-3 px-2">
                     <DestinationMap address={d.locationAddress} />
@@ -151,4 +144,4 @@ const PopularDestinations: React.FC = () => {
   );
 };
 
-export default PopularDestinations;
+export default PopularTravelDestinations;
