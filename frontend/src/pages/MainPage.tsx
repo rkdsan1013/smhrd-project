@@ -46,11 +46,7 @@ const MainContent: React.FC = () => {
         return <GroupSearch userUuid={userUuid} />;
       case "groupRoom":
         return mainContent.groupUuid && mainContent.groupName ? (
-          <GroupRoom
-            groupUuid={mainContent.groupUuid}
-            groupName={mainContent.groupName}
-            currentUserUuid={userUuid}
-          />
+          <GroupRoom groupUuid={mainContent.groupUuid} currentUserUuid={userUuid} />
         ) : (
           <div>그룹 정보가 없습니다.</div>
         );
