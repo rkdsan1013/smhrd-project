@@ -69,7 +69,7 @@ const Home: React.FC = () => {
       {/* 캘린더 영역 */}
       <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col min-h-[32rem] overflow-hidden">
         <div className="flex-1 bg-gray-100 rounded-lg w-full h-full">
-          <Calendar mode="read" view="month" />
+          <Calendar mode="view" view="month" />
         </div>
       </div>
 

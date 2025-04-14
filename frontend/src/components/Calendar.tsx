@@ -11,6 +11,7 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import Icons from "./Icons";
 import ScheduleAllDayModal from "./ScheduleAllDayModal";
 import ScheduleDetailModal from "./ScheduleDetailModal";
+import ScheduleEditModal from "./ScheduleEditModal";
 import ScheduleListView, { ScheduleListViewHandle } from "./ScheduleListView";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSchedule, Schedule } from "../contexts/ScheduleContext";
@@ -86,10 +87,12 @@ const formats = {
 export interface CalendarProps {
   initialDate?: Date;
   view?: View | "all";
-  mode?: "read" | "edit";
+  mode?: "view" | "edit";
 }
 
-const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "read" }) => {
+const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "view" }) => {
+  // mode가 "edit"일 때만 편집 기능이 활성화됩니다.
+  const isEditable = mode === "edit";
   const [currentView, setCurrentView] = useState<"month" | "week" | "day" | "agenda">(
     view === "all" ? "month" : (view as "month" | "week" | "day" | "agenda"),
   );
@@ -97,11 +100,11 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
   const [filterType, setFilterType] = useState<"all" | "personal" | "group">("all");
   const [showAllDayModal, setShowAllDayModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<SlotInfo | null>(null);
 
   const { schedules, updateSchedule, refreshSchedules } = useSchedule();
-
-  const isEditable = mode === "edit";
   const isFixedView = view !== "all";
 
   const updateSchedules = async () => {
@@ -114,7 +117,6 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
 
   useEffect(() => {
     updateSchedules();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const shiftDate = (
@@ -153,6 +155,7 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
     }
   };
 
+  // 빈 영역(셀렉션) 선택 시 — 신규 일정 생성 폼(종일 또는 상세) 열기
   const handleSelectSlot = (slotInfo: SlotInfo) => {
     if (!isEditable) return;
     setSelectedSlot(slotInfo);
@@ -163,9 +166,20 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
       moment(slotInfo.end).hour() === 0 &&
       moment(slotInfo.end).diff(moment(slotInfo.start), "days") >= 1;
 
-    isMonthAllDay || isExplicitAllDay || isAllDayTimeRange
-      ? setShowAllDayModal(true)
-      : setShowDetailModal(true);
+    if (isMonthAllDay || isExplicitAllDay || isAllDayTimeRange) {
+      setShowAllDayModal(true);
+    } else {
+      setShowDetailModal(true);
+    }
+  };
+
+  // 이벤트(일정) 클릭 시 — 개인 일정만 수정 모달을 오픈합니다.
+  const handleSelectEvent = (event: object) => {
+    if (!isEditable) return;
+    const schedule = event as Schedule;
+    if (schedule.type === "group") return;
+    setSelectedSchedule(schedule);
+    setShowEditModal(true);
   };
 
   const scrollToTime = useMemo(() => {
@@ -302,6 +316,9 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
                   toolbar={false}
                   selectable={isEditable}
                   resizable={isEditable}
+                  /* 개인 일정만 드래그/리사이즈가 가능하도록 */
+                  draggableAccessor={(event) => isEditable && (event as Schedule).type !== "group"}
+                  resizableAccessor={(event) => isEditable && (event as Schedule).type !== "group"}
                   scrollToTime={scrollToTime}
                   eventPropGetter={(event: object) => {
                     const schedule = event as Schedule;
@@ -320,22 +337,29 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
                   messages={messages}
                   formats={formats}
                   onSelectSlot={isEditable ? handleSelectSlot : undefined}
+                  onSelectEvent={isEditable ? handleSelectEvent : undefined}
                   onEventDrop={
                     isEditable
-                      ? ({ event, start, end }: any) =>
-                          updateSchedule((event as Schedule).uuid, {
+                      ? ({ event, start, end }: any) => {
+                          const schedule = event as Schedule;
+                          if (schedule.type === "group") return;
+                          updateSchedule(schedule.uuid, {
                             start_time: start,
                             end_time: end,
-                          })
+                          });
+                        }
                       : undefined
                   }
                   onEventResize={
                     isEditable
-                      ? ({ event, start, end }: any) =>
-                          updateSchedule((event as Schedule).uuid, {
+                      ? ({ event, start, end }: any) => {
+                          const schedule = event as Schedule;
+                          if (schedule.type === "group") return;
+                          updateSchedule(schedule.uuid, {
                             start_time: start,
                             end_time: end,
-                          })
+                          });
+                        }
                       : undefined
                   }
                 />
@@ -366,6 +390,23 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
             detailDate: moment(selectedSlot.start).format("YYYY-MM-DD"),
             startTime: moment(selectedSlot.start).format("HH:mm"),
             endTime: moment(selectedSlot.end).format("HH:mm"),
+          }}
+        />
+      )}
+      {isEditable && showEditModal && selectedSchedule && (
+        <ScheduleEditModal
+          onClose={() => {
+            setShowEditModal(false);
+            updateSchedules();
+            setSelectedSchedule(null);
+          }}
+          defaultValues={{
+            id: selectedSchedule.uuid,
+            title: selectedSchedule.title,
+            description: selectedSchedule.description || "",
+            location: selectedSchedule.location || "",
+            startDate: moment(selectedSchedule.start_time).format("YYYY-MM-DD"),
+            endDate: moment(selectedSchedule.end_time).subtract(1, "day").format("YYYY-MM-DD"),
           }}
         />
       )}
