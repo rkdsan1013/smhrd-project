@@ -67,22 +67,21 @@ const Home: React.FC = () => {
   return (
     <div className="flex-1 flex flex-col md:flex-row gap-4 overflow-y-auto no-scrollbar min-h-[32rem]">
       {/* 캘린더 영역 */}
-      <div className="flex-1 bg-white rounded-lg shadow flex flex-col min-h-[32rem] overflow-hidden">
+      <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col min-h-[32rem] overflow-hidden">
         <div className="flex-1 bg-gray-100 rounded-lg w-full h-full">
           <Calendar mode="read" view="month" />
         </div>
       </div>
 
       {/* 대시보드 영역 */}
-      <div className="flex-1 bg-white rounded-lg shadow p-4 flex flex-row min-h-[25rem] lg:min-h-[25rem] lg:h-full gap-4">
+      <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-row min-h-[25rem] lg:min-h-[25rem] lg:h-full gap-4">
         {/* 왼쪽: 현재 일정 / 다음 일정 영역 */}
         <div className="flex flex-col flex-1 gap-4 h-full">
           {/* 현재 일정 섹션 */}
-          <div className="bg-white rounded shadow-sm border border-gray-200 flex flex-col flex-1 overflow-hidden">
-            {/* 헤더: 배경색과 구분선 추가 */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col flex-1 overflow-hidden">
             <div className="sticky top-0 z-10 px-4 py-2 bg-white">
               <h2 className="text-xl font-bold text-gray-900">현재 일정</h2>
-              <div className="w-3/4 mx-auto mt-2 border-b border-gray-300"></div>
+              <div className="w-full mt-2 border-b border-gray-300"></div>
             </div>
             <div className="flex-1 overflow-y-auto no-scrollbar px-4 py-2">
               {currentSchedules.length > 0 ? (
@@ -145,11 +144,10 @@ const Home: React.FC = () => {
           </div>
 
           {/* 다음 일정 섹션 */}
-          <div className="bg-white rounded shadow-sm border border-gray-200 flex flex-col flex-1 overflow-hidden">
-            {/* 헤더: 배경색과 구분선 추가 */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col flex-1 overflow-hidden">
             <div className="sticky top-0 z-10 px-4 py-2 bg-white">
               <h2 className="text-xl font-bold text-gray-900">다음 일정</h2>
-              <div className="w-3/4 mx-auto mt-2 border-b border-gray-300"></div>
+              <div className="w-full mt-2 border-b border-gray-300"></div>
             </div>
             <div className="flex-1 overflow-y-auto no-scrollbar px-4 py-2">
               {nextSchedule ? (
@@ -200,7 +198,7 @@ const Home: React.FC = () => {
         </div>
 
         {/* 오른쪽: 여행지 + 지도 컴포넌트 */}
-        <div className="bg-gray-50 rounded flex items-center justify-center flex-1">
+        <div className="bg-gray-50 rounded-xl shadow-sm border border-gray-200 flex items-center justify-center flex-1">
           <PopularTravelDestinations />
         </div>
       </div>

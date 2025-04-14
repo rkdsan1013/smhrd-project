@@ -302,19 +302,7 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid, group
                 exit="exit"
                 transition={{ duration: 0.2 }}
               >
-                <GroupSettings
-                  group={{
-                    uuid: groupUuid,
-                    name: groupName,
-                    description: "",
-                    group_icon: "",
-                    group_picture: "",
-                    visibility: "public",
-                    group_leader_uuid: "",
-                    created_at: "",
-                    updated_at: "",
-                  }}
-                />
+                <GroupSettings />
               </motion.div>
             )}
             {selectedTab === "vote" && (
