@@ -1,3 +1,5 @@
+// backend/src/routes/scheduleRoutes.js
+
 const express = require("express");
 const verifyToken = require("../middlewares/verifyToken");
 const scheduleController = require("../controllers/scheduleController");
