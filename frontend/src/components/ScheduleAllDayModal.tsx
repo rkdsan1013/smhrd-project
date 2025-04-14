@@ -19,6 +19,8 @@ interface ScheduleAllDayModalProps {
 const ScheduleAllDayModal: React.FC<ScheduleAllDayModalProps> = ({ onClose, defaultValues }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -43,8 +45,28 @@ const ScheduleAllDayModal: React.FC<ScheduleAllDayModalProps> = ({ onClose, defa
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // 개인 일정에서는 과거 날짜 검증 로직을 제외(단, 시작일과 종료일의 순서만 검증)
+  const validateForm = () => {
+    const newErrors: Partial<Record<keyof typeof formData, string>> & { general?: string } = {};
+
+    if (!formData.title) newErrors.title = "일정 제목을 입력하세요.";
+    if (!formData.location) newErrors.location = "장소를 입력하세요.";
+    if (!formData.startDate) newErrors.startDate = "시작일을 선택하세요.";
+    if (!formData.endDate) newErrors.endDate = "종료일을 선택하세요.";
+
+    // 개인 일정에는 과거 날짜 검증 로직은 제외합니다.
+    const start = formData.startDate ? new Date(formData.startDate) : null;
+    const end = formData.endDate ? new Date(formData.endDate) : null;
+
+    if (start && end && start > end) newErrors.endDate = "종료일은 시작일보다 늦어야 합니다.";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async () => {
     if (isSubmitting) return;
+    if (!validateForm()) return; // 검증 실패 시 제출 중단
     setIsSubmitting(true);
     try {
       const scheduleData = {
@@ -104,6 +126,7 @@ const ScheduleAllDayModal: React.FC<ScheduleAllDayModalProps> = ({ onClose, defa
               placeholder="일정 제목"
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
             />
+            {errors.title && <p className="mt-1 text-sm text-red-500">{errors.title}</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -116,6 +139,7 @@ const ScheduleAllDayModal: React.FC<ScheduleAllDayModalProps> = ({ onClose, defa
                 onChange={handleChange}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               />
+              {errors.startDate && <p className="mt-1 text-sm text-red-500">{errors.startDate}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">종료일</label>
@@ -126,6 +150,7 @@ const ScheduleAllDayModal: React.FC<ScheduleAllDayModalProps> = ({ onClose, defa
                 onChange={handleChange}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               />
+              {errors.endDate && <p className="mt-1 text-sm text-red-500">{errors.endDate}</p>}
             </div>
           </div>
 
@@ -139,6 +164,7 @@ const ScheduleAllDayModal: React.FC<ScheduleAllDayModalProps> = ({ onClose, defa
               placeholder="장소"
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
             />
+            {errors.location && <p className="mt-1 text-sm text-red-500">{errors.location}</p>}
           </div>
 
           <div>

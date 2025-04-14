@@ -2,6 +2,7 @@
 
 const scheduleModel = require("../models/scheduleModel");
 const voteModel = require("../models/voteModel");
+const moment = require("moment");
 const { v4: uuidv4 } = require("uuid");
 
 const getSchedules = async (req, res) => {
@@ -31,32 +32,46 @@ const createSchedule = async (req, res) => {
 
     // 필수 필드 검증
     if (!title || !start_time || !end_time) {
-      return res
-        .status(400)
-        .json({ success: false, message: "title, start_time, end_time은 필수입니다." });
+      return res.status(400).json({
+        success: false,
+        message: "title, start_time, end_time은 필수입니다.",
+      });
     }
-    const now = new Date();
-    if (new Date(start_time) < now || new Date(end_time) < now) {
-      return res
-        .status(400)
-        .json({ success: false, message: "start_time과 end_time은 과거일 수 없습니다." });
+
+    // 그룹 일정인 경우: 오늘 날짜(자정 기준)보다 이전이면 에러.
+    if (group_uuid) {
+      const today = moment().startOf("day"); // 오늘의 시작 (자정)
+      const startDay = moment(start_time).startOf("day");
+      const endDay = moment(end_time).startOf("day");
+
+      if (startDay.isBefore(today) || endDay.isBefore(today)) {
+        return res.status(400).json({
+          success: false,
+          message: "start_time과 end_time은 오늘 날짜부터여야 합니다.",
+        });
+      }
     }
+
+    // 시간 순서 검증: 시작 시간이 종료 시간보다 늦으면 안 됨 (모든 경우 적용)
     if (new Date(start_time) > new Date(end_time)) {
-      return res
-        .status(400)
-        .json({ success: false, message: "start_time은 end_time보다 늦을 수 없습니다." });
+      return res.status(400).json({
+        success: false,
+        message: "start_time은 end_time보다 늦을 수 없습니다.",
+      });
     }
 
     // 그룹 일정일 경우 멤버 여부 확인
     if (group_uuid) {
       const isMember = await voteModel.checkIsGroupMember(group_uuid, owner_uuid);
       if (!isMember) {
-        return res
-          .status(403)
-          .json({ success: false, message: "그룹 멤버만 그룹 일정을 생성할 수 있습니다." });
+        return res.status(403).json({
+          success: false,
+          message: "그룹 멤버만 그룹 일정을 생성할 수 있습니다.",
+        });
       }
     }
 
+    // 생성할 일정 객체 구성
     const schedule = {
       uuid: uuidv4(),
       title,
@@ -68,9 +83,10 @@ const createSchedule = async (req, res) => {
       owner_uuid,
       group_uuid,
     };
+
     await scheduleModel.create(schedule);
 
-    // 그룹 일정일 경우 소켓 이벤트
+    // 그룹 일정일 경우 소켓 이벤트 전송
     if (group_uuid) {
       global.io.to(group_uuid).emit("scheduleCreated", {
         scheduleUuid: schedule.uuid,
@@ -84,7 +100,10 @@ const createSchedule = async (req, res) => {
     return res.status(201).json({ success: true, schedule });
   } catch (error) {
     console.error(`createSchedule error for user ${req.user.uuid}: ${error.message}`);
-    return res.status(500).json({ success: false, message: `일정 생성 중 오류: ${error.message}` });
+    return res.status(500).json({
+      success: false,
+      message: `일정 생성 중 오류: ${error.message}`,
+    });
   }
 };
 

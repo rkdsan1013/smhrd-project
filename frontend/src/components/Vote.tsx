@@ -46,17 +46,22 @@ export const VoteModal: React.FC<VoteModalProps> = ({ groupUuid, onClose, onVote
 
   const validateForm = () => {
     const newErrors: Partial<Record<keyof typeof formData, string>> & { general?: string } = {};
+
     if (!formData.title) newErrors.title = "투표 제목을 입력하세요.";
     if (!formData.location) newErrors.location = "여행지를 입력하세요.";
     if (!formData.startDate) newErrors.startDate = "여행 시작일을 선택하세요.";
     if (!formData.endDate) newErrors.endDate = "여행 종료일을 선택하세요.";
 
+    // 현재 시각 대신 오늘의 자정(00:00) 기준을 생성
     const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
     const start = formData.startDate ? new Date(formData.startDate) : null;
     const end = formData.endDate ? new Date(formData.endDate) : null;
 
-    if (start && start < now) newErrors.startDate = "시작일은 과거일 수 없습니다.";
-    if (end && end < now) newErrors.endDate = "종료일은 과거일 수 없습니다.";
+    // start와 end를 today(자정)와 비교하여 오늘 이전이면 과거로 판단
+    if (start && start < today) newErrors.startDate = "시작일은 과거일 수 없습니다.";
+    if (end && end < today) newErrors.endDate = "종료일은 과거일 수 없습니다.";
     if (start && end && start > end) newErrors.endDate = "종료일은 시작일보다 늦어야 합니다.";
 
     setErrors(newErrors);
@@ -93,7 +98,7 @@ export const VoteModal: React.FC<VoteModalProps> = ({ groupUuid, onClose, onVote
   };
 
   return ReactDOM.createPortal(
-    <div className="fixed inset-0 flex items-center justify-center z-50">
+    <div className="fixed inset-0 flex items-center justify-center z-9999">
       <div
         className={`absolute inset-0 bg-black/60 transition-opacity duration-300 ${
           isVisible ? "opacity-100" : "opacity-0"
