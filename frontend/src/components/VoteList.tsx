@@ -11,8 +11,9 @@ interface VoteListProps {
   onVoteSelected?: (scheduleUuid: string) => void;
 }
 
-interface TravelVote {
+export interface TravelVote {
   uuid: string;
+  title: string;
   location: string;
   start_date: string;
   end_date: string;
@@ -40,8 +41,12 @@ const VoteList: React.FC<VoteListProps> = ({ groupUuid, currentUserUuid, onVoteS
       console.log(`[VoteList] 일정 목록 조회 성공 (group ${groupUuid}):`, response);
 
       if (Array.isArray(response.votes)) {
-        setVotes(response.votes);
-        console.log(`[VoteList] 일정 목록 설정: ${response.votes.length}개`);
+        const mappedVotes = response.votes.map((vote: any) => ({
+          ...vote,
+          title: vote.title || "제목 없음",
+        }));
+        setVotes(mappedVotes);
+        console.log(`[VoteList] 일정 목록 설정: ${mappedVotes.length}개`);
       } else {
         throw new Error("일정 데이터 형식이 잘못되었습니다. 예상: { votes: 배열 }");
       }
@@ -136,7 +141,7 @@ const VoteList: React.FC<VoteListProps> = ({ groupUuid, currentUserUuid, onVoteS
         {loading && <p className="text-center text-gray-500">일정 목록을 불러오는 중...</p>}
         {error && <p className="text-center text-red-500">{error}</p>}
         {!loading && !error && votes.length === 0 && (
-          <p className="text-center text-gray-500">일정가 없습니다.</p>
+          <p className="text-center text-gray-500">일정이 없습니다.</p>
         )}
         {!loading &&
           !error &&

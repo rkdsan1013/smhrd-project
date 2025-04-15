@@ -14,6 +14,7 @@ interface VoteModalProps {
 interface VoteItemProps {
   vote: {
     uuid: string;
+    title: string;
     location: string;
     start_date: string;
     end_date: string;
@@ -52,14 +53,13 @@ export const VoteModal: React.FC<VoteModalProps> = ({ groupUuid, onClose, onVote
     if (!formData.startDate) newErrors.startDate = "여행 시작일을 선택하세요.";
     if (!formData.endDate) newErrors.endDate = "여행 종료일을 선택하세요.";
 
-    // 현재 시각 대신 오늘의 자정(00:00) 기준을 생성
+    // 현재 시각 대신 오늘 자정(00:00) 기준으로 비교
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     const start = formData.startDate ? new Date(formData.startDate) : null;
     const end = formData.endDate ? new Date(formData.endDate) : null;
 
-    // start와 end를 today(자정)와 비교하여 오늘 이전이면 과거로 판단
     if (start && start < today) newErrors.startDate = "시작일은 과거일 수 없습니다.";
     if (end && end < today) newErrors.endDate = "종료일은 과거일 수 없습니다.";
     if (start && end && start > end) newErrors.endDate = "종료일은 시작일보다 늦어야 합니다.";
@@ -256,23 +256,31 @@ export const VoteItem: React.FC<VoteItemProps> = ({
 
   return (
     <div className="p-5 mb-4 border border-gray-200 rounded-xl shadow-md bg-white hover:shadow-lg">
-      <h3 className="text-xl font-semibold text-gray-800">{vote.location}</h3>
+      {/* 제목을 강조하여 표시 */}
+      <h3 className="text-xl font-semibold text-gray-800">{vote.title}</h3>
       <div className="mt-2 space-y-2 text-gray-600">
+        {/* 여행지 */}
         <p>
-          <span className="font-medium text-blue-600">여행 기간:</span> {vote.start_date} ~{" "}
+          <span className="font-medium text-blue-600">장소:</span> {vote.location}
+        </p>
+        {/* 여행 기간 */}
+        <p>
+          <span className="font-medium text-blue-600">기간:</span> {vote.start_date} ~{" "}
           {vote.end_date}
         </p>
+        {/* 인원 (존재하는 경우) */}
         {vote.headcount && (
           <p>
             <span className="font-medium text-blue-600">인원:</span> {vote.headcount}명
           </p>
         )}
-        {vote.description && <p className="text-gray-500 italic">{vote.description}</p>}
+        {/* 설명 */}
+        {vote.description && <p className="text-gray-500">{vote.description}</p>}
+        {/* 참여자 */}
         <p>
           <span className="font-medium">참여자:</span> {vote.participant_count}명
         </p>
       </div>
-
       <div className="flex gap-3 mt-4">
         <button
           onClick={handleParticipate}
@@ -284,7 +292,6 @@ export const VoteItem: React.FC<VoteItemProps> = ({
         >
           {vote.has_participated ? "참여 취소" : "참여하기"}
         </button>
-
         <button
           onClick={handleEnterChat}
           disabled={!vote.has_participated}
@@ -297,7 +304,6 @@ export const VoteItem: React.FC<VoteItemProps> = ({
           채팅방 입장
         </button>
       </div>
-
       {error && <p className="text-red-600 text-sm mt-2">{error}</p>}
     </div>
   );
