@@ -81,7 +81,8 @@ const GroupAnnouncement: React.FC<GroupAnnouncementProps> = ({
 
       {error && <div className="px-4 py-2 text-center text-red-500">{error}</div>}
 
-      <div className="flex-1 overflow-y-auto px-4 py-4">
+      {/* 스크롤 문제 해결: overflow-y-auto 영역에 min-h-0 클래스 추가 */}
+      <div className="flex-1 overflow-y-auto min-h-0 px-4 py-4">
         {announcements.length === 0 ? (
           <p className="text-gray-500 text-center">등록된 공지사항이 없습니다.</p>
         ) : (
