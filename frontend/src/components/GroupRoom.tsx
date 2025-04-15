@@ -266,8 +266,33 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid }) => 
       {/* 모바일 상단 네비게이션 */}
       <div className="block md:hidden mb-4 border-b border-gray-300 py-2">
         <div className="flex items-center justify-around">
-          {/* 상단 버튼은 동일 */}
-          ...
+          <button
+            onClick={() => setSelectedTab("announcement")}
+            className="p-2 active:scale-95 hover:bg-gray-100 transition-all duration-200"
+          >
+            <Icons name="bell" className="w-6 h-6" />
+          </button>
+          <button
+            onClick={() => setSelectedTab("vote")}
+            className="p-2 active:scale-95 hover:bg-gray-100 transition-all duration-200"
+          >
+            <Icons name="calendar" className="w-6 h-6" />
+          </button>
+          <button
+            onClick={() => {
+              setScheduleUuid(null);
+              setSelectedTab("chat");
+            }}
+            className="p-2 active:scale-95 hover:bg-gray-100 transition-all duration-200"
+          >
+            <Icons name="chat" className="w-6 h-6" />
+          </button>
+          <button
+            onClick={() => setSelectedTab("settings")}
+            className="p-2 active:scale-95 hover:bg-gray-100 transition-all duration-200"
+          >
+            <Icons name="cog" className="w-6 h-6" />
+          </button>
         </div>
       </div>
 
