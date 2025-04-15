@@ -37,19 +37,19 @@ const VoteList: React.FC<VoteListProps> = ({ groupUuid, currentUserUuid, onVoteS
     setError(null);
     try {
       const response = await getTravelVotes(groupUuid);
-      console.log(`[VoteList] 투표 목록 조회 성공 (group ${groupUuid}):`, response);
+      console.log(`[VoteList] 일정 목록 조회 성공 (group ${groupUuid}):`, response);
 
       if (Array.isArray(response.votes)) {
         setVotes(response.votes);
-        console.log(`[VoteList] 투표 목록 설정: ${response.votes.length}개`);
+        console.log(`[VoteList] 일정 목록 설정: ${response.votes.length}개`);
       } else {
-        throw new Error("투표 데이터 형식이 잘못되었습니다. 예상: { votes: 배열 }");
+        throw new Error("일정 데이터 형식이 잘못되었습니다. 예상: { votes: 배열 }");
       }
     } catch (error: any) {
-      const errMsg = error.message || `투표 목록을 불러오는 데 실패했습니다.`;
+      const errMsg = error.message || `일정 목록을 불러오는 데 실패했습니다.`;
       setError(errMsg);
       setVotes([]);
-      console.error(`[VoteList] 투표 목록 조회 실패 (group ${groupUuid}):`, {
+      console.error(`[VoteList] 일정 목록 조회 실패 (group ${groupUuid}):`, {
         message: error.message,
         data: error.data,
       });
@@ -69,7 +69,7 @@ const VoteList: React.FC<VoteListProps> = ({ groupUuid, currentUserUuid, onVoteS
         ({ voteUuid, groupUuid: eventGroupUuid }: { voteUuid: string; groupUuid: string }) => {
           if (eventGroupUuid === groupUuid) {
             fetchVotes();
-            console.log(`[VoteList] 새 투표 생성 수신: ${voteUuid}`);
+            console.log(`[VoteList] 새 일정 생성 수신: ${voteUuid}`);
           }
         },
       );
@@ -99,7 +99,7 @@ const VoteList: React.FC<VoteListProps> = ({ groupUuid, currentUserUuid, onVoteS
                 : vote,
             ),
           );
-          console.log(`[VoteList] 투표 참여 업데이트: ${voteUuid}, count: ${participant_count}`);
+          console.log(`[VoteList] 일정 참여 업데이트: ${voteUuid}, count: ${participant_count}`);
         },
       );
 
@@ -108,7 +108,7 @@ const VoteList: React.FC<VoteListProps> = ({ groupUuid, currentUserUuid, onVoteS
         ({ voteUuid, groupUuid: eventGroupUuid }: { voteUuid: string; groupUuid: string }) => {
           if (eventGroupUuid === groupUuid) {
             setVotes((prev) => prev.filter((vote) => vote.uuid !== voteUuid));
-            console.log(`[VoteList] 투표 삭제 수신: ${voteUuid}`);
+            console.log(`[VoteList] 일정 삭제 수신: ${voteUuid}`);
           }
         },
       );
@@ -133,10 +133,10 @@ const VoteList: React.FC<VoteListProps> = ({ groupUuid, currentUserUuid, onVoteS
         </button>
       </div>
       <div className="flex-1 overflow-y-auto">
-        {loading && <p className="text-center text-gray-500">투표 목록을 불러오는 중...</p>}
+        {loading && <p className="text-center text-gray-500">일정 목록을 불러오는 중...</p>}
         {error && <p className="text-center text-red-500">{error}</p>}
         {!loading && !error && votes.length === 0 && (
-          <p className="text-center text-gray-500">투표가 없습니다.</p>
+          <p className="text-center text-gray-500">일정가 없습니다.</p>
         )}
         {!loading &&
           !error &&
