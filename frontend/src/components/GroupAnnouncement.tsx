@@ -67,7 +67,7 @@ const GroupAnnouncement: React.FC<GroupAnnouncementProps> = ({
   return (
     <div className="h-full flex flex-col">
       <header className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-        <h2 className="text-2xl font-bold text-gray-800">그룹 공지사항</h2>
+        <h2 className="text-2xl font-bold text-gray-800">공지사항</h2>
         {isLeader && (
           <button
             onClick={() => setIsModalOpen(true)}
