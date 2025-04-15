@@ -108,7 +108,7 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
   const { schedules, updateSchedule, refreshSchedules } = useSchedule();
   const isFixedView = view !== "all";
 
-  // 추가: 드래그&드롭 후 발생하는 클릭 이벤트 무시를 위한 ref (단위: ms)
+  // 드래그&드롭 후 발생하는 클릭 이벤트 무시를 위한 ref (단위: ms)
   const lastDropTimeRef = useRef<number>(0);
 
   const updateSchedulesAsync = async () => {
@@ -352,15 +352,21 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
                   scrollToTime={scrollToTime}
                   eventPropGetter={(event: object) => {
                     const schedule = event as Schedule;
-                    const backgroundColor = schedule.type === "personal" ? "#2563eb" : "#16a34a";
+                    let gradient;
+                    if (schedule.type === "personal") {
+                      gradient = "linear-gradient(135deg, #2563eb, #60a5fa)";
+                    } else {
+                      gradient = "linear-gradient(135deg, #16a34a, #4ade80)";
+                    }
                     return {
                       style: {
-                        backgroundColor,
+                        background: gradient,
                         borderRadius: "0.375rem",
-                        opacity: 0.9,
+                        opacity: 0.95,
                         color: "white",
                         border: "none",
                         display: "block",
+                        boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
                       },
                     };
                   }}

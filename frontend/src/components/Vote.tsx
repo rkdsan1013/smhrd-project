@@ -47,7 +47,7 @@ export const VoteModal: React.FC<VoteModalProps> = ({ groupUuid, onClose, onVote
   const validateForm = () => {
     const newErrors: Partial<Record<keyof typeof formData, string>> & { general?: string } = {};
 
-    if (!formData.title) newErrors.title = "투표 제목을 입력하세요.";
+    if (!formData.title) newErrors.title = "일정 제목을 입력하세요.";
     if (!formData.location) newErrors.location = "여행지를 입력하세요.";
     if (!formData.startDate) newErrors.startDate = "여행 시작일을 선택하세요.";
     if (!formData.endDate) newErrors.endDate = "여행 종료일을 선택하세요.";
@@ -85,10 +85,10 @@ export const VoteModal: React.FC<VoteModalProps> = ({ groupUuid, onClose, onVote
       handleClose();
     } catch (err: any) {
       const errorMessage = err.message.includes("SQL syntax")
-        ? "투표 생성 중 서버 오류가 발생했습니다. 입력을 확인해주세요."
-        : err.message || "투표 생성에 실패했습니다.";
+        ? "일정 생성 중 서버 오류가 발생했습니다. 입력을 확인해주세요."
+        : err.message || "일정 생성에 실패했습니다.";
       setErrors({ general: errorMessage });
-      console.error(`[VoteModal] 투표 생성 실패 (group ${groupUuid}):`, err);
+      console.error(`[VoteModal] 일정 생성 실패 (group ${groupUuid}):`, err);
     }
   };
 
@@ -111,7 +111,7 @@ export const VoteModal: React.FC<VoteModalProps> = ({ groupUuid, onClose, onVote
         }`}
       >
         <div className="flex justify-between items-center p-5 border-b border-gray-200">
-          <h2 className="text-2xl font-semibold text-gray-800">여행 투표 생성</h2>
+          <h2 className="text-2xl font-semibold text-gray-800">여행 일정 생성</h2>
           <button
             onClick={handleClose}
             className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-200"
@@ -121,7 +121,7 @@ export const VoteModal: React.FC<VoteModalProps> = ({ groupUuid, onClose, onVote
         </div>
         <div className="p-6 space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">투표 제목</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">일정 제목</label>
             <input
               type="text"
               name="title"
@@ -211,7 +211,7 @@ export const VoteModal: React.FC<VoteModalProps> = ({ groupUuid, onClose, onVote
               onClick={handleSubmit}
               className="h-11 w-full bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
-              투표 생성
+              일정 생성
             </button>
           </div>
         </div>

@@ -1,8 +1,9 @@
+// /frontend/src/components/GroupRoom.tsx
+
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import GroupChat from "./GroupChat";
 import GroupAnnouncement from "./GroupAnnouncement";
-import GroupCalendar from "./GroupCalendar";
 import GroupSettings from "./GroupSettings";
 import GroupMemberList from "./GroupMemberList";
 import VoteList from "./VoteList";
@@ -16,7 +17,7 @@ interface GroupRoomProps {
   currentUserUuid: string;
 }
 
-type TabType = "announcement" | "calendar" | "chat" | "settings" | "vote";
+type TabType = "announcement" | "chat" | "settings" | "vote";
 
 const motionVariants = {
   initial: { opacity: 0, x: 50 },
@@ -219,6 +220,7 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid }) => 
 
   return (
     <div className="h-full flex flex-col">
+      {/* 모바일 상단 네비게이션 */}
       <div className="block md:hidden mb-4 border-b border-gray-300 py-2">
         <div className="flex items-center justify-around">
           <button
@@ -228,10 +230,11 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid }) => 
             <Icons name="bell" className="w-6 h-6" />
           </button>
           <button
-            onClick={() => setSelectedTab("calendar")}
+            onClick={() => setSelectedTab("vote")}
             className="flex flex-col items-center p-2 rounded hover:text-blue-600 transition-all duration-200 active:scale-95"
           >
             <Icons name="calendar" className="w-6 h-6" />
+            <span className="hidden lg:inline ml-2">일정</span>
           </button>
           <button
             onClick={() => setSelectedTab("chat")}
@@ -249,6 +252,7 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid }) => 
       </div>
 
       <div className="flex flex-1 overflow-hidden gap-4">
+        {/* 데스크탑 좌측 사이드바 */}
         <aside className="hidden md:flex flex-col md:w-24 lg:w-52 flex-shrink-0 border-r border-gray-300 p-4">
           <div className="space-y-4">
             <button
@@ -259,7 +263,7 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid }) => 
               <span className="hidden lg:inline ml-2">공지</span>
             </button>
             <button
-              onClick={() => setSelectedTab("calendar")}
+              onClick={() => setSelectedTab("vote")}
               className="w-full flex items-center justify-center lg:justify-start lg:text-left p-2 rounded hover:bg-gray-100 transition-all duration-200 active:scale-95"
             >
               <Icons name="calendar" className="w-6 h-6" />
@@ -277,13 +281,6 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid }) => 
           <div className="space-y-4"></div>
           <div className="flex-grow" />
           <div className="my-2 border-t border-gray-300" />
-          <button
-            onClick={() => setSelectedTab("vote")}
-            className="w-full flex items-center justify-center lg:justify-start lg:text-left p-2 rounded hover:bg-gray-100 transition-all duration-200 active:scale-95"
-          >
-            <Icons name="vote" className="w-6 h-6" />
-            <span className="hidden lg:inline ml-2">투표</span>
-          </button>
           <button
             onClick={() => setSelectedTab("settings")}
             className="w-full flex items-center justify-center lg:justify-start lg:text-left p-2 rounded hover:bg-gray-100 transition-all duration-200 active:scale-95"
@@ -310,19 +307,6 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid }) => 
                   currentUserUuid={currentUserUuid}
                   groupLeaderUuid={groupDetails.group_leader_uuid}
                 />
-              </motion.div>
-            )}
-            {selectedTab === "calendar" && (
-              <motion.div
-                key={`calendar-${groupUuid}`}
-                className="h-full"
-                variants={motionVariants}
-                initial="initial"
-                animate="animate"
-                exit="exit"
-                transition={{ duration: 0.2 }}
-              >
-                <GroupCalendar />
               </motion.div>
             )}
             {selectedTab === "chat" && (
