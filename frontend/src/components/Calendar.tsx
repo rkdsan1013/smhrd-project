@@ -180,7 +180,7 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
   const handleSelectEvent = (event: object) => {
     if (!isEditable) return;
     // 드래그&드롭 후 짧은 시간 내 발생한 클릭 이벤트는 무시합니다.
-    if (Date.now() - lastDropTimeRef.current < 300) return;
+    if (Date.now() - lastDropTimeRef.current < 100) return;
     const schedule = event as Schedule;
     if (schedule.type === "group") return;
     // 일정의 시작, 종료 시간을 통해 all‑day 여부를 판단합니다.
@@ -394,18 +394,31 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
           </AnimatePresence>
         </DndProvider>
       </div>
-      {isEditable && showAllDayModal && selectedSlot && (
-        <ScheduleAllDayModal
-          onClose={() => {
-            setShowAllDayModal(false);
-            updateSchedulesAsync();
-          }}
-          defaultValues={{
-            startDate: moment(selectedSlot.start).format("YYYY-MM-DD"),
-            endDate: moment(selectedSlot.end).subtract(1, "day").format("YYYY-MM-DD"),
-          }}
-        />
-      )}
+      {/* ✅ 종일 모달 애니메이션 적용 */}
+      <AnimatePresence>
+        {isEditable && showAllDayModal && selectedSlot && (
+          <motion.div
+            key="allDayModal"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.3 }}
+          >
+            <ScheduleAllDayModal
+              onClose={() => {
+                setShowAllDayModal(false);
+                updateSchedulesAsync();
+              }}
+              defaultValues={{
+                startDate: moment(selectedSlot.start).format("YYYY-MM-DD"),
+                endDate: moment(selectedSlot.end).subtract(1, "day").format("YYYY-MM-DD"),
+              }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ✅ 상세 일정 모달 (기존 유지) */}
       {isEditable && showDetailModal && selectedSlot && (
         <ScheduleDetailModal
           onClose={() => {
@@ -419,6 +432,8 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
           }}
         />
       )}
+
+      {/* ✅ 종일 일정 수정 모달 (기존 유지) */}
       {isEditable && showEditModal && selectedSchedule && (
         <ScheduleEditModal
           onClose={() => {
@@ -436,6 +451,8 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
           }}
         />
       )}
+
+      {/* ✅ 상세 일정 수정 모달 (기존 유지) */}
       {isEditable && showDetailEditModal && selectedSchedule && (
         <ScheduleDetailEditModal
           onClose={() => {
