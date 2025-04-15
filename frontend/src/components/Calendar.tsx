@@ -108,6 +108,9 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
   const { schedules, updateSchedule, refreshSchedules } = useSchedule();
   const isFixedView = view !== "all";
 
+  // 추가: 드래그&드롭 후 발생하는 클릭 이벤트 무시를 위한 ref (단위: ms)
+  const lastDropTimeRef = useRef<number>(0);
+
   const updateSchedulesAsync = async () => {
     try {
       await refreshSchedules();
@@ -176,6 +179,8 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
   // 이벤트 클릭 시 – 세부 일정 수정 (비종일 일정은 ScheduleDetailEditModal, 종일 일정은 기존 ScheduleEditModal)
   const handleSelectEvent = (event: object) => {
     if (!isEditable) return;
+    // 드래그&드롭 후 짧은 시간 내 발생한 클릭 이벤트는 무시합니다.
+    if (Date.now() - lastDropTimeRef.current < 300) return;
     const schedule = event as Schedule;
     if (schedule.type === "group") return;
     // 일정의 시작, 종료 시간을 통해 all‑day 여부를 판단합니다.
@@ -195,6 +200,8 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, view = "all", mode = "
   const handleEventChange = async ({ event, start, end }: any) => {
     const schedule = event as Schedule;
     if (schedule.type === "group") return;
+    // 드래그&드롭 이벤트 발생 시각을 기록해 두어, 후속 클릭 이벤트를 무시할 수 있도록 합니다.
+    lastDropTimeRef.current = Date.now();
     try {
       await updateSchedule(schedule.uuid, { start_time: start, end_time: end });
     } catch (error) {
