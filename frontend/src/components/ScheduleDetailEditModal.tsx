@@ -1,3 +1,5 @@
+// /frontend/src/components/ScheduleDetailEditModal.tsx
+
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import moment from "moment";
@@ -100,6 +102,21 @@ const ScheduleDetailEditModal: React.FC<ScheduleDetailEditModalProps> = ({
     }
   };
 
+  // 삭제 기능 추가
+  const handleDelete = async () => {
+    if (isSubmitting) return;
+    if (!window.confirm("정말 삭제하시겠습니까?")) return;
+    setIsSubmitting(true);
+    try {
+      await scheduleService.deleteSchedule(defaultValues.uuid);
+      handleModalClose();
+    } catch (error) {
+      console.error("일정 삭제에 실패했습니다.", error);
+      alert("일정 삭제에 실패했습니다.");
+      setIsSubmitting(false);
+    }
+  };
+
   return ReactDOM.createPortal(
     <div className="fixed inset-0 flex items-center justify-center z-[9999]">
       <div
@@ -183,10 +200,11 @@ const ScheduleDetailEditModal: React.FC<ScheduleDetailEditModalProps> = ({
         <div className="p-5 border-t border-gray-200">
           <div className="grid grid-cols-2 gap-3">
             <button
-              onClick={handleModalClose}
-              className="h-11 w-full bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors duration-200 font-medium"
+              onClick={handleDelete}
+              disabled={isSubmitting}
+              className="h-11 w-full bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 font-medium"
             >
-              취소
+              삭제
             </button>
             <button
               onClick={handleSubmit}
