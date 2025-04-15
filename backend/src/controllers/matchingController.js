@@ -2,6 +2,18 @@
 
 const matchingModel = require("../models/matchingModel");
 
+// group 관련 이미지 URL을 서버 URL과 함께 포맷하는 함수
+const formatGroup = (group) => {
+  const serverUrl = process.env.SERVER_URL || "http://localhost:5000";
+  if (group.group_icon && !group.group_icon.startsWith("http")) {
+    group.group_icon = serverUrl + group.group_icon;
+  }
+  if (group.group_picture && !group.group_picture.startsWith("http")) {
+    group.group_picture = serverUrl + group.group_picture;
+  }
+  return group;
+};
+
 const createMatching = async (req, res) => {
   try {
     const user_uuid = req.user;
@@ -53,8 +65,11 @@ const getRecommendedGroups = async (req, res) => {
     // 응답 확인 로그
     console.log(`추천 그룹 ${groups.length}개 응답`);
 
+    // 그룹 이미지 포맷 적용 (group_icon, group_picture)
+    const formattedGroups = groups.map(formatGroup);
+
     // 정상 응답
-    return res.status(200).json(groups);
+    return res.status(200).json(formattedGroups);
   } catch (err) {
     console.error("추천 그룹 컨트롤러 오류:", err);
     return res.status(500).json({ message: "추천 그룹 조회 실패" });
