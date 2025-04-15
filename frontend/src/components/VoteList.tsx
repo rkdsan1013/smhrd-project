@@ -9,6 +9,7 @@ interface VoteListProps {
   groupUuid: string;
   currentUserUuid: string;
   onVoteSelected?: (scheduleUuid: string) => void;
+  onVoteStatusChange?: () => void;
 }
 
 export interface TravelVote {
@@ -26,7 +27,12 @@ export interface TravelVote {
   group_uuid: string;
 }
 
-const VoteList: React.FC<VoteListProps> = ({ groupUuid, currentUserUuid, onVoteSelected }) => {
+const VoteList: React.FC<VoteListProps> = ({
+  groupUuid,
+  currentUserUuid,
+  onVoteSelected,
+  onVoteStatusChange,
+}) => {
   const [votes, setVotes] = useState<TravelVote[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -60,6 +66,14 @@ const VoteList: React.FC<VoteListProps> = ({ groupUuid, currentUserUuid, onVoteS
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // vote 참여/취소 시 호출될 핸들러: 내부 목록 갱신 후 상위(onVoteStatusChange)에도 알림
+  const handleVoteUpdate = () => {
+    fetchVotes();
+    if (onVoteStatusChange) {
+      onVoteStatusChange();
     }
   };
 
@@ -105,6 +119,11 @@ const VoteList: React.FC<VoteListProps> = ({ groupUuid, currentUserUuid, onVoteS
             ),
           );
           console.log(`[VoteList] 일정 참여 업데이트: ${voteUuid}, count: ${participant_count}`);
+          // 즉시 목록 갱신 및 상위에 vote 업데이트 알림
+          fetchVotes();
+          if (onVoteStatusChange) {
+            onVoteStatusChange();
+          }
         },
       );
 
@@ -114,6 +133,10 @@ const VoteList: React.FC<VoteListProps> = ({ groupUuid, currentUserUuid, onVoteS
           if (eventGroupUuid === groupUuid) {
             setVotes((prev) => prev.filter((vote) => vote.uuid !== voteUuid));
             console.log(`[VoteList] 일정 삭제 수신: ${voteUuid}`);
+            fetchVotes();
+            if (onVoteStatusChange) {
+              onVoteStatusChange();
+            }
           }
         },
       );
@@ -150,7 +173,7 @@ const VoteList: React.FC<VoteListProps> = ({ groupUuid, currentUserUuid, onVoteS
               key={vote.uuid}
               vote={vote}
               currentUserUuid={currentUserUuid}
-              onVoteUpdated={fetchVotes}
+              onVoteUpdated={handleVoteUpdate}
               onClick={() => vote.schedule_uuid && onVoteSelected?.(vote.schedule_uuid)}
             />
           ))}
@@ -159,7 +182,7 @@ const VoteList: React.FC<VoteListProps> = ({ groupUuid, currentUserUuid, onVoteS
         <VoteModal
           groupUuid={groupUuid}
           onClose={() => setIsModalOpen(false)}
-          onVoteCreated={fetchVotes}
+          onVoteCreated={handleVoteUpdate}
         />
       )}
     </div>

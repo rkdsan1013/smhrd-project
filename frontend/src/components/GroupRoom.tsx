@@ -10,6 +10,7 @@ import VoteList from "./VoteList";
 import Icons from "./Icons";
 import { getGroupChatRoomUuid, getGroupDetails } from "../services/groupService";
 import { getScheduleChatRoomUuid } from "../services/scheduleService";
+import { getTravelVotes } from "../services/voteService";
 import { useSocket } from "../contexts/SocketContext";
 
 interface GroupRoomProps {
@@ -35,7 +36,29 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid }) => 
   const [chatRoomError, setChatRoomError] = useState<string | null>(null);
   const [scheduleChatRoomError, setScheduleChatRoomError] = useState<string | null>(null);
   const [groupDetails, setGroupDetails] = useState<any | null>(null);
+  const [participatedSchedules, setParticipatedSchedules] = useState<
+    Array<{ schedule_uuid: string; title: string }>
+  >([]);
   const { socket } = useSocket();
+
+  // 공통으로 참여 일정 목록 업데이트 함수 (즉시 호출 및 socket 이벤트, vote 업데이트 시 사용)
+  const updateParticipatedSchedules = async () => {
+    try {
+      const response = await getTravelVotes(groupUuid);
+      if (Array.isArray(response.votes)) {
+        const schedules = response.votes
+          .filter((vote: any) => vote.has_participated && vote.schedule_uuid)
+          .map((vote: any) => ({
+            schedule_uuid: vote.schedule_uuid,
+            title: vote.title || "제목 없음",
+          }));
+        setParticipatedSchedules(schedules);
+        console.log(`[GroupRoom] 참여 일정 조회 성공: ${schedules.length}개`);
+      }
+    } catch (error: any) {
+      console.error(`[GroupRoom] 참여 일정 조회 실패: ${error.message}`);
+    }
+  };
 
   useEffect(() => {
     const fetchGroupDetails = async () => {
@@ -107,6 +130,26 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid }) => 
 
     fetchScheduleChatRoomUuid();
   }, [scheduleUuid]);
+
+  // 참여 일정 목록을 업데이트하고, 소켓 이벤트에 따라 즉시 갱신
+  useEffect(() => {
+    updateParticipatedSchedules();
+
+    if (socket) {
+      const handleVoteChange = () => {
+        updateParticipatedSchedules();
+      };
+      socket.on("travelVoteCreated", handleVoteChange);
+      socket.on("voteParticipationUpdated", handleVoteChange);
+      socket.on("travelVoteDeleted", handleVoteChange);
+
+      return () => {
+        socket.off("travelVoteCreated", handleVoteChange);
+        socket.off("voteParticipationUpdated", handleVoteChange);
+        socket.off("travelVoteDeleted", handleVoteChange);
+      };
+    }
+  }, [groupUuid, socket]);
 
   useEffect(() => {
     if (!socket) return;
@@ -236,8 +279,12 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid }) => 
             <Icons name="calendar" className="w-6 h-6" />
             <span className="hidden lg:inline ml-2">일정</span>
           </button>
+          {/* 채팅 버튼 클릭 시 scheduleUuid 리셋 → 그룹 채팅방으로 전환 */}
           <button
-            onClick={() => setSelectedTab("chat")}
+            onClick={() => {
+              setScheduleUuid(null);
+              setSelectedTab("chat");
+            }}
             className="flex flex-col items-center p-2 rounded hover:text-blue-600 transition-all duration-200 active:scale-95"
           >
             <Icons name="chat" className="w-6 h-6" />
@@ -269,8 +316,12 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid }) => 
               <Icons name="calendar" className="w-6 h-6" />
               <span className="hidden lg:inline ml-2">일정</span>
             </button>
+            {/* 데스크탑 채팅 버튼 클릭 시 scheduleUuid 리셋 */}
             <button
-              onClick={() => setSelectedTab("chat")}
+              onClick={() => {
+                setScheduleUuid(null);
+                setSelectedTab("chat");
+              }}
               className="w-full flex items-center justify-center lg:justify-start lg:text-left p-2 rounded hover:bg-gray-100 transition-all duration-200 active:scale-95"
             >
               <Icons name="chat" className="w-6 h-6" />
@@ -278,7 +329,23 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid }) => 
             </button>
           </div>
           <div className="my-2 border-t border-gray-300" />
-          <div className="space-y-4"></div>
+          {/* 참여한 일정 채팅방 버튼들 (있을 경우) */}
+          {participatedSchedules.length > 0 && (
+            <div className="space-y-4">
+              {participatedSchedules.map((schedule) => (
+                <button
+                  key={schedule.schedule_uuid}
+                  onClick={() => {
+                    setScheduleUuid(schedule.schedule_uuid);
+                    setSelectedTab("chat");
+                  }}
+                  className="w-full flex items-center justify-center lg:justify-start lg:text-left p-2 rounded hover:bg-gray-100 transition-all duration-200 active:scale-95"
+                >
+                  {schedule.title}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="flex-grow" />
           <div className="my-2 border-t border-gray-300" />
           <button
@@ -352,6 +419,7 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid }) => 
                     setScheduleUuid(scheduleUuid);
                     setSelectedTab("chat");
                   }}
+                  onVoteStatusChange={updateParticipatedSchedules}
                 />
               </motion.div>
             )}
