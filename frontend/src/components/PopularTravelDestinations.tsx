@@ -63,7 +63,7 @@ const PopularTravelDestinations: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-full flex flex-col items-start justify-start text-left rounded-xl shadow-sm border border-gray-200 bg-white p-4">
+    <div className="w-full h-full flex flex-col items-start justify-start text-left rounded-xl bg-white p-4">
       {/* 헤더 */}
       <div className="w-full px-4 py-2">
         <div className="flex justify-between items-center w-full">
