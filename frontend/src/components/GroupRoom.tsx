@@ -41,7 +41,7 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid }) => 
   >([]);
   const { socket } = useSocket();
 
-  // 공통으로 참여 일정 목록 업데이트 함수 (즉시 호출 및 socket 이벤트, vote 업데이트 시 사용)
+  // 참여 일정 목록 업데이트 함수 (즉시 호출 및 소켓 이벤트, vote 업데이트 시 사용)
   const updateParticipatedSchedules = async () => {
     try {
       const response = await getTravelVotes(groupUuid);
@@ -378,7 +378,8 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid }) => 
             )}
             {selectedTab === "chat" && (
               <motion.div
-                key={`chat-${groupUuid}`}
+                // key가 scheduleUuid 값에 따라 변경되어 일정 채팅/그룹 채팅 전환 시 애니메이션 효과가 발생합니다.
+                key={`chat-${scheduleUuid ? scheduleUuid : "group"}`}
                 className="h-full"
                 variants={motionVariants}
                 initial="initial"
