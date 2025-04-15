@@ -65,8 +65,7 @@ const GroupAnnouncement: React.FC<GroupAnnouncementProps> = ({
   }
 
   return (
-    // 부모 영역에 맞게 h-full 사용
-    <div className="h-full flex flex-col bg-gray-50">
+    <div className="h-full flex flex-col">
       <header className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
         <h2 className="text-2xl font-bold text-gray-800">그룹 공지사항</h2>
         {isLeader && (
@@ -81,7 +80,6 @@ const GroupAnnouncement: React.FC<GroupAnnouncementProps> = ({
 
       {error && <div className="px-4 py-2 text-center text-red-500">{error}</div>}
 
-      {/* 스크롤 문제 해결: overflow-y-auto 영역에 min-h-0 클래스 추가 */}
       <div className="flex-1 overflow-y-auto min-h-0 px-4 py-4">
         {announcements.length === 0 ? (
           <p className="text-gray-500 text-center">등록된 공지사항이 없습니다.</p>
@@ -90,7 +88,7 @@ const GroupAnnouncement: React.FC<GroupAnnouncementProps> = ({
             {announcements.map((announcement) => (
               <div
                 key={announcement.uuid}
-                className="p-4 bg-white rounded-lg shadow border border-gray-200 hover:shadow-md transition duration-200"
+                className="p-4 rounded-lg shadow border border-gray-200 hover:shadow-md transition duration-200"
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center">
@@ -107,9 +105,9 @@ const GroupAnnouncement: React.FC<GroupAnnouncementProps> = ({
                   )}
                 </div>
                 <p className="text-gray-700 mb-2">{announcement.content}</p>
-                <div className="text-sm text-gray-500">
-                  <span className="mr-4">작성자: {announcement.author_name}</span>
-                  <span>작성일: {new Date(announcement.created_at).toLocaleString()}</span>
+                <div className="text-sm text-gray-500 text-right">
+                  <div>작성자: {announcement.author_name}</div>
+                  <div>{new Date(announcement.created_at).toLocaleString()}</div>
                 </div>
               </div>
             ))}
