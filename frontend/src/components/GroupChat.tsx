@@ -1,3 +1,5 @@
+// /frontend/src/components/GroupChat.tsx
+
 import React, { useEffect, useRef, useState, KeyboardEvent } from "react";
 import {
   sendMessageSocket,
@@ -77,7 +79,15 @@ const GroupChat: React.FC<GroupChatProps> = ({ roomUuid, currentUserUuid, roomNa
     }
   }, [roomUuid, socket]);
 
-  // 새 메시지 추가 시에만 스크롤 이동
+  // 채팅 입장 후 초기 메시지 로드가 완료되면 애니메이션 없이 최하단으로 스크롤
+  useEffect(() => {
+    if (!loading && scrollRef.current) {
+      scrollRef.current.scrollIntoView({ behavior: "auto" });
+      prevMessagesLength.current = messages.length;
+    }
+  }, [loading]);
+
+  // 새 메시지 추가 시 부드럽게 스크롤 이동
   useEffect(() => {
     if (messages.length > prevMessagesLength.current && scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: "smooth" });
