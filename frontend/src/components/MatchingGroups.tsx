@@ -16,24 +16,32 @@ const MatchingGroups: React.FC<MatchingGroupsProps> = ({ userUuid }) => {
   const [selectedGroup, setSelectedGroup] = useState<MatchingGroupInfo | null>(null);
   const [refreshCount, setRefreshCount] = useState(0);
 
-  useEffect(() => {
-    const fetchMatchingGroups = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        console.log("추천 그룹 가져오기 시작");
-        const groups = await getMatchingGroups(userUuid);
-        console.log("받아온 추천 그룹 수:", groups.length);
-        setMatchingGroups(groups);
-      } catch (error: any) {
-        console.error("추천 그룹 조회 오류:", error);
-        setError(error.message || "추천 그룹을 불러오는데 실패했습니다.");
-      } finally {
-        setLoading(false);
-      }
-    };
+  // 추천 그룹을 가져오고, 이미 가입한 그룹은 필터링하는 함수
+  const fetchAndFilterMatchingGroups = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      console.log("추천 그룹 가져오기 시작");
+      let groups = await getMatchingGroups(userUuid);
+      console.log("받아온 추천 그룹 수:", groups.length);
 
-    fetchMatchingGroups();
+      // 이미 가입한 그룹 필터링
+      const { getMyGroups } = await import("../services/groupService");
+      const myGroups = await getMyGroups();
+      const myGroupIds = myGroups.map((g: any) => g.uuid);
+      groups = groups.filter((group) => !myGroupIds.includes(group.uuid));
+
+      setMatchingGroups(groups);
+    } catch (error: any) {
+      console.error("추천 그룹 조회 오류:", error);
+      setError(error.message || "추천 그룹을 불러오는데 실패했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAndFilterMatchingGroups();
   }, [userUuid, refreshCount]);
 
   // 그룹 프로필 닫으면 목록 새로고침
@@ -46,26 +54,6 @@ const MatchingGroups: React.FC<MatchingGroupsProps> = ({ userUuid }) => {
   const handleRefresh = () => {
     setRefreshCount((prev) => prev + 1);
   };
-
-  // 이미 가입한 그룹 필터링 (임시 조치)
-  const filterJoinedGroups = async () => {
-    try {
-      const { getMyGroups } = await import("../services/groupService");
-      const myGroups = await getMyGroups();
-      const myGroupIds = myGroups.map((g) => g.uuid);
-
-      setMatchingGroups((prev) => prev.filter((group) => !myGroupIds.includes(group.uuid)));
-    } catch (error) {
-      console.error("그룹 필터링 실패:", error);
-    }
-  };
-
-  // 최초 마운트 시 필터링 시도
-  useEffect(() => {
-    if (matchingGroups.length > 0) {
-      filterJoinedGroups();
-    }
-  }, [matchingGroups.length]);
 
   return (
     <div className="h-full">
