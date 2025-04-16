@@ -39,6 +39,8 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid }) => 
   const [participatedSchedules, setParticipatedSchedules] = useState<
     Array<{ schedule_uuid: string; title: string }>
   >([]);
+  // 모바일 채팅 드롭다운 상태: 모바일에서 채팅 버튼 클릭 시 드롭다운 메뉴를 토글함.
+  const [showChatDropdown, setShowChatDropdown] = useState<boolean>(false);
   const { socket } = useSocket();
 
   // 참여 일정 목록 업데이트 함수 (즉시 호출 및 소켓 이벤트, vote 업데이트 시 사용)
@@ -264,7 +266,7 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid }) => 
   return (
     <div className="h-full flex flex-col">
       {/* 모바일 상단 네비게이션 */}
-      <div className="block md:hidden mb-4 border-b border-gray-300 py-2">
+      <div className="block md:hidden mb-4 border-b border-gray-300 py-2 relative">
         <div className="flex items-center justify-around">
           <button
             onClick={() => setSelectedTab("announcement")}
@@ -272,21 +274,53 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid }) => 
           >
             <Icons name="bell" className="w-6 h-6" />
           </button>
+          {/* 일정 버튼은 그대로 동작 (Vote 탭 전환) */}
           <button
             onClick={() => setSelectedTab("vote")}
             className="p-2 active:scale-95 hover:bg-gray-100 transition-all duration-200"
           >
             <Icons name="calendar" className="w-6 h-6" />
           </button>
-          <button
-            onClick={() => {
-              setScheduleUuid(null);
-              setSelectedTab("chat");
-            }}
-            className="p-2 active:scale-95 hover:bg-gray-100 transition-all duration-200"
-          >
-            <Icons name="chat" className="w-6 h-6" />
-          </button>
+          {/* 모바일 채팅 버튼: 드롭다운 메뉴로 그룹채팅 및 가입한 일정 채팅 선택 */}
+          <div className="relative">
+            <button
+              onClick={() => setShowChatDropdown(!showChatDropdown)}
+              className="p-2 active:scale-95 hover:bg-gray-100 transition-all duration-200"
+            >
+              <Icons name="chat" className="w-6 h-6" />
+            </button>
+            {showChatDropdown && (
+              <div className="absolute z-10 mt-2 w-40 bg-white border border-gray-300 rounded shadow-lg">
+                <button
+                  onClick={() => {
+                    setScheduleUuid(null);
+                    setSelectedTab("chat");
+                    setShowChatDropdown(false);
+                  }}
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                >
+                  그룹 채팅
+                </button>
+                {participatedSchedules.length > 0 ? (
+                  participatedSchedules.map((schedule) => (
+                    <button
+                      key={schedule.schedule_uuid}
+                      onClick={() => {
+                        setScheduleUuid(schedule.schedule_uuid);
+                        setSelectedTab("chat");
+                        setShowChatDropdown(false);
+                      }}
+                      className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                    >
+                      {schedule.title}
+                    </button>
+                  ))
+                ) : (
+                  <div className="px-4 py-2 text-gray-500">가입한 일정 없음</div>
+                )}
+              </div>
+            )}
+          </div>
           <button
             onClick={() => setSelectedTab("settings")}
             className="p-2 active:scale-95 hover:bg-gray-100 transition-all duration-200"
@@ -297,7 +331,7 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid }) => 
       </div>
 
       <div className="flex flex-1 overflow-hidden gap-4">
-        {/* ✅ 수정된 좌측 사이드바 시작 */}
+        {/* 데스크탑 좌측 사이드바 */}
         <aside className="hidden md:flex flex-col md:w-24 lg:w-52 flex-shrink-0 border-r border-gray-300 p-4">
           <div className="space-y-2">
             <button
@@ -314,6 +348,7 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid }) => 
               <Icons name="calendar" className="w-6 h-6" />
               <span className="hidden lg:inline ml-2">일정</span>
             </button>
+            {/* 데스크탑에서는 채팅 버튼에 드롭다운 없이 바로 채팅탭 전환 */}
             <button
               onClick={() => {
                 setScheduleUuid(null);
@@ -356,7 +391,6 @@ const GroupRoom: React.FC<GroupRoomProps> = ({ groupUuid, currentUserUuid }) => 
             <span className="hidden lg:inline ml-2">설정</span>
           </button>
         </aside>
-        {/* ✅ 수정된 좌측 사이드바 끝 */}
 
         {/* 메인 콘텐츠 영역 */}
         <section className="flex-1 min-w-0 overflow-hidden p-4">
