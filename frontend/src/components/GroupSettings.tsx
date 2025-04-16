@@ -43,7 +43,8 @@ const GroupSettings: React.FC<GroupSettingsProps> = ({ group, currentUserUuid })
   const isGroupLeader = currentUserUuid === group.group_leader_uuid;
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
+    // h-full과 overflow-y-auto를 추가하여 컨텐츠가 화면을 벗어나면 스크롤하도록 설정
+    <div className="max-w-3xl mx-auto p-6 h-full overflow-y-auto">
       {/* 헤더 영역: 그룹 프로필 이미지 및 기본 정보 */}
       <div className="flex items-center space-x-4 mb-8">
         {group.group_picture ? (
@@ -95,7 +96,7 @@ const GroupSettings: React.FC<GroupSettingsProps> = ({ group, currentUserUuid })
 
       {/* 회원/관리자 액션 영역 */}
       {!isGroupLeader ? (
-        <div className="bg-white shadow rounded-lg p-6">
+        <div className="bg-white shadow rounded-lg p-6 mb-8">
           <h2 className="text-xl font-semibold mb-4">회원 행동</h2>
           <p className="mb-4 text-gray-700">
             그룹을 탈퇴하면 그룹의 채팅방 및 관련 모든 정보를 더 이상 이용할 수 없습니다.
@@ -110,7 +111,7 @@ const GroupSettings: React.FC<GroupSettingsProps> = ({ group, currentUserUuid })
           {error && <p className="text-red-500 mt-4">{error}</p>}
         </div>
       ) : (
-        <div className="bg-white shadow rounded-lg p-6">
+        <div className="bg-white shadow rounded-lg p-6 mb-8">
           <h2 className="text-xl font-semibold mb-4">관리자 설정</h2>
           <p className="text-gray-700">본 그룹의 리더로서 여러 설정을 관리할 수 있습니다.</p>
           {/* 관리자가 사용할 기능들을 여기에 추가할 수 있습니다. */}
@@ -119,7 +120,7 @@ const GroupSettings: React.FC<GroupSettingsProps> = ({ group, currentUserUuid })
 
       {/* 탈퇴 확인 모달 */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-9999">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md transform transition-all duration-300">
             <h3 className="text-2xl font-semibold mb-4">그룹 탈퇴 확인</h3>
             <p className="mb-6">
