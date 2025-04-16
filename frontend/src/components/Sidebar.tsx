@@ -81,20 +81,34 @@ const Sidebar: React.FC<SidebarProps> = ({
   const hoverTimeoutRef = useRef<number | null>(null);
   const [isGroupCreationModalOpen, setIsGroupCreationModalOpen] = useState(false);
 
-  useEffect(() => {
-    async function fetchGroups() {
-      try {
-        const fetchedGroups = await getMyGroups();
-        const mappedGroups: Group[] = fetchedGroups.map((group) => ({
-          ...group,
-          image: group.group_icon || "",
-        }));
-        setGroups(mappedGroups);
-      } catch (error) {
-        console.error("그룹 불러오기 실패:", error);
-      }
+  // 그룹 목록을 가져오는 함수
+  const fetchGroups = async () => {
+    try {
+      const fetchedGroups = await getMyGroups();
+      const mappedGroups: Group[] = fetchedGroups.map((group) => ({
+        ...group,
+        image: group.group_icon || "",
+      }));
+      setGroups(mappedGroups);
+    } catch (error) {
+      console.error("그룹 불러오기 실패:", error);
     }
+  };
+
+  // 초기 그룹 목록 불러오기
+  useEffect(() => {
     fetchGroups();
+  }, []);
+
+  // 그룹 참여 후 "groupJoined" 이벤트를 수신하면 그룹 목록 재조회
+  useEffect(() => {
+    const handleGroupJoined = () => {
+      fetchGroups();
+    };
+    window.addEventListener("groupJoined", handleGroupJoined);
+    return () => {
+      window.removeEventListener("groupJoined", handleGroupJoined);
+    };
   }, []);
 
   // 그룹 버튼 클릭 시, 그룹의 UUID와 이름을 부모에게 전달

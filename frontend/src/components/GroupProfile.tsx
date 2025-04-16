@@ -10,13 +10,11 @@ import { useSocket } from "../contexts/SocketContext";
 
 interface GroupProfileProps {
   onClose: () => void;
-  group: GroupInfo; // 그룹 생성 시 저장된 그룹 리더 uuid 포함
+  group: GroupInfo;
 }
 
 const GroupProfile: React.FC<GroupProfileProps> = ({ onClose, group }) => {
-  // SocketContext에서 소켓 인스턴스를 가져옵니다.
   const { socket } = useSocket();
-
   const [groupLeader, setGroupLeader] = useState<any>(null);
   const [isMember, setIsMember] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
@@ -65,10 +63,14 @@ const GroupProfile: React.FC<GroupProfileProps> = ({ onClose, group }) => {
         console.log("joinGroup 응답:", response);
         if (response.success) {
           setIsMember(true);
+          // 그룹 참여 성공 시, 사이드바 그룹 목록 갱신을 위해 커스텀 이벤트 디스패치
+          window.dispatchEvent(new CustomEvent("groupJoined"));
         } else {
           console.error("그룹 참여 실패:", response.message);
+          // 이미 그룹 멤버인 경우에도 갱신
           if (response.message === "이미 그룹의 멤버입니다.") {
             setIsMember(true);
+            window.dispatchEvent(new CustomEvent("groupJoined"));
           }
         }
       });
