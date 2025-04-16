@@ -22,8 +22,14 @@ const GroupSearch: React.FC<GroupSearchProps> = ({ userUuid }) => {
     setSearchLoading(true);
     setSearchError("");
     try {
+      // 검색 결과 호출
       const results = await searchGroups(searchKeyword);
-      setSearchResults(results);
+      // 가입한 그룹을 가져와 검색 결과에서 필터링
+      const { getMyGroups } = await import("../services/groupService");
+      const myGroups = await getMyGroups();
+      const myGroupIds = myGroups.map((g: any) => g.uuid);
+      const filteredResults = results.filter((group) => !myGroupIds.includes(group.uuid));
+      setSearchResults(filteredResults);
     } catch (error: any) {
       setSearchError(error.message || "검색 실패");
     } finally {
@@ -32,7 +38,7 @@ const GroupSearch: React.FC<GroupSearchProps> = ({ userUuid }) => {
   };
 
   return (
-    // 부모 컨테이너에 배경색 없음 (원래대로)
+    // 부모 컨테이너에 배경색 없음
     <div className="p-6">
       {/* 데스크톱(md 이상): 좌측은 검색 영역, 우측은 추천 그룹 영역 */}
       <div className="flex flex-col md:flex-row gap-4">
@@ -97,7 +103,7 @@ const GroupSearch: React.FC<GroupSearchProps> = ({ userUuid }) => {
           )}
         </div>
 
-        {/* 우측: 추천 그룹 영역 */}
+        {/* 우측: 추천 그룹 영역 (이미 가입한 그룹은 필터링되어 표시됨) */}
         <div className="w-full md:w-1/2">
           <MatchingGroups userUuid={userUuid} />
         </div>
