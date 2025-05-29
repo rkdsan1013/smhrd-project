@@ -1,3 +1,17 @@
+# 요즘 어디가? (smhrd-project)
+
+## 프로젝트 소개
+"요즘 어디가?"는 MZ세대의 여행 취향과 최신 여행 트렌드를 반영한 단체여행 큐레이션 서비스입니다.  
+사용자 취향 기반 그룹 매칭과 실시간 일정 투표 기능을 통해 함께 여행할 최적의 여행지를 추천하고,  
+효율적인 여행 일정 관리를 지원합니다.
+
+## 주요 기능
+- 최신 여행 트렌드 분석 기반 여행지 추천
+- 사용자 취향 기반 그룹 매칭 및 초대
+- 실시간 채팅 기능 및 일정 투표
+- 여행 일정 자동 생성 및 관리
+- 반응형 UI/UX 지원
+
 ## 🛠️ 기술 스택
 
 | 구분 | 기술 |
@@ -9,3 +23,12 @@
 | **서버 환경** | <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=Node.js&logoColor=white"/> |
 | **데이터베이스** | <img src="https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=MySQL&logoColor=white"/> |
 | **협업 도구** | <img src="https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=Git&logoColor=white"/> <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=GitHub&logoColor=white"/> |
+
+## 설치 및 실행 방법
+1. 저장소 클론
+git clone https://github.com/rkdsan1013/smhrd-project.git
+2. 프로젝트 폴더로 이동
+cd smhrd-project
+3. 의존성 설치 및 실행
+npm install
+npm start
